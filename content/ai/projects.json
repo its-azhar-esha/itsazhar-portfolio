@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Fleet Guard",
+    "category": "AI Fleet Monitoring & Incident Management",
+    "description": "An AI-powered fleet monitoring system that analyzes vehicle activity, detects risks, and provides intelligent operational insights through automated workflows.",
+    "problem": "Manual fleet monitoring was reactive, slow, and prone to missed incidents.",
+    "solution": "A real-time AI system that analyzes fleet activity, detects risks, and provides instant operational insights.",
+    "stack": ["n8n", "Supabase", "Groq AI", "React", "Tailwind CSS", "Framer Motion"],
+    "impact": "Reduced incident response time from hours to minutes."
+  },
+  {
+    "name": "Lease Intelligence System",
+    "category": "Real Estate AI",
+    "description": "An intelligent document processing system that extracts important lease clauses from PDFs and converts unstructured documents into structured business data.",
+    "problem": "Manual lease review was slow, inconsistent, and easy to miss critical clauses.",
+    "solution": "Automated extraction of important lease information from PDFs with structured summaries.",
+    "stack": ["n8n", "Supabase", "Groq AI", "LLM", "PDF Processing"],
+    "impact": "Reduces manual document review time by 80%."
+  },
+  {
+    "name": "Document Intelligence Pipeline",
+    "category": "AI Document Automation",
+    "description": "An automated document processing pipeline that receives documents, extracts information, classifies content, validates data, and routes results automatically.",
+    "problem": "Teams spent hours manually processing incoming documents.",
+    "solution": "An end-to-end automated pipeline using n8n and LLM-powered analysis.",
+    "stack": ["n8n", "LLM", "Airtable", "Gmail", "API Integration"],
+    "impact": "Reduced turnaround time from days to minutes."
+  },
+  {
+    "name": "Client Onboarding Orchestrator",
+    "category": "Business Automation",
+    "description": "An intelligent onboarding system that captures leads, qualifies prospects, automates communication, and organizes customer data.",
+    "problem": "Manual client onboarding was fragmented across email, spreadsheets, and multiple tools.",
+    "solution": "An intelligent onboarding system with AI-driven lead scoring and automated follow-ups.",
+    "stack": ["n8n", "AI Agents", "REST APIs", "CRM", "Email Automation"],
+    "impact": "Reduces onboarding time by 60%."
+  },
+  {
+    "name": "Smart Product Matcher AI",
+    "category": "E-Commerce AI",
+    "description": "An AI-powered product matching and data cleaning system for e-commerce and inventory management.",
+    "problem": "Duplicate, inconsistent, and incomplete product data across multiple platforms.",
+    "solution": "AI-powered product matching, deduplication, cleaning, and enrichment system.",
+    "stack": ["n8n", "AI/ML", "PostgreSQL", "API Integration", "Data Pipeline"],
+    "impact": "Eliminates product data inconsistencies and saves hours of manual cleanup weekly."
+  }
+]

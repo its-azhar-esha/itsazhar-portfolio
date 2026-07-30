@@ -1,0 +1,10 @@
+{
+  "name": "Azhar",
+  "title": "AI Automation Specialist",
+  "location": "Bangladesh",
+  "working": "Remote, Worldwide",
+  "summary": "I build intelligent AI automation systems that eliminate repetitive work and help businesses scale. From AI agents to complex workflow automation, I design systems that are reliable, documented, and built to last.",
+  "story": "My journey into AI automation started with a simple frustration — watching talented teams waste hours on repetitive manual work that could be automated. I dove deep into workflow automation, AI agents, and system integration. Today I help businesses transform their operations with intelligent automation systems.",
+  "philosophy": "Simplicity First — The best automation is invisible. Real Results — Every workflow must solve a real business problem. Built to Last — Every system is fully documented and designed to scale.",
+  "skills": ["n8n", "AI Agents", "LLMs", "API Integration", "Supabase", "PostgreSQL", "React", "Automation Systems"]
+}

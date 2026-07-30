@@ -1,0 +1,30 @@
+[
+  {
+    "question": "What services do you offer?",
+    "answer": "I offer AI agent development, workflow automation with n8n, API integrations, document intelligence systems, and custom AI automation solutions tailored to your business needs."
+  },
+  {
+    "question": "How does pricing work?",
+    "answer": "Each project is scoped individually based on complexity and requirements. I offer a free 15-minute audit to understand your needs and provide a clear estimate."
+  },
+  {
+    "question": "How long does a project take?",
+    "answer": "Small automation workflows can be delivered in 1-2 weeks. Larger systems typically take 3-6 weeks depending on complexity and integrations."
+  },
+  {
+    "question": "Which industries do you work with?",
+    "answer": "I work across logistics, real estate, e-commerce, SaaS, education, and any industry with repetitive digital workflows that can be automated."
+  },
+  {
+    "question": "What tools and technologies do you use?",
+    "answer": "I primarily use n8n for workflow automation, various LLMs for AI capabilities, Supabase for data, and modern web technologies for interfaces."
+  },
+  {
+    "question": "Do you provide ongoing support?",
+    "answer": "Yes. Every system comes with documentation and I offer ongoing maintenance and support packages to ensure your automation runs smoothly."
+  },
+  {
+    "question": "How do I get started?",
+    "answer": "Book a free 15-minute automation audit. We'll discuss your workflow, identify automation opportunities, and create a plan — with no obligation."
+  }
+]

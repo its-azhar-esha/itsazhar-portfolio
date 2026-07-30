@@ -1,0 +1,100 @@
+"use client"
+
+import { motion } from "framer-motion"
+import { ArrowRight, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { fadeUp, scaleIn } from "@/lib/motion"
+import Link from "next/link"
+
+export function CTA() {
+  return (
+    <section className="border-t border-border/40 py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-2xl border bg-gradient-to-b from-card to-background p-8 sm:p-12 lg:p-16"
+        >
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+          </div>
+
+          <div className="relative flex flex-col items-center text-center">
+            <motion.div
+              variants={scaleIn}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+            >
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-background px-4 py-1.5 text-sm text-muted-foreground">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span>Stop wasting time. Start automating.</span>
+              </div>
+            </motion.div>
+
+            <motion.h2
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl"
+            >
+              Ready to automate your workflow?
+            </motion.h2>
+
+            <motion.p
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mt-4 max-w-xl text-lg text-muted-foreground"
+            >
+              Let&apos;s find the automation opportunities in your business.
+              Book a free 15-minute audit and start scaling smarter.
+            </motion.p>
+
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="mt-10 flex flex-col items-center gap-4 sm:flex-row"
+            >
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                <Link href="/contact">
+                  <Button size="xl" className="group gap-2 text-base">
+                    Book Free Audit
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px]" />
+                  </Button>
+                </Link>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                <Link href="/projects">
+                  <Button variant="outline" size="xl" className="text-base">
+                    View Projects
+                  </Button>
+                </Link>
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
