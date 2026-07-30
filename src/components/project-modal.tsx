@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { modalOverlay, spring } from "@/lib/motion";
-import type { Project } from "@/lib/projects";
+import type { Project } from "@/lib/projects-data";
 import Link from "next/link";
 
 interface ProjectModalProps {

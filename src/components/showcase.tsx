@@ -13,12 +13,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { projects } from "@/lib/projects";
+import { getFeaturedProjects } from "@/lib/projects-data";
 import { fadeUp, cardEntrance, spring } from "@/lib/motion";
 import type { Variants } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import type { Project } from "@/lib/projects";
+import type { Project } from "@/lib/projects-data";
 
 const ProjectModal = dynamic(
   () => import("./project-modal").then((m) => ({ default: m.ProjectModal })),
@@ -148,6 +148,7 @@ function SmallCard({ project, onSelect }: { project: Project; onSelect: () => vo
 }
 
 export function Showcase() {
+  const [projects, setProjects] = React.useState<Project[]>([]);
   const [index, setIndex] = React.useState(0);
   const [direction, setDirection] = React.useState(0);
   const [isPaused, setIsPaused] = React.useState(false);
@@ -155,13 +156,18 @@ export function Showcase() {
   const [carouselHeight, setCarouselHeight] = React.useState(0);
   const carouselRef = React.useRef<HTMLDivElement>(null);
   const touchStartX = React.useRef(0);
-  const n = projects.length;
+
+  React.useEffect(() => {
+    getFeaturedProjects().then(setProjects);
+  }, []);
 
   React.useLayoutEffect(() => {
     if (carouselRef.current) {
       setCarouselHeight(carouselRef.current.offsetHeight);
     }
   }, []);
+
+  const n = projects.length;
 
   const activeIndices = React.useMemo(() => [index, (index + 1) % n, (index + 2) % n], [index, n]);
 
@@ -176,10 +182,10 @@ export function Showcase() {
   }, [n]);
 
   React.useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || n === 0) return;
     const id = setInterval(goNext, 4500);
     return () => clearInterval(id);
-  }, [isPaused, goNext, carouselHeight]);
+  }, [isPaused, goNext, n]);
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -215,6 +221,8 @@ export function Showcase() {
     }
     return pos === 0 ? { y: 20, scale: 0.98, opacity: 0 } : { y: -15, opacity: 0 };
   };
+
+  if (projects.length === 0) return null;
 
   return (
     <section id="projects" className="border-border/40 border-t py-24">

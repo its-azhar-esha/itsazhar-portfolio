@@ -8,15 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { fadeUp, scaleIn, slideUp, spring, springSoft, cardHover } from "@/lib/motion";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import type { HeroContent } from "@/types/hero";
 
-const stats = [
-  { value: "12+", label: "Automation Systems Built" },
-  { value: "50+", label: "Workflows Created" },
-  { value: "15+", label: "AI Automation Services" },
-  { value: "100%", label: "Documented Systems" },
-];
-
-const trustItems = ["AI Agents", "n8n", "APIs", "Workflow Automation", "Business Systems"];
+interface HeroProps {
+  content: HeroContent;
+}
 
 const particlePositions = [
   { left: "15%", top: "20%" },
@@ -67,7 +63,7 @@ function AnimatedStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-export function Hero() {
+export function Hero({ content }: HeroProps) {
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
   const sectionRef = React.useRef<HTMLElement>(null);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -82,6 +78,8 @@ export function Hero() {
     },
     [isDesktop],
   );
+
+  const { basic, actions, metrics, badges } = content;
 
   return (
     <section
@@ -145,7 +143,7 @@ export function Hero() {
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 className="inline-block h-2 w-2 rounded-full bg-green-500"
               />
-              Available for Automation Projects
+              {basic.availability}
             </Badge>
           </motion.div>
 
@@ -157,7 +155,7 @@ export function Hero() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
             >
-              Automate anything.
+              {basic.headline}
             </motion.h1>
             <motion.p
               variants={fadeUp}
@@ -166,7 +164,7 @@ export function Hero() {
               transition={{ delay: 0.35, duration: 0.5 }}
               className="from-foreground via-foreground to-foreground/60 bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl md:text-6xl lg:text-7xl"
             >
-              Scale everything.
+              {basic.highlight}
             </motion.p>
           </div>
 
@@ -177,10 +175,7 @@ export function Hero() {
             transition={{ delay: 0.5, duration: 0.5 }}
             className="text-muted-foreground mx-auto mt-6 max-w-[620px] text-lg md:text-xl"
           >
-            I design and build intelligent automation systems that eliminate repetitive work,
-            streamline operations, and help businesses scale faster. From AI agents and n8n
-            workflows to custom integrations, I turn complex processes into reliable automated
-            systems.
+            {basic.subheadline}
           </motion.p>
 
           <motion.div
@@ -195,17 +190,17 @@ export function Hero() {
               whileTap={{ scale: 0.98 }}
               transition={spring}
             >
-              <Link href="/contact">
+              <Link href={actions.primary.href}>
                 <Button size="xl" className="group gap-2 text-base shadow-sm">
-                  Book a Free 15-Min Audit
+                  {actions.primary.label}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px]" />
                 </Button>
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
-              <Link href="/projects">
+              <Link href={actions.secondary.href}>
                 <Button variant="outline" size="xl" className="text-base">
-                  View Projects
+                  {actions.secondary.label}
                 </Button>
               </Link>
             </motion.div>
@@ -220,7 +215,7 @@ export function Hero() {
             animate="visible"
             className="mt-8 flex flex-wrap justify-center gap-2"
           >
-            {trustItems.map((item) => (
+            {badges.map((item) => (
               <motion.span
                 key={item}
                 variants={{
@@ -249,7 +244,7 @@ export function Hero() {
           transition={{ delay: 0.9, duration: 0.6 }}
           className="mt-20 grid grid-cols-2 gap-4 md:grid-cols-4"
         >
-          {stats.map((stat) => (
+          {metrics.map((stat) => (
             <AnimatedStat key={stat.label} value={stat.value} label={stat.label} />
           ))}
         </motion.div>

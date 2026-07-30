@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { projects } from "@/lib/projects";
+import { getProjects } from "@/lib/projects-data";
 import dynamic from "next/dynamic";
 
 const ProjectModal = dynamic(
@@ -22,33 +22,10 @@ const ProjectModal = dynamic(
     ssr: false,
   },
 );
-import type { Project } from "@/lib/projects";
+import type { Project } from "@/lib/projects-data";
 import Link from "next/link";
 
-const INDUSTRIES = [
-  "All",
-  "Healthcare",
-  "Finance & FinTech",
-  "Business Operations",
-  "Logistics",
-  "E-Commerce",
-  "Real Estate",
-  "Education",
-  "Manufacturing",
-  "Human Resources",
-  "Sales & CRM",
-  "Marketing",
-  "Customer Support",
-  "Legal",
-  "Insurance",
-  "Hospitality",
-  "Travel",
-  "Construction",
-  "Non-Profit",
-  "Government",
-  "Document Intelligence",
-  "Custom Solutions",
-];
+const ALL_LABEL = "All" as const;
 
 const statusColors: Record<string, string> = {
   "Production Ready": "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
@@ -57,50 +34,16 @@ const statusColors: Record<string, string> = {
   Completed: "text-muted-foreground bg-muted-foreground/10 border-muted-foreground/20",
 };
 
-function getIndustryCounts() {
-  const counts: Record<string, number> = { All: projects.length };
-  for (const p of projects) {
-    const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-    for (const ind of inds) {
-      counts[ind] = (counts[ind] || 0) + 1;
-    }
-  }
-  for (const ind of INDUSTRIES) {
-    if (!(ind in counts)) counts[ind] = 0;
-  }
-  return counts;
-}
-
-function filterProjects(industry: string, query: string): Project[] {
-  let result = projects;
-  if (industry !== "All") {
-    result = result.filter((p) => {
-      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-      return inds.includes(industry);
-    });
-  }
-  if (query.trim()) {
-    const q = query.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q)) ||
-        p.tech?.some((t) => t.toLowerCase().includes(q)),
-    );
-  }
-  return result;
-}
-
 export default function ProjectsPage() {
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [selectedProject, setSelectedProject] = React.useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [activeIndustry, setActiveIndustry] = React.useState(() => {
-    if (typeof window === "undefined") return "All";
+  const [activeIndustry, setActiveIndustry] = React.useState<string>(() => {
+    if (typeof window === "undefined") return ALL_LABEL;
     const params = new URLSearchParams(window.location.search);
     const ind = params.get("industry");
-    if (ind && INDUSTRIES.includes(ind)) return ind;
-    return "All";
+    return ind || ALL_LABEL;
   });
   const searchRef = React.useRef<HTMLInputElement>(null);
   const filterRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
@@ -109,21 +52,73 @@ export default function ProjectsPage() {
   );
 
   React.useEffect(() => {
+    getProjects().then((data) => {
+      setProjects(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const industries = React.useMemo(() => {
+    const set = new Set<string>();
+    set.add(ALL_LABEL);
+    for (const p of projects) {
+      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
+      for (const ind of inds) set.add(ind);
+    }
+    return Array.from(set);
+  }, [projects]);
+
+  React.useEffect(() => {
     const onPopState = () => {
       const params = new URLSearchParams(window.location.search);
       const ind = params.get("industry");
-      setActiveIndustry(ind && INDUSTRIES.includes(ind) ? ind : "All");
+      setActiveIndustry(ind && ind !== ALL_LABEL ? ind : ALL_LABEL);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
+
+  const getIndustryCounts = React.useCallback(() => {
+    const counts: Record<string, number> = { [ALL_LABEL]: projects.length };
+    for (const p of projects) {
+      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
+      for (const ind of inds) {
+        counts[ind] = (counts[ind] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [projects]);
+
+  const filterProjects = React.useCallback(
+    (industry: string, query: string): Project[] => {
+      let result = projects;
+      if (industry !== ALL_LABEL) {
+        result = result.filter((p) => {
+          const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
+          return inds.includes(industry);
+        });
+      }
+      if (query.trim()) {
+        const q = query.toLowerCase();
+        result = result.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.description.toLowerCase().includes(q) ||
+            p.tags.some((t) => t.toLowerCase().includes(q)) ||
+            p.tech?.some((t) => t.toLowerCase().includes(q)),
+        );
+      }
+      return result;
+    },
+    [projects],
+  );
 
   const updateIndustry = React.useCallback(
     (industry: string) => {
       if (industry === activeIndustry) return;
       setActiveIndustry(industry);
       const params = new URLSearchParams(window.location.search);
-      if (industry === "All") {
+      if (industry === ALL_LABEL) {
         params.delete("industry");
       } else {
         params.set("industry", industry);
@@ -135,11 +130,11 @@ export default function ProjectsPage() {
     [activeIndustry],
   );
 
-  const industryCounts = React.useMemo(() => getIndustryCounts(), []);
+  const industryCounts = React.useMemo(() => getIndustryCounts(), [getIndustryCounts]);
 
   const filtered = React.useMemo(
     () => filterProjects(activeIndustry, searchQuery),
-    [activeIndustry, searchQuery],
+    [activeIndustry, searchQuery, filterProjects],
   );
 
   const clearSearch = () => {
@@ -161,16 +156,16 @@ export default function ProjectsPage() {
   const onFilterKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
     let newIndex = -1;
     if (e.key === "ArrowRight") {
-      newIndex = (index + 1) % INDUSTRIES.length;
+      newIndex = (index + 1) % industries.length;
     } else if (e.key === "ArrowLeft") {
-      newIndex = (index - 1 + INDUSTRIES.length) % INDUSTRIES.length;
+      newIndex = (index - 1 + industries.length) % industries.length;
     } else if (e.key === "Home") {
       newIndex = 0;
     } else if (e.key === "End") {
-      newIndex = INDUSTRIES.length - 1;
+      newIndex = industries.length - 1;
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      updateIndustry(INDUSTRIES[index]);
+      updateIndustry(industries[index]);
       return;
     }
     if (newIndex >= 0) {
@@ -178,6 +173,31 @@ export default function ProjectsPage() {
       filterRefs.current[newIndex]?.focus();
     }
   };
+
+  if (loading) {
+    return (
+      <div className="pt-24 md:pt-32">
+        <section className="border-border/40 border-b py-16 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="bg-muted mx-auto mb-4 h-6 w-32 animate-pulse rounded-full" />
+              <div className="bg-muted mx-auto h-10 w-96 animate-pulse rounded-lg" />
+              <div className="bg-muted mx-auto mt-6 h-6 w-128 animate-pulse rounded-lg" />
+            </div>
+          </div>
+        </section>
+        <section className="py-16 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-6 md:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-muted h-64 animate-pulse rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-24 md:pt-32">
@@ -253,7 +273,7 @@ export default function ProjectsPage() {
               aria-label="Filter by industry"
               className="flex flex-wrap justify-center gap-2"
             >
-              {INDUSTRIES.map((ind, i) => {
+              {industries.map((ind, i) => {
                 const count = industryCounts[ind];
                 const isActive = activeIndustry === ind;
                 return (
@@ -290,7 +310,7 @@ export default function ProjectsPage() {
           </div>
 
           {filtered.length === 0 &&
-          activeIndustry !== "All" &&
+          activeIndustry !== ALL_LABEL &&
           industryCounts[activeIndustry] === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -312,7 +332,7 @@ export default function ProjectsPage() {
                 <Link href="/contact">
                   <Button>Let&apos;s Discuss</Button>
                 </Link>
-                <Button variant="outline" onClick={() => updateIndustry("All")}>
+                <Button variant="outline" onClick={() => updateIndustry(ALL_LABEL)}>
                   Return to All
                 </Button>
               </div>
@@ -331,7 +351,7 @@ export default function ProjectsPage() {
                 className="mt-4"
                 onClick={() => {
                   setSearchQuery("");
-                  updateIndustry("All");
+                  updateIndustry(ALL_LABEL);
                 }}
               >
                 Clear all filters

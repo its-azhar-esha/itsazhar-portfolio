@@ -6,15 +6,29 @@ import { CaseStudies } from "@/components/case-studies";
 import { About } from "@/components/about";
 import { Contact } from "@/components/contact";
 import { CTA } from "@/components/cta";
+import { getPublicHeroContent } from "@/lib/hero";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "https://azhar.dev" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const content = await getPublicHeroContent();
+    return {
+      title: content.seo.title,
+      description: content.seo.description,
+      alternates: { canonical: "https://azhar.dev" },
+    };
+  } catch {
+    return {
+      alternates: { canonical: "https://azhar.dev" },
+    };
+  }
+}
 
-export default function Home() {
+export default async function Home() {
+  const heroContent = await getPublicHeroContent();
+
   return (
     <>
-      <Hero />
+      <Hero content={heroContent} />
       <Showcase />
       <Features />
       <CaseStudies />

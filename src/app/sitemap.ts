@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
-import { projects } from "@/lib/projects";
+import { getProjectSlugs } from "@/lib/projects-data";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://azhar.dev";
 
   const staticPages = [
@@ -32,8 +32,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const projectPages = projects.map((project) => ({
-    url: `${baseUrl}/projects/${project.slug}`,
+  const slugs = await getProjectSlugs();
+
+  const projectPages = slugs.map((slug: string) => ({
+    url: `${baseUrl}/projects/${slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,
     priority: 0.8,

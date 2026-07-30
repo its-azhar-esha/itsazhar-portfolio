@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,19 +11,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { signIn } from "@/lib/auth";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = React.useState(false);
   const [state, formAction, isPending] = useActionState(
-    async (_prev: { error: string } | undefined, formData: FormData) => {
-      const result = await signIn(formData);
-      if (!result) {
-        router.push("/admin");
-        return undefined;
-      }
-      return result;
-    },
+    async (_prev: { error: string } | undefined, formData: FormData) => signIn(formData),
     undefined,
   );
+  const prevPendingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (prevPendingRef.current && !isPending && state === undefined) {
+      prevPendingRef.current = false;
+      window.location.href = "/admin";
+    }
+    prevPendingRef.current = isPending;
+  }, [isPending, state]);
 
   return (
     <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-12">

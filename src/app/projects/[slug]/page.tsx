@@ -1,14 +1,20 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { projects } from "@/lib/projects";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  getProject,
+  getProjectSlugs,
+  getAdjacentProjects,
+  getRelatedProjects,
+} from "@/lib/projects-data";
 import Link from "next/link";
 
 export async function generateStaticParams() {
-  return projects.map((project) => ({ slug: project.slug }));
+  const slugs = await getProjectSlugs();
+  return slugs.map((slug: string) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -17,22 +23,30 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = projects.find((p) => p.slug === slug);
+  const project = await getProject(slug);
   if (!project) return { title: "Project Not Found" };
   return {
-    title: `${project.name} | Azhar | AI Automation Systems`,
-    description: project.description,
+    title: project.seo_title
+      ? `${project.seo_title} | Azhar`
+      : `${project.name} | Azhar | AI Automation Systems`,
+    description: project.seo_description || project.description,
     openGraph: {
-      title: `${project.name} | Azhar`,
-      description: project.description,
+      title: project.seo_title || `${project.name} | Azhar`,
+      description: project.seo_description || project.description,
+      ...(project.coverImage ? { images: [{ url: project.coverImage }] } : {}),
     },
+    ...(project.canonical_url ? { alternates: { canonical: project.canonical_url } } : {}),
+    ...(project.keywords?.length ? { keywords: project.keywords.join(", ") } : {}),
   };
 }
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = projects.find((p) => p.slug === slug);
+  const project = await getProject(slug);
   if (!project) notFound();
+
+  const { prev, next } = await getAdjacentProjects(slug);
+  const related = await getRelatedProjects(slug);
 
   return (
     <div className="pt-24 md:pt-32">
@@ -128,15 +142,85 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 <p className="text-muted-foreground leading-relaxed">{project.impact}</p>
               </CardContent>
             </Card>
-            <div className="mt-10">
-              <Button size="lg" className="gap-2">
-                Book a Free 15-Min Audit
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+          </div>
+        </section>
+      )}
+
+      {related.length > 0 && (
+        <section className="border-border/40 border-t py-16 md:py-20">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-bold sm:text-2xl">Related Projects</h2>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {related.map((r) => (
+                <Link key={r.slug} href={`/projects/${r.slug}`}>
+                  <Card className="hover:border-primary/30 h-full transition-all duration-200 hover:shadow-sm">
+                    <CardHeader className="p-4">
+                      <Badge variant="secondary" className="mb-2 w-fit text-[10px]">
+                        {r.category}
+                      </Badge>
+                      <CardTitle className="text-sm">{r.name}</CardTitle>
+                      <CardDescription className="mt-1 line-clamp-2 text-xs">
+                        {r.description}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
       )}
+
+      <section className="border-border/40 border-t py-12">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4">
+            {prev ? (
+              <Link
+                href={`/projects/${prev.slug}`}
+                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
+                <div className="text-left">
+                  <div className="text-muted-foreground/60 text-xs">Previous</div>
+                  <div className="font-medium">{prev.name}</div>
+                </div>
+              </Link>
+            ) : (
+              <div />
+            )}
+            {next ? (
+              <Link
+                href={`/projects/${next.slug}`}
+                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 text-right text-sm transition-colors"
+              >
+                <div>
+                  <div className="text-muted-foreground/60 text-xs">Next</div>
+                  <div className="font-medium">{next.name}</div>
+                </div>
+                <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </Link>
+            ) : (
+              <div />
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-border/40 border-t py-16 md:py-20">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center text-center">
+            <p className="text-muted-foreground text-sm">
+              Interested in a similar system for your business?
+            </p>
+            <Link href="/contact">
+              <Button size="lg" className="mt-4 gap-2">
+                Book a Free 15-Min Audit
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
