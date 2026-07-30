@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { ArrowRight, Globe, Mail, ExternalLink } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { spring } from "@/lib/motion"
-import Link from "next/link"
+import { motion } from "framer-motion";
+import { ArrowRight, Globe, Mail, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { spring } from "@/lib/motion";
+import Link from "next/link";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -13,7 +13,7 @@ const quickLinks = [
   { label: "Projects", href: "/projects" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
-]
+];
 
 const socialLinks = [
   {
@@ -31,30 +31,26 @@ const socialLinks = [
     href: "mailto:azharmahmudalif@gmail.com",
     icon: Mail,
   },
-]
+];
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/40">
+    <footer className="border-border/40 border-t">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <a href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm font-bold text-primary-foreground">A</span>
+            <Link href="/" aria-label="Home" className="flex items-center gap-2">
+              <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+                <span className="text-primary-foreground text-sm font-bold">A</span>
               </div>
-              <span className="text-lg font-semibold tracking-tight">
-                Azhar
-              </span>
-            </a>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              I build AI automation systems that eliminate repetitive work,
-              connect business tools, and help teams operate smarter through AI
-              agents, workflows, and intelligent integrations.
+              <span className="text-lg font-semibold tracking-tight">Azhar</span>
+            </Link>
+            <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed">
+              I build AI automation systems that eliminate repetitive work, connect business tools,
+              and help teams operate smarter through AI agents, workflows, and intelligent
+              integrations.
             </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              AI Automation Specialist
-            </p>
+            <p className="text-muted-foreground mt-3 text-xs">AI Automation Specialist</p>
             <div className="mt-4 flex items-center gap-2">
               {socialLinks.map((link) => (
                 <motion.div
@@ -63,12 +59,7 @@ export function Footer() {
                   whileTap={{ scale: 0.95 }}
                   transition={spring}
                 >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    asChild
-                  >
+                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                     <a
                       href={link.href}
                       target="_blank"
@@ -83,33 +74,34 @@ export function Footer() {
             </div>
           </div>
 
-          <div>
+          <nav aria-label="Quick links">
             <h3 className="text-sm font-semibold">Quick Links</h3>
             <ul className="mt-4 space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="group/link relative inline-block text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                    className="group/link text-muted-foreground hover:text-foreground relative inline-block text-sm transition-colors duration-200"
                   >
                     {link.label}
-                    <span className="absolute -bottom-0.5 left-0 h-px w-0 rounded-full bg-foreground transition-all duration-200 group-hover/link:w-full" />
+                    <span className="bg-foreground absolute -bottom-0.5 left-0 h-px w-0 rounded-full transition-all duration-200 group-hover/link:w-full" />
                   </a>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
           <div className="lg:col-span-2">
-            <h3 className="text-sm font-semibold">
-              Stop wasting time. Start automating.
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Book a free 15-minute audit and discover what automation can do
-              for your business.
+            <h3 className="text-sm font-semibold">Stop wasting time. Start automating.</h3>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Book a free 15-minute audit and discover what automation can do for your business.
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={spring}
+              >
                 <Link href="/contact">
                   <Button size="sm" className="group gap-1.5">
                     Book Free Audit
@@ -117,7 +109,11 @@ export function Footer() {
                   </Button>
                 </Link>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={spring}
+              >
                 <Link href="/projects">
                   <Button variant="outline" size="sm">
                     View Projects
@@ -131,11 +127,11 @@ export function Footer() {
         <Separator className="my-8" />
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             &copy; 2026 Azhar (itsazhar.com). All rights reserved.
           </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

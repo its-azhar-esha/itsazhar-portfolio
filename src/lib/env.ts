@@ -1,24 +1,24 @@
 export function getEnv(key: string, fallback = ""): string {
-  return process.env[key]?.trim() || fallback
+  return process.env[key]?.trim() || fallback;
 }
 
 export function hasEnv(key: string): boolean {
-  const val = process.env[key]?.trim()
-  return val !== undefined && val !== ""
+  const val = process.env[key]?.trim();
+  return val !== undefined && val !== "";
 }
 
 export function requireEnv(key: string): string {
-  const val = getEnv(key)
+  const val = getEnv(key);
   if (!val) {
     if (process.env.NODE_ENV === "development") {
       console.warn(
         `[env] Missing required environment variable: ${key}. ` +
-          "Check .env.example for the full list of required variables."
-      )
+          "Check .env.example for the full list of required variables.",
+      );
     }
-    return ""
+    return "";
   }
-  return val
+  return val;
 }
 
 export const env = {
@@ -32,4 +32,4 @@ export const env = {
   supabaseAnonKey: getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   supabaseServiceRoleKey: getEnv("SUPABASE_SERVICE_ROLE_KEY"),
   hasSupabase: hasEnv("NEXT_PUBLIC_SUPABASE_URL") && hasEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-}
+};

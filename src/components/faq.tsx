@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
+import { motion } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { fadeUp } from "@/lib/motion"
+} from "@/components/ui/accordion";
+import { fadeUp } from "@/lib/motion";
 
 const faqs = [
   {
@@ -34,11 +34,11 @@ const faqs = [
     q: "How do I get started?",
     a: "Book a free 15-minute automation audit. I will review your workflow and identify the best automation opportunities.",
   },
-]
+];
 
 export function FAQ() {
   return (
-    <section className="border-t border-border/40 py-24">
+    <section className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={fadeUp}
@@ -51,10 +51,9 @@ export function FAQ() {
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Frequently Asked Questions
           </h2>
-          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-            Everything you need to know about AI automation, workflows, and
-            working together. Have another question? Book a free audit and
-            let&apos;s discuss your needs.
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
+            Everything you need to know about AI automation, workflows, and working together. Have
+            another question? Book a free audit and let&apos;s discuss your needs.
           </p>
         </motion.div>
 
@@ -69,17 +68,13 @@ export function FAQ() {
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, i) => (
               <AccordionItem key={i} value={`item-${i}`}>
-                <AccordionTrigger className="text-left text-base">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  {faq.a}
-                </AccordionContent>
+                <AccordionTrigger className="text-left text-base">{faq.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">{faq.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

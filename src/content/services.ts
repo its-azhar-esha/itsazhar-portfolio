@@ -1,14 +1,14 @@
-import type { LucideIcon } from "lucide-react"
-import { Bot, Workflow, Cable, FileText, Building2, Cpu } from "lucide-react"
+import type { LucideIcon } from "lucide-react";
+import { Bot, Workflow, Cable, FileText, Building2, Cpu } from "lucide-react";
 
 export interface Service {
-  id: string
-  title: string
-  description: string
-  icon: LucideIcon
-  features: string[]
-  order: number
-  cta?: string
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  features: string[];
+  order: number;
+  cta?: string;
 }
 
 export const services: Service[] = [
@@ -96,4 +96,4 @@ export const services: Service[] = [
     ],
     order: 6,
   },
-]
+];

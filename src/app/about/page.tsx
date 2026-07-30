@@ -1,22 +1,38 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, Sparkles, Play, X,
-  Search, Layers, Cpu, Settings,
-  ExternalLink, MessageCircle,
-  Stethoscope, Landmark, Building2, Truck,
-  Home, GraduationCap, ShoppingBag, Megaphone,
-  Headphones, FileText, Mail, Quote,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import Link from "next/link"
-import { spring, springSoft, fadeIn } from "@/lib/motion"
-import { projects } from "@/lib/projects"
-import { useChat } from "@/providers"
+  ArrowRight,
+  Sparkles,
+  Play,
+  X,
+  Search,
+  Layers,
+  Cpu,
+  Settings,
+  ExternalLink,
+  MessageCircle,
+  Stethoscope,
+  Landmark,
+  Building2,
+  Truck,
+  Home,
+  GraduationCap,
+  ShoppingBag,
+  Megaphone,
+  Headphones,
+  FileText,
+  Mail,
+  Quote,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
+import { spring, springSoft, fadeIn } from "@/lib/motion";
+import { projects } from "@/lib/projects";
+import { useChat } from "@/providers";
 
 const roles = [
   "Building AI Agents",
@@ -24,16 +40,35 @@ const roles = [
   "Connecting Systems",
   "Saving Thousands of Hours",
   "Creating Intelligent Workflows",
-]
+];
 
 const buildSteps = [
-  { icon: Search, title: "Discovery", desc: "Understand your business workflow, pain points, and automation goals." },
-  { icon: Layers, title: "Workflow Design", desc: "Map existing processes, identify bottlenecks, and design the automation approach." },
-  { icon: Cpu, title: "Development", desc: "Build and configure the automation system using n8n, AI agents, and integrations." },
-  { icon: Settings, title: "Optimization", desc: "Rigorously test, deploy, document, and optimize for long-term reliability." },
-]
+  {
+    icon: Search,
+    title: "Discovery",
+    desc: "Understand your business workflow, pain points, and automation goals.",
+  },
+  {
+    icon: Layers,
+    title: "Workflow Design",
+    desc: "Map existing processes, identify bottlenecks, and design the automation approach.",
+  },
+  {
+    icon: Cpu,
+    title: "Development",
+    desc: "Build and configure the automation system using n8n, AI agents, and integrations.",
+  },
+  {
+    icon: Settings,
+    title: "Optimization",
+    desc: "Rigorously test, deploy, document, and optimize for long-term reliability.",
+  },
+];
 
-interface Tool { name: string; icon?: string }
+interface Tool {
+  name: string;
+  icon?: string;
+}
 
 const tools = [
   // AI
@@ -137,7 +172,7 @@ const tools = [
   { name: "DigitalOcean" },
   { name: "Linux" },
   { name: "NGINX" },
-]
+];
 
 const industries = [
   { name: "Healthcare", icon: Stethoscope },
@@ -150,22 +185,58 @@ const industries = [
   { name: "Marketing", icon: Megaphone },
   { name: "Customer Support", icon: Headphones },
   { name: "Document Intelligence", icon: FileText },
-]
+];
 
 const timeline = [
-  { year: "2021", title: "Started Learning", desc: "Began exploring automation and AI technologies to solve real problems." },
-  { year: "2022", title: "Built First Workflow", desc: "Created my first automated workflow using n8n and API integrations." },
-  { year: "2023", title: "First AI System", desc: "Developed and deployed my first production AI automation system." },
-  { year: "2024", title: "Portfolio Launch", desc: "Launched my portfolio to showcase automation systems to the world." },
-  { year: "2025+", title: "Building Enterprise Solutions", desc: "Delivering enterprise-grade automation systems for global clients." },
-]
+  {
+    year: "2021",
+    title: "Started Learning",
+    desc: "Began exploring automation and AI technologies to solve real problems.",
+  },
+  {
+    year: "2022",
+    title: "Built First Workflow",
+    desc: "Created my first automated workflow using n8n and API integrations.",
+  },
+  {
+    year: "2023",
+    title: "First AI System",
+    desc: "Developed and deployed my first production AI automation system.",
+  },
+  {
+    year: "2024",
+    title: "Portfolio Launch",
+    desc: "Launched my portfolio to showcase automation systems to the world.",
+  },
+  {
+    year: "2025+",
+    title: "Building Enterprise Solutions",
+    desc: "Delivering enterprise-grade automation systems for global clients.",
+  },
+];
 
 const values = [
-  { icon: Quote, title: "Build once. Automate forever.", desc: "I design systems that keep running without constant maintenance — reliable, self-sustaining, and built to last." },
-  { icon: Quote, title: "Simple beats complicated.", desc: "The best automation is invisible. Simple, maintainable, and easy to understand — never over-engineered." },
-  { icon: Quote, title: "Reliable over flashy.", desc: "Production-ready systems that work consistently. I prioritize stability over experimental features." },
-  { icon: Quote, title: "Business first. Technology second.", desc: "Every solution starts with a real business problem. Tools are chosen to serve the outcome, not the other way around." },
-]
+  {
+    icon: Quote,
+    title: "Build once. Automate forever.",
+    desc: "I design systems that keep running without constant maintenance — reliable, self-sustaining, and built to last.",
+  },
+  {
+    icon: Quote,
+    title: "Simple beats complicated.",
+    desc: "The best automation is invisible. Simple, maintainable, and easy to understand — never over-engineered.",
+  },
+  {
+    icon: Quote,
+    title: "Reliable over flashy.",
+    desc: "Production-ready systems that work consistently. I prioritize stability over experimental features.",
+  },
+  {
+    icon: Quote,
+    title: "Business first. Technology second.",
+    desc: "Every solution starts with a real business problem. Tools are chosen to serve the outcome, not the other way around.",
+  },
+];
 
 const socials = [
   {
@@ -219,16 +290,16 @@ const socials = [
     icon: null,
     placeholder: true,
   },
-]
+];
 
 const particles = Array.from({ length: 20 }, (_, i) => ({
   id: i,
-  x: ((i * 137.5) % 100),
-  y: ((i * 97.3) % 100),
+  x: (i * 137.5) % 100,
+  y: (i * 97.3) % 100,
   size: (i % 3) + 1,
   duration: 15 + (i % 10),
   delay: (i * 1.7) % 10,
-}))
+}));
 
 const socialIcons: Record<string, React.ReactNode> = {
   LinkedIn: (
@@ -261,15 +332,15 @@ const socialIcons: Record<string, React.ReactNode> = {
       <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
     </svg>
   ),
-}
+};
 
 function RotatingText() {
-  const [index, setIndex] = React.useState(0)
+  const [index, setIndex] = React.useState(0);
 
   React.useEffect(() => {
-    const id = setInterval(() => setIndex((p) => (p + 1) % roles.length), 3000)
-    return () => clearInterval(id)
-  }, [])
+    const id = setInterval(() => setIndex((p) => (p + 1) % roles.length), 3000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="relative h-8 md:h-9" aria-live="polite">
@@ -280,49 +351,56 @@ function RotatingText() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.35 }}
-          className="absolute inset-0 flex items-center text-base font-medium text-primary md:text-lg"
+          className="text-primary absolute inset-0 flex items-center text-base font-medium md:text-lg"
         >
           {roles[index]}
         </motion.p>
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 function IntroVideo() {
-  const [expanded, setExpanded] = React.useState(false)
-  const [loaded, setLoaded] = React.useState(false)
-  const ref = React.useRef<HTMLDivElement>(null)
-  const videoRef = React.useRef<HTMLVideoElement>(null)
+  const [expanded, setExpanded] = React.useState(false);
+  const [loaded, setLoaded] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
 
   React.useEffect(() => {
-    if (!ref.current) return
+    if (!ref.current) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setLoaded(true) },
-      { rootMargin: "200px" }
-    )
-    observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [])
+      ([entry]) => {
+        if (entry.isIntersecting) setLoaded(true);
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
 
   React.useEffect(() => {
-    if (!expanded) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setExpanded(false) }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [expanded])
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
 
   const handleExpand = () => {
-    setExpanded(true)
+    setExpanded(true);
     if (videoRef.current) {
-      videoRef.current.muted = false
-      videoRef.current.controls = true
+      videoRef.current.muted = false;
+      videoRef.current.controls = true;
     }
-  }
+  };
 
   return (
     <>
-      <div ref={ref} className="relative aspect-video overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-primary/5 via-primary/[0.02] to-background shadow-sm backdrop-blur-sm">
+      <div
+        ref={ref}
+        className="border-border/60 from-primary/5 via-primary/[0.02] to-background relative aspect-video overflow-hidden rounded-xl border bg-gradient-to-br shadow-sm backdrop-blur-sm"
+      >
         {loaded ? (
           <video
             ref={videoRef}
@@ -339,7 +417,7 @@ function IntroVideo() {
           </video>
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+            <div className="bg-primary/10 h-8 w-8 animate-pulse rounded-full" />
           </div>
         )}
         <button
@@ -350,9 +428,9 @@ function IntroVideo() {
           <motion.div
             animate={{ scale: [1, 1.08, 1] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-background/90 shadow-lg backdrop-blur-sm transition-transform duration-300 hover:scale-110"
+            className="bg-background/90 flex h-12 w-12 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 hover:scale-110"
           >
-            <Play className="ml-0.5 h-5 w-5 text-foreground" />
+            <Play className="text-foreground ml-0.5 h-5 w-5" />
           </motion.div>
         </button>
       </div>
@@ -365,7 +443,7 @@ function IntroVideo() {
             animate="visible"
             exit="hidden"
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xl"
+            className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl"
             onClick={() => setExpanded(false)}
           >
             <motion.div
@@ -378,7 +456,7 @@ function IntroVideo() {
             >
               <button
                 onClick={() => setExpanded(false)}
-                className="absolute -top-10 right-4 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground absolute -top-10 right-4 flex items-center gap-1.5 text-sm transition-colors"
               >
                 <X className="h-4 w-4" /> Close
               </button>
@@ -398,78 +476,91 @@ function IntroVideo() {
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }
 
 function AnimatedCounter({ value, label }: { value: number; label: string }) {
-  const ref = React.useRef<HTMLDivElement>(null)
-  const [count, setCount] = React.useState(0)
-  const hasAnimated = React.useRef(false)
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [count, setCount] = React.useState(0);
+  const hasAnimated = React.useRef(false);
 
   React.useEffect(() => {
-    if (!ref.current) return
+    if (!ref.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated.current) {
-          hasAnimated.current = true
-          const duration = 1500
-          const start = performance.now()
+          hasAnimated.current = true;
+          const duration = 1500;
+          const start = performance.now();
           const tick = (now: number) => {
-            const elapsed = now - start
-            const progress = Math.min(elapsed / duration, 1)
-            const eased = 1 - Math.pow(1 - progress, 3)
-            setCount(Math.floor(eased * value))
-            if (progress < 1) requestAnimationFrame(tick)
-          }
-          requestAnimationFrame(tick)
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.floor(eased * value));
+            if (progress < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
         }
       },
-      { threshold: 0.3 }
-    )
-    observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [value])
+      { threshold: 0.3 },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [value]);
 
   return (
     <div ref={ref} className="text-center">
       <span className="text-3xl font-bold tracking-tight md:text-4xl">{count}</span>
-      <span className="block mt-1 text-xs text-muted-foreground md:text-sm">{label}</span>
+      <span className="text-muted-foreground mt-1 block text-xs md:text-sm">{label}</span>
     </div>
-  )
+  );
 }
 
 const toolIconPaths: Record<string, string> = {
   n8n: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z",
-  supabase: "M11.9 1.2c-.3-.3-.8-.2-1 .2L3.7 14.6c-.2.4.1.9.6.9h5.8l-2.2 7.3c-.2.6.4 1.2 1 1l13.2-8c.4-.2.4-.8 0-1l-5.6-4.5c-.2-.2-.3-.5-.2-.7l3.5-6.6c.2-.4-.1-.9-.6-.9H11.9z",
-  docker: "M13.98 11.08h-2.26V8.86h2.26v2.22zm-3.14 0H8.58V8.86h2.26v2.22zm-3.14 0H5.44V8.86h2.26v2.22zm-3.14 0H2.3V8.86h2.26v2.22zm9.42-3.14h-2.26V5.72h2.26v2.22zm-3.14 0H8.58V5.72h2.26v2.22zm0 6.28c3.42 0 6.2-2.52 6.2-5.62 0-.3-.04-.6-.1-.9.8-.5 1.34-1.3 1.34-2.2 0-.72-.36-1.36-.9-1.8-.54-.44-1.26-.66-2.02-.56-.36-1.1-1.42-1.94-2.76-1.94-1.16 0-2.2.6-2.74 1.52-.3-.04-.6-.06-.92-.06-2.98 0-5.4 2.28-5.4 5.1v.1c0 2.94 2.52 5.34 5.6 5.34h5.7z",
+  supabase:
+    "M11.9 1.2c-.3-.3-.8-.2-1 .2L3.7 14.6c-.2.4.1.9.6.9h5.8l-2.2 7.3c-.2.6.4 1.2 1 1l13.2-8c.4-.2.4-.8 0-1l-5.6-4.5c-.2-.2-.3-.5-.2-.7l3.5-6.6c.2-.4-.1-.9-.6-.9H11.9z",
+  docker:
+    "M13.98 11.08h-2.26V8.86h2.26v2.22zm-3.14 0H8.58V8.86h2.26v2.22zm-3.14 0H5.44V8.86h2.26v2.22zm-3.14 0H2.3V8.86h2.26v2.22zm9.42-3.14h-2.26V5.72h2.26v2.22zm-3.14 0H8.58V5.72h2.26v2.22zm0 6.28c3.42 0 6.2-2.52 6.2-5.62 0-.3-.04-.6-.1-.9.8-.5 1.34-1.3 1.34-2.2 0-.72-.36-1.36-.9-1.8-.54-.44-1.26-.66-2.02-.56-.36-1.1-1.42-1.94-2.76-1.94-1.16 0-2.2.6-2.74 1.52-.3-.04-.6-.06-.92-.06-2.98 0-5.4 2.28-5.4 5.1v.1c0 2.94 2.52 5.34 5.6 5.34h5.7z",
   vercel: "M12 2L2 21h20L12 2zm0 4.5l7.5 13h-15L12 6.5z",
-  react: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  nextjs: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v6l2 2V7zm-2 8l-2-2H7l4 4v-2z",
-  tailwind: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  typescript: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  python: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  postgresql: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  stripe: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  figma: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  openai: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  claude: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-  github: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
-}
+  react:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  nextjs:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v6l2 2V7zm-2 8l-2-2H7l4 4v-2z",
+  tailwind:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  typescript:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  python:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  postgresql:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  stripe:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  figma:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  openai:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  claude:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+  github:
+    "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z",
+};
 
 function ToolIcon({ name }: { name: string }) {
-  const path = toolIconPaths[name.toLowerCase()]
-  if (!path) return <div className="h-4 w-4 rounded bg-primary/20" />
+  const path = toolIconPaths[name.toLowerCase()];
+  if (!path) return <div className="bg-primary/20 h-4 w-4 rounded" />;
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
       <path d={path} />
     </svg>
-  )
+  );
 }
 
 function ToolChip({ tool }: { tool: Tool }) {
   return (
     <div
-      className="tool-chip flex shrink-0 items-center gap-2 rounded-full border border-border/50 bg-card/60 px-4 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm shadow-[0_1px_3px_-1px_rgba(0,0,0,0.05)] transition-all duration-300 hover:border-primary/40 hover:text-foreground hover:shadow-md hover:shadow-primary/5"
+      className="tool-chip border-border/50 bg-card/60 text-muted-foreground hover:border-primary/40 hover:text-foreground hover:shadow-primary/5 flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium shadow-[0_1px_3px_-1px_rgba(0,0,0,0.05)] backdrop-blur-sm transition-all duration-300 hover:shadow-md"
       tabIndex={0}
       role="listitem"
       aria-label={tool.name}
@@ -477,7 +568,7 @@ function ToolChip({ tool }: { tool: Tool }) {
       <ToolIcon name={tool.name} />
       <span>{tool.name}</span>
     </div>
-  )
+  );
 }
 
 function StyleTag() {
@@ -501,51 +592,56 @@ function StyleTag() {
         .tool-chip:hover svg { transform: none !important; }
       }
     `}</style>
-  )
+  );
 }
 
 export default function AboutPage() {
-  const { setIsOpen } = useChat()
+  const { setIsOpen } = useChat();
 
   const stats = React.useMemo(() => {
-    const uniqueTech = new Set<string>()
-    const uniqueIndustries = new Set<string>()
-    let totalWorkflows = 0
+    const uniqueTech = new Set<string>();
+    const uniqueIndustries = new Set<string>();
+    let totalWorkflows = 0;
     for (const p of projects) {
-      for (const t of [...(p.tech || []), ...p.tags]) uniqueTech.add(t)
-      const inds = Array.isArray(p.industry) ? p.industry : [p.industry]
-      for (const ind of inds) uniqueIndustries.add(ind)
-      totalWorkflows += p.workflow?.length || 0
+      for (const t of [...(p.tech || []), ...p.tags]) uniqueTech.add(t);
+      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
+      for (const ind of inds) uniqueIndustries.add(ind);
+      totalWorkflows += p.workflow?.length || 0;
     }
     return [
       { label: "Projects", value: projects.length },
       { label: "Technologies", value: uniqueTech.size },
       { label: "Industries", value: uniqueIndustries.size },
       { label: "Workflows", value: totalWorkflows },
-    ]
-  }, [])
+    ];
+  }, []);
 
   return (
     <div className="pt-24 md:pt-32">
-      <section className="relative overflow-hidden border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 relative overflow-hidden border-b py-16 md:py-24">
         <div className="pointer-events-none absolute inset-0">
           <motion.div
             animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
             transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-48 -right-48 h-96 w-96 rounded-full bg-primary/5 blur-3xl"
+            className="bg-primary/5 absolute -top-48 -right-48 h-96 w-96 rounded-full blur-3xl"
           />
           <motion.div
             animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
             transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -bottom-48 -left-48 h-96 w-96 rounded-full bg-primary/5 blur-3xl"
+            className="bg-primary/5 absolute -bottom-48 -left-48 h-96 w-96 rounded-full blur-3xl"
           />
           {particles.map((p) => (
             <motion.div
               key={p.id}
-              className="absolute rounded-full bg-primary/10"
+              className="bg-primary/10 absolute rounded-full"
               style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
               animate={{ y: [0, -30, 0], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: p.duration, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+              transition={{
+                duration: p.duration,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: p.delay,
+              }}
             />
           ))}
         </div>
@@ -573,15 +669,17 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="mt-6 text-lg leading-relaxed text-muted-foreground"
+              className="text-muted-foreground mt-6 text-lg leading-relaxed"
             >
-              I build intelligent automation systems that help businesses eliminate repetitive work, streamline operations, and scale efficiently using AI, workflows, and modern integrations.
+              I build intelligent automation systems that help businesses eliminate repetitive work,
+              streamline operations, and scale efficiently using AI, workflows, and modern
+              integrations.
             </motion.p>
           </div>
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-10 md:flex-row md:items-center md:gap-12">
             <motion.div
@@ -601,26 +699,50 @@ export default function AboutPage() {
               className="w-full md:w-[60%]"
             >
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Hi, I&apos;m Azhar</h2>
-              <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                <p>I&apos;m an AI Automation Specialist from Bangladesh — I build systems that connect AI agents, automate workflows, and eliminate repetitive work for businesses worldwide.</p>
-                <p>My focus is on producing reliable, production-ready automation that saves time, reduces errors, and scales with your business. Every system I deliver is designed to run without constant maintenance.</p>
-                <p className="font-medium text-foreground">My mission: Make automation accessible and practical for every business — from solo founders to growing enterprises.</p>
-                <p className="font-medium text-foreground">My vision: A world where no one wastes time on work a machine can do better.</p>
+              <div className="text-muted-foreground mt-4 space-y-3 text-sm leading-relaxed sm:text-base">
+                <p>
+                  I&apos;m an AI Automation Specialist from Bangladesh — I build systems that
+                  connect AI agents, automate workflows, and eliminate repetitive work for
+                  businesses worldwide.
+                </p>
+                <p>
+                  My focus is on producing reliable, production-ready automation that saves time,
+                  reduces errors, and scales with your business. Every system I deliver is designed
+                  to run without constant maintenance.
+                </p>
+                <p className="text-foreground font-medium">
+                  My mission: Make automation accessible and practical for every business — from
+                  solo founders to growing enterprises.
+                </p>
+                <p className="text-foreground font-medium">
+                  My vision: A world where no one wastes time on work a machine can do better.
+                </p>
               </div>
-              <div className="mt-6 border-t border-border/40 pt-6">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Currently</p>
+              <div className="border-border/40 mt-6 border-t pt-6">
+                <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
+                  Currently
+                </p>
                 <RotatingText />
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href="/projects">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
-                    <Button className="group gap-2 shadow-sm shadow-primary/10">
-                      View My Projects <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={spring}
+                  >
+                    <Button className="group shadow-primary/10 gap-2 shadow-sm">
+                      View My Projects{" "}
+                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                     </Button>
                   </motion.div>
                 </Link>
                 <Link href="/contact">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={spring}
+                  >
                     <Button variant="outline" className="group gap-2">
                       Book Free Audit
                     </Button>
@@ -632,7 +754,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -640,8 +762,12 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">How I Build Automation Systems</h2>
-            <p className="mt-3 text-center text-muted-foreground">A proven process from discovery to deployment.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              How I Build Automation Systems
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              A proven process from discovery to deployment.
+            </p>
           </motion.div>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {buildSteps.map((step, i) => (
@@ -654,13 +780,15 @@ export default function AboutPage() {
                 whileHover={{ y: -6, transition: { type: "spring", stiffness: 300, damping: 25 } }}
                 className="group"
               >
-                <Card className="h-full border-border/60 bg-card/60 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+                <Card className="border-border/60 bg-card/60 hover:border-primary/30 hover:shadow-primary/5 h-full backdrop-blur-sm transition-all duration-300 hover:shadow-lg">
                   <CardContent className="p-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/20">
+                    <div className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110">
                       <step.icon className="h-5 w-5" />
                     </div>
                     <h3 className="mt-4 font-semibold">{step.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                      {step.desc}
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -669,7 +797,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="group/section border-b border-border/40 py-16 md:py-24">
+      <section className="group/section border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -677,37 +805,36 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">Tools I Use</h2>
-            <p className="mt-3 text-center text-muted-foreground">A constantly evolving toolkit for building AI systems, business automations, and modern web applications.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              Tools I Use
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              A constantly evolving toolkit for building AI systems, business automations, and
+              modern web applications.
+            </p>
           </motion.div>
         </div>
         <div className="relative mt-14 overflow-hidden">
           <StyleTag />
           {[0, 1].map((row) => {
-            const half = Math.ceil(tools.length / 2)
-            const items = row === 0 ? tools.slice(0, half) : tools.slice(half)
-            const duplicated = [...items, ...items]
-            const dir = row === 0 ? "marquee-left" : "marquee-right"
+            const half = Math.ceil(tools.length / 2);
+            const items = row === 0 ? tools.slice(0, half) : tools.slice(half);
+            const duplicated = [...items, ...items];
+            const dir = row === 0 ? "marquee-left" : "marquee-right";
             return (
-              <div
-                key={row}
-                className="marquee-row mb-5 last:mb-0"
-              >
-                <div
-                  className={`marquee-track flex gap-4 md:gap-5 ${dir}`}
-                  aria-hidden="true"
-                >
+              <div key={row} className="marquee-row mb-5 last:mb-0">
+                <div className={`marquee-track flex gap-4 md:gap-5 ${dir}`} aria-hidden="true">
                   {duplicated.map((tool, i) => (
                     <ToolChip key={`${tool.name}-${i}`} tool={tool} />
                   ))}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -715,8 +842,12 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">Industries I Build For</h2>
-            <p className="mt-3 text-center text-muted-foreground">Every industry can benefit from intelligent automation.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              Industries I Build For
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              Every industry can benefit from intelligent automation.
+            </p>
           </motion.div>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             {industries.map((ind, i) => (
@@ -727,7 +858,7 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.04, duration: 0.2 }}
               >
-                <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/60 px-4 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-all duration-200 hover:border-primary/30 hover:text-foreground">
+                <div className="border-border/50 bg-card/60 text-muted-foreground hover:border-primary/30 hover:text-foreground inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur-sm transition-all duration-200">
                   <ind.icon className="h-3.5 w-3.5" />
                   {ind.name}
                 </div>
@@ -737,7 +868,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -745,8 +876,12 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">My Journey</h2>
-            <p className="mt-3 text-center text-muted-foreground">From first workflow to enterprise solutions.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              My Journey
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              From first workflow to enterprise solutions.
+            </p>
           </motion.div>
           <div className="mx-auto mt-12 max-w-2xl">
             {timeline.map((item, i) => (
@@ -764,22 +899,29 @@ export default function AboutPage() {
                     whileInView={{ scaleY: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.8, delay: i * 0.12, ease: [0.23, 1, 0.32, 1] }}
-                    className="absolute left-[13px] top-8 bottom-0 w-px origin-top bg-border"
+                    className="bg-border absolute top-8 bottom-0 left-[13px] w-px origin-top"
                   />
                 )}
                 <motion.div
                   initial={{ scale: 0 }}
                   whileInView={{ scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.12 + 0.1, type: "spring", stiffness: 400, damping: 20 }}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background"
+                  transition={{
+                    delay: i * 0.12 + 0.1,
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 20,
+                  }}
+                  className="border-primary bg-background flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2"
                 >
-                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <div className="bg-primary h-2 w-2 rounded-full" />
                 </motion.div>
                 <div className="pt-0.5">
-                  <span className="inline-block rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">{item.year}</span>
+                  <span className="border-primary/20 bg-primary/5 text-primary inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                    {item.year}
+                  </span>
                   <h3 className="mt-1.5 font-semibold">{item.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{item.desc}</p>
+                  <p className="text-muted-foreground mt-1 text-sm">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -787,7 +929,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -795,8 +937,12 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">My Approach</h2>
-            <p className="mt-3 text-center text-muted-foreground">The principles that guide every system I build.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              My Approach
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              The principles that guide every system I build.
+            </p>
           </motion.div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {values.map((v, i) => (
@@ -808,13 +954,13 @@ export default function AboutPage() {
                 transition={{ delay: i * 0.08, duration: 0.3 }}
                 whileHover={{ y: -4, transition: { type: "spring", stiffness: 300, damping: 25 } }}
               >
-                <Card className="h-full border-border/60 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
+                <Card className="border-border/60 bg-card/50 hover:border-primary/30 hover:shadow-primary/5 h-full backdrop-blur-sm transition-all duration-300 hover:shadow-md">
                   <CardContent className="p-6">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                      <v.icon className="h-4 w-4 text-primary" />
+                    <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-lg">
+                      <v.icon className="text-primary h-4 w-4" />
                     </div>
                     <h3 className="mt-4 font-semibold">{v.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{v.desc}</p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{v.desc}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -823,7 +969,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -831,8 +977,12 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">By the Numbers</h2>
-            <p className="mt-3 text-center text-muted-foreground">Real metrics from real projects.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              By the Numbers
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              Real metrics from real projects.
+            </p>
           </motion.div>
           <div className="mx-auto mt-10 grid max-w-2xl grid-cols-2 gap-8 md:grid-cols-4 md:gap-12">
             {stats.map((s) => (
@@ -842,7 +992,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -850,8 +1000,12 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">Find Me On</h2>
-            <p className="mt-3 text-center text-muted-foreground">Connect with me across platforms.</p>
+            <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+              Find Me On
+            </h2>
+            <p className="text-muted-foreground mt-3 text-center">
+              Connect with me across platforms.
+            </p>
           </motion.div>
           <div className="mx-auto mt-10 grid max-w-lg gap-3">
             {socials.map((s, i) => (
@@ -864,28 +1018,37 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05, duration: 0.25 }}
-                whileHover={{ x: 6, y: -2, borderColor: "hsl(var(--primary) / 0.3)", boxShadow: "0 4px 20px -8px hsl(var(--primary)/0.15)", transition: springSoft }}
+                whileHover={{
+                  x: 6,
+                  y: -2,
+                  borderColor: "hsl(var(--primary) / 0.3)",
+                  boxShadow: "0 4px 20px -8px hsl(var(--primary)/0.15)",
+                  transition: springSoft,
+                }}
                 whileTap={{ scale: 0.98, transition: springSoft }}
-                className={`group flex items-center gap-3 rounded-lg border border-border/60 bg-card/60 px-4 py-3 backdrop-blur-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:shadow-primary/10 ${s.placeholder ? "cursor-default opacity-70" : ""}`}
+                className={`group border-border/60 bg-card/60 hover:border-primary/40 hover:shadow-primary/10 flex items-center gap-3 rounded-lg border px-4 py-3 backdrop-blur-sm transition-all duration-200 hover:shadow-md ${s.placeholder ? "cursor-default opacity-70" : ""}`}
                 aria-label={s.placeholder ? `${s.name} (coming soon)` : `${s.name} profile`}
               >
                 <motion.div
                   whileHover={{ scale: 1.15 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-all duration-200 group-hover:bg-primary/20"
+                  className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200"
                 >
                   {s.name === "Email" ? (
                     <Mail className="h-4 w-4" />
-                  ) : socialIcons[s.name] || (
-                    <ExternalLink className="h-4 w-4" />
+                  ) : (
+                    socialIcons[s.name] || <ExternalLink className="h-4 w-4" />
                   )}
                 </motion.div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{s.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{s.username}{s.placeholder ? " (Coming Soon)" : ""}</p>
+                  <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                    {s.username}
+                    {s.placeholder ? " (Coming Soon)" : ""}
+                  </p>
                 </div>
                 {!s.placeholder && (
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px] group-hover:text-primary" />
+                  <ExternalLink className="text-muted-foreground group-hover:text-primary h-3.5 w-3.5 shrink-0 transition-all duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
                 )}
               </motion.a>
             ))}
@@ -902,10 +1065,13 @@ export default function AboutPage() {
             transition={{ duration: 0.5 }}
             className="mx-auto max-w-xl text-center"
           >
-            <div className="rounded-xl border border-border/60 bg-card/60 p-8 backdrop-blur-sm md:p-12">
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Still Have Questions?</h2>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Ask Azhar AI — the AI assistant trained on everything I build. Get instant answers about my work, process, and experience.
+            <div className="border-border/60 bg-card/60 rounded-xl border p-8 backdrop-blur-sm md:p-12">
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                Still Have Questions?
+              </h2>
+              <p className="text-muted-foreground mt-3 text-sm">
+                Ask Azhar AI — the AI assistant trained on everything I build. Get instant answers
+                about my work, process, and experience.
               </p>
               <motion.div
                 whileHover={{ scale: 1.02 }}
@@ -913,7 +1079,11 @@ export default function AboutPage() {
                 transition={spring}
                 className="mt-8 inline-block"
               >
-                <Button size="lg" onClick={() => setIsOpen(true)} className="group gap-2 shadow-sm shadow-primary/10">
+                <Button
+                  size="lg"
+                  onClick={() => setIsOpen(true)}
+                  className="group shadow-primary/10 gap-2 shadow-sm"
+                >
                   <MessageCircle className="h-4 w-4" />
                   Ask Azhar AI
                 </Button>
@@ -923,5 +1093,5 @@ export default function AboutPage() {
         </div>
       </section>
     </div>
-  )
+  );
 }

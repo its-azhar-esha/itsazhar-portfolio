@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About | Azhar | AI Automation Systems",
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
       ],
     }),
   },
-}
+};
 
 export default function AboutLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return children;
 }

@@ -1,17 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/providers";
 import { Navbar } from "@/components/navbar";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { Footer } from "@/components/footer";
 import { ChatProvider } from "@/providers";
 import { PageTransition } from "@/components/page-transition";
+import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 
-const Analytics = dynamic(() => import("@/components/analytics").then((m) => ({ default: m.Analytics })));
+const Analytics = dynamic(() =>
+  import("@/components/analytics").then((m) => ({ default: m.Analytics })),
+);
 
-const MobileNav = dynamic(() => import("@/components/mobile-nav").then((m) => ({ default: m.MobileNav })));
+const MobileNav = dynamic(() =>
+  import("@/components/mobile-nav").then((m) => ({ default: m.MobileNav })),
+);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,7 +64,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   openGraph: {
     type: "website",
@@ -100,9 +111,14 @@ export default function RootLayout({
           "https://x.com/azhar_m_alif",
         ],
         knowsAbout: [
-          "AI Agents", "Workflow Automation", "n8n",
-          "API Integration", "Business Automation",
-          "React", "TypeScript", "Supabase",
+          "AI Agents",
+          "Workflow Automation",
+          "n8n",
+          "API Integration",
+          "Business Automation",
+          "React",
+          "TypeScript",
+          "Supabase",
         ],
       },
       {
@@ -120,7 +136,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -134,44 +150,26 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Azhar" />
-        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://mc.yandex.ru" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <GoogleAnalytics gaId="G-XXXXXXXXXX" />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="bg-background text-foreground flex min-h-full flex-col">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
+          className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg"
         >
           Skip to main content
         </a>
-        <script
-          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
-          async
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-XXXXXXXXXX',{page_path:window.location.pathname});`,
-          }}
-        />
+        <GoogleTagManager gtmId="GTM-XXXXXXX" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,'clarity','script','CLARITY_ID');`,
           }}
         />
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
-            height="0"
-            width="0"
-            loading="lazy"
-            title="Google Tag Manager"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
         <Suspense fallback={null}>
           <Analytics />
         </Suspense>
@@ -183,7 +181,9 @@ export default function RootLayout({
         >
           <ChatProvider>
             <Navbar />
-            <main id="main-content" className="flex-1 pb-[72px] md:pb-0"><PageTransition>{children}</PageTransition></main>
+            <main id="main-content" className="flex-1 pb-[72px] md:pb-0">
+              <PageTransition>{children}</PageTransition>
+            </main>
             <MobileNav />
             <Footer />
           </ChatProvider>

@@ -1,28 +1,28 @@
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-const MODEL = "llama-3.3-70b-versatile"
-const TIMEOUT_MS = 30000
-const MAX_RETRIES = 1
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = "llama-3.3-70b-versatile";
+const TIMEOUT_MS = 30000;
+const MAX_RETRIES = 1;
 
-import { fetchWithRetry, combineAbortSignals } from "./shared"
+import { fetchWithRetry, combineAbortSignals } from "./shared";
 
 export async function streamGroq(
   messages: { role: string; content: string }[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<Response> {
-  const apiKey = process.env.GROQ_API_KEY
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error("[Groq] GROQ_API_KEY is empty or not set")
-    throw new Error("Groq API key is not configured")
+    console.error("[Groq] GROQ_API_KEY is empty or not set");
+    throw new Error("Groq API key is not configured");
   }
 
-  console.log("[Groq] Attempting stream with model:", MODEL)
+  console.log("[Groq] Attempting stream with model:", MODEL);
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   const combinedSignal = signal
     ? combineAbortSignals(signal, controller.signal)
-    : controller.signal
+    : controller.signal;
 
   try {
     const response = await fetchWithRetry(
@@ -42,23 +42,21 @@ export async function streamGroq(
         }),
         signal: combinedSignal,
       },
-      MAX_RETRIES
-    )
+      MAX_RETRIES,
+    );
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error")
-      console.error(`[Groq] Error ${response.status}: ${errorText}`)
+      const errorText = await response.text().catch(() => "Unknown error");
+      console.error(`[Groq] Error ${response.status}: ${errorText}`);
     } else {
-      console.log("[Groq] Stream started successfully")
+      console.log("[Groq] Stream started successfully");
     }
 
-    return response
+    return response;
   } catch (err) {
-    console.error("[Groq] Fetch failed:", err)
-    throw err
+    console.error("[Groq] Fetch failed:", err);
+    throw err;
   } finally {
-    clearTimeout(timeoutId)
+    clearTimeout(timeoutId);
   }
 }
-
-

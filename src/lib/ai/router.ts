@@ -1,57 +1,59 @@
-import { streamGroq } from "./providers/groq"
-import { streamOpenRouter } from "./providers/openrouter"
-import { getFastestModel } from "./models"
+import { streamGroq } from "./providers/groq";
+import { streamOpenRouter } from "./providers/openrouter";
+import { getFastestModel } from "./models";
 
-export type AIProvider = "groq" | "openrouter"
+export type AIProvider = "groq" | "openrouter";
 
-const providerChain: AIProvider[] = ["groq", "openrouter"]
+const providerChain: AIProvider[] = ["groq", "openrouter"];
 
 interface StreamResult {
-  stream: ReadableStream<Uint8Array>
-  provider: AIProvider
-  model: string
+  stream: ReadableStream<Uint8Array>;
+  provider: AIProvider;
+  model: string;
 }
 
 export async function routeToAI(
   messages: { role: string; content: string }[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<StreamResult> {
-  let lastError: unknown
+  let lastError: unknown;
 
   for (const provider of providerChain) {
     try {
-      const model = getFastestModel(provider)
-      const modelId = model?.id || (provider === "groq" ? "llama-3.3-70b-versatile" : "meta-llama/llama-3.1-8b-instruct")
+      const model = getFastestModel(provider);
+      const modelId =
+        model?.id ||
+        (provider === "groq" ? "llama-3.3-70b-versatile" : "meta-llama/llama-3.1-8b-instruct");
 
-      let response: Response
+      let response: Response;
       switch (provider) {
         case "groq":
-          response = await streamGroq(messages, signal)
-          break
+          response = await streamGroq(messages, signal);
+          break;
         case "openrouter":
-          response = await streamOpenRouter(messages, signal)
-          break
+          response = await streamOpenRouter(messages, signal);
+          break;
       }
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error")
-        lastError = new Error(`${provider} returned ${response.status}: ${errorText}`)
-        continue
+        const errorText = await response.text().catch(() => "Unknown error");
+        lastError = new Error(`${provider} returned ${response.status}: ${errorText}`);
+        continue;
       }
 
       if (!response.body) {
-        lastError = new Error(`${provider} returned empty body`)
-        continue
+        lastError = new Error(`${provider} returned empty body`);
+        continue;
       }
 
-      return { stream: response.body, provider, model: modelId }
+      return { stream: response.body, provider, model: modelId };
     } catch (err) {
-      lastError = err
-      continue
+      lastError = err;
+      continue;
     }
   }
 
-  throw lastError || new Error("All AI providers failed")
+  throw lastError || new Error("All AI providers failed");
 }
 
 export function buildSystemPrompt(knowledge: string): string {
@@ -96,5 +98,5 @@ When relevant, suggest:
 ---
 
 KNOWLEDGE:
-${knowledge}`
+${knowledge}`;
 }

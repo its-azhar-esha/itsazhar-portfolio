@@ -51,4 +51,4 @@ export const site = {
     },
     responseTime: "Within 24 Hours",
   },
-} as const
+} as const;

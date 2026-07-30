@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { ArrowRight, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { fadeUp, scaleIn } from "@/lib/motion"
-import Link from "next/link"
+import { motion } from "framer-motion";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { fadeUp, scaleIn } from "@/lib/motion";
+import Link from "next/link";
 
 export function CTA() {
   return (
-    <section className="border-t border-border/40 py-24">
+    <section className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={fadeUp}
@@ -16,11 +16,11 @@ export function CTA() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-2xl border bg-gradient-to-b from-card to-background p-8 sm:p-12 lg:p-16"
+          className="from-card to-background relative overflow-hidden rounded-2xl border bg-gradient-to-b p-8 sm:p-12 lg:p-16"
         >
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+            <div className="bg-primary/10 absolute -top-24 -right-24 h-64 w-64 rounded-full blur-3xl" />
+            <div className="bg-primary/5 absolute -bottom-24 -left-24 h-64 w-64 rounded-full blur-3xl" />
           </div>
 
           <div className="relative flex flex-col items-center text-center">
@@ -31,8 +31,8 @@ export function CTA() {
               viewport={{ once: true }}
               transition={{ delay: 0.1, duration: 0.4 }}
             >
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-background px-4 py-1.5 text-sm text-muted-foreground">
-                <Sparkles className="h-4 w-4 text-primary" />
+              <div className="bg-background text-muted-foreground mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm">
+                <Sparkles className="text-primary h-4 w-4" />
                 <span>Stop wasting time. Start automating.</span>
               </div>
             </motion.div>
@@ -54,10 +54,10 @@ export function CTA() {
               whileInView="visible"
               viewport={{ once: true }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="mt-4 max-w-xl text-lg text-muted-foreground"
+              className="text-muted-foreground mt-4 max-w-xl text-lg"
             >
-              Let&apos;s find the automation opportunities in your business.
-              Book a free 15-minute audit and start scaling smarter.
+              Let&apos;s find the automation opportunities in your business. Book a free 15-minute
+              audit and start scaling smarter.
             </motion.p>
 
             <motion.div
@@ -96,5 +96,5 @@ export function CTA() {
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

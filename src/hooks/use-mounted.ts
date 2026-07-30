@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { useSyncExternalStore } from "react"
+import { useSyncExternalStore } from "react";
 
 function noopSubscribe() {
-  return () => {}
+  return () => {};
 }
 
 function getSnapshot() {
-  return true
+  return true;
 }
 
 function getServerSnapshot() {
-  return false
+  return false;
 }
 
 export function useMounted() {
-  return useSyncExternalStore(noopSubscribe, getSnapshot, getServerSnapshot)
+  return useSyncExternalStore(noopSubscribe, getSnapshot, getServerSnapshot);
 }

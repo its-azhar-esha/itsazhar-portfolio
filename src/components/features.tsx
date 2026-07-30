@@ -1,17 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import {
-  ChevronDown,
-  Bot,
-  Workflow,
-  Cable,
-  FileText,
-  Building2,
-  Cpu,
-} from "lucide-react"
-import { fadeUp, cardEntrance } from "@/lib/motion"
+import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Bot, Workflow, Cable, FileText, Building2, Cpu } from "lucide-react";
+import { fadeUp, cardEntrance } from "@/lib/motion";
 
 const features = [
   {
@@ -50,10 +42,10 @@ const features = [
     description:
       "Build tailored automation systems based on unique business challenges and operational goals.",
   },
-]
+];
 
-function ServiceCard({ feature, i }: { feature: typeof features[0]; i: number }) {
-  const [expanded, setExpanded] = React.useState(false)
+function ServiceCard({ feature, i }: { feature: (typeof features)[0]; i: number }) {
+  const [expanded, setExpanded] = React.useState(false);
 
   return (
     <motion.div
@@ -63,11 +55,15 @@ function ServiceCard({ feature, i }: { feature: typeof features[0]; i: number })
       viewport={{ once: true, margin: "-50px" }}
       transition={{ delay: i * 0.1, duration: 0.5 }}
       onClick={() => setExpanded(!expanded)}
-      whileHover={{ y: -4, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.08)", transition: { type: "spring", stiffness: 300, damping: 25 } }}
+      whileHover={{
+        y: -4,
+        boxShadow: "0 12px 40px -8px rgba(0,0,0,0.08)",
+        transition: { type: "spring", stiffness: 300, damping: 25 },
+      }}
       whileTap={{ scale: 0.98, transition: { type: "spring", stiffness: 400, damping: 20 } }}
-      className="group cursor-pointer rounded-xl border bg-card p-6 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 md:cursor-default"
+      className="group bg-card hover:border-primary/30 hover:shadow-primary/5 cursor-pointer rounded-xl border p-6 transition-all duration-300 hover:shadow-lg md:cursor-default"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg">
         <feature.icon className="h-5 w-5" />
       </div>
       <h3 className="mt-4 font-semibold">{feature.title}</h3>
@@ -82,7 +78,7 @@ function ServiceCard({ feature, i }: { feature: typeof features[0]; i: number })
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <p className="mt-2 text-sm text-muted-foreground">{feature.description}</p>
+              <p className="text-muted-foreground mt-2 text-sm">{feature.description}</p>
             </motion.div>
           ) : (
             <motion.div
@@ -91,26 +87,28 @@ function ServiceCard({ feature, i }: { feature: typeof features[0]; i: number })
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{feature.description}</p>
+              <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
+                {feature.description}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
         <motion.div
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-          className="mt-2 flex justify-center text-muted-foreground"
+          className="text-muted-foreground mt-2 flex justify-center"
         >
           <ChevronDown className="h-4 w-4" />
         </motion.div>
       </div>
-      <p className="mt-2 hidden text-sm text-muted-foreground md:block">{feature.description}</p>
+      <p className="text-muted-foreground mt-2 hidden text-sm md:block">{feature.description}</p>
     </motion.div>
-  )
+  );
 }
 
 export function Features() {
   return (
-    <section id="services" className="border-t border-border/40 py-24">
+    <section id="services" className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={fadeUp}
@@ -120,14 +118,11 @@ export function Features() {
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            What I build.
-          </h2>
-          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-            Intelligent automation systems designed around real business needs.
-            From AI agents to workflow orchestration, I build scalable solutions
-            that reduce manual effort, improve efficiency, and help teams
-            operate smarter.
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">What I build.</h2>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
+            Intelligent automation systems designed around real business needs. From AI agents to
+            workflow orchestration, I build scalable solutions that reduce manual effort, improve
+            efficiency, and help teams operate smarter.
           </p>
         </motion.div>
 
@@ -138,5 +133,5 @@ export function Features() {
         </div>
       </div>
     </section>
-  )
+  );
 }

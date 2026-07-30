@@ -1,24 +1,22 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useTheme } from "next-themes"
-import { motion, AnimatePresence } from "framer-motion"
-import { Sun, Moon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { useTheme } from "next-themes";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sun, Moon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
+export const ThemeToggle = React.memo(function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
 
-  React.useEffect(() => setMounted(true), [])
+  React.useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return (
-      <div className="h-9 w-9 rounded-full border border-border bg-background" />
-    )
+    return <div className="border-border bg-background h-9 w-9 rounded-full border" />;
   }
 
-  const isDark = theme === "dark"
+  const isDark = theme === "dark";
 
   return (
     <button
@@ -28,7 +26,7 @@ export function ThemeToggle() {
         "hover:border-foreground/30 hover:shadow-lg",
         isDark
           ? "border-zinc-700 bg-zinc-900 hover:shadow-yellow-500/10"
-          : "border-zinc-300 bg-zinc-100 hover:shadow-blue-500/10"
+          : "border-zinc-300 bg-zinc-100 hover:shadow-blue-500/10",
       )}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
@@ -75,5 +73,5 @@ export function ThemeToggle() {
         }}
       />
     </button>
-  )
-}
+  );
+});

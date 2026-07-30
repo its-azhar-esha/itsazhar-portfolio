@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { motion } from "framer-motion"
-import { ExternalLink } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { springSoft } from "@/lib/motion"
+import * as React from "react";
+import { motion } from "framer-motion";
+import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { springSoft } from "@/lib/motion";
 
 interface SocialLink {
-  name: string
-  url: string
-  username: string
-  icon: React.ReactNode
+  name: string;
+  url: string;
+  username: string;
+  icon: React.ReactNode;
 }
 
 const socials: SocialLink[] = [
@@ -74,7 +74,7 @@ const socials: SocialLink[] = [
       </svg>
     ),
   },
-]
+];
 
 export function SocialLinks() {
   return (
@@ -92,20 +92,20 @@ export function SocialLinks() {
           whileHover={{ x: 4, borderColor: "hsl(var(--primary) / 0.3)", transition: springSoft }}
           whileTap={{ scale: 0.98, transition: springSoft }}
           className={cn(
-            "group flex items-center gap-3 rounded-lg border bg-card px-3.5 py-2.5 transition-all duration-200",
-            "hover:border-primary/30 hover:shadow-sm hover:shadow-primary/5"
+            "group bg-card flex items-center gap-3 rounded-lg border px-3.5 py-2.5 transition-all duration-200",
+            "hover:border-primary/30 hover:shadow-primary/5 hover:shadow-sm",
           )}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-all duration-200 group-hover:scale-110 group-hover:bg-primary/20">
+          <div className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-200 group-hover:scale-110">
             {social.icon}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-medium">{social.name}</p>
-            <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{social.username}</p>
+            <p className="text-muted-foreground mt-0.5 truncate text-[10px]">{social.username}</p>
           </div>
-          <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px] group-hover:text-primary" />
+          <ExternalLink className="text-muted-foreground group-hover:text-primary h-3 w-3 shrink-0 transition-all duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
         </motion.a>
       ))}
     </div>
-  )
+  );
 }

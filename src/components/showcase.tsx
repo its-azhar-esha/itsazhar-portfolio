@@ -1,26 +1,36 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, ExternalLink, Play, ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { projects } from "@/lib/projects"
-import { fadeUp, cardEntrance, spring } from "@/lib/motion"
-import type { Variants } from "framer-motion"
-import Link from "next/link"
-import dynamic from "next/dynamic"
-import type { Project } from "@/lib/projects"
+import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, ExternalLink, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { projects } from "@/lib/projects";
+import { fadeUp, cardEntrance, spring } from "@/lib/motion";
+import type { Variants } from "framer-motion";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import type { Project } from "@/lib/projects";
 
-const ProjectModal = dynamic(() => import("./project-modal").then((m) => ({ default: m.ProjectModal })), {
-  ssr: false,
-})
+const ProjectModal = dynamic(
+  () => import("./project-modal").then((m) => ({ default: m.ProjectModal })),
+  {
+    ssr: false,
+  },
+);
 
 const tagStagger: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.04, delayChildren: 0.15 } },
-}
+};
 
 const featuredTextVariants = {
   hidden: { opacity: 0, y: 8 },
@@ -29,43 +39,24 @@ const featuredTextVariants = {
     y: 0,
     transition: { delay: 0.2 + i * 0.06, duration: 0.35 },
   }),
-}
+};
 
-function FeaturedCard({
-  project,
-  onSelect,
-}: {
-  project: Project
-  onSelect: () => void
-}) {
+function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () => void }) {
   return (
-    <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-b from-card to-background transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+    <Card className="border-primary/20 from-card to-background hover:border-primary/40 hover:shadow-primary/5 relative overflow-hidden bg-gradient-to-b transition-all duration-300 hover:shadow-lg">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
+        <div className="bg-primary/5 absolute -top-24 -right-24 h-48 w-48 rounded-full blur-3xl" />
       </div>
       <CardHeader className="relative">
-        <motion.div
-          variants={featuredTextVariants}
-          initial="hidden"
-          animate="visible"
-          custom={0}
-        >
-          <Badge variant="secondary" className="mb-3 w-fit">{project.category}</Badge>
+        <motion.div variants={featuredTextVariants} initial="hidden" animate="visible" custom={0}>
+          <Badge variant="secondary" className="mb-3 w-fit">
+            {project.category}
+          </Badge>
         </motion.div>
-        <motion.div
-          variants={featuredTextVariants}
-          initial="hidden"
-          animate="visible"
-          custom={1}
-        >
+        <motion.div variants={featuredTextVariants} initial="hidden" animate="visible" custom={1}>
           <CardTitle className="text-xl">{project.name}</CardTitle>
         </motion.div>
-        <motion.div
-          variants={featuredTextVariants}
-          initial="hidden"
-          animate="visible"
-          custom={2}
-        >
+        <motion.div variants={featuredTextVariants} initial="hidden" animate="visible" custom={2}>
           <CardDescription className="mt-2 text-sm">{project.description}</CardDescription>
         </motion.div>
       </CardHeader>
@@ -84,7 +75,13 @@ function FeaturedCard({
                 visible: { opacity: 1, y: 0, transition: { duration: 0.25 } },
               }}
             >
-              <Badge key={tag} variant="outline" className="text-xs transition-all duration-200 hover:border-primary/50 hover:bg-primary/10 hover:text-foreground">{tag}</Badge>
+              <Badge
+                key={tag}
+                variant="outline"
+                className="hover:border-primary/50 hover:bg-primary/10 hover:text-foreground text-xs transition-all duration-200"
+              >
+                {tag}
+              </Badge>
             </motion.div>
           ))}
         </motion.div>
@@ -102,127 +99,125 @@ function FeaturedCard({
               <Play className="h-3.5 w-3.5" /> Watch Demo
             </Button>
           )}
-          <Button size="sm" variant={project.hasVideo ? "outline" : "default"} className="group gap-1.5" onClick={onSelect}>
-            View Case Study <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
+          <Button
+            size="sm"
+            variant={project.hasVideo ? "outline" : "default"}
+            className="group gap-1.5"
+            onClick={onSelect}
+          >
+            View Case Study{" "}
+            <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
           </Button>
         </motion.div>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
-function SmallCard({
-  project,
-  onSelect,
-}: {
-  project: Project
-  onSelect: () => void
-}) {
+function SmallCard({ project, onSelect }: { project: Project; onSelect: () => void }) {
   return (
-    <Card className="h-full transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+    <Card className="hover:border-primary/30 hover:shadow-primary/5 h-full transition-all duration-300 hover:shadow-lg">
       <CardHeader>
-        <Badge variant="secondary" className="mb-3 w-fit">{project.category}</Badge>
+        <Badge variant="secondary" className="mb-3 w-fit">
+          {project.category}
+        </Badge>
         <CardTitle className="text-lg">{project.name}</CardTitle>
         <CardDescription className="mt-2 text-sm">{project.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-1.5">
           {project.tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">{tag}</Badge>
+            <Badge
+              key={tag}
+              variant="outline"
+              className="hover:border-primary/40 hover:bg-primary/5 text-xs transition-all duration-200"
+            >
+              {tag}
+            </Badge>
           ))}
         </div>
       </CardContent>
       <CardFooter className="gap-3">
         <Button size="sm" variant="outline" className="group gap-1.5" onClick={onSelect}>
-          View Case Study <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
+          View Case Study{" "}
+          <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 export function Showcase() {
-  const [index, setIndex] = React.useState(0)
-  const [direction, setDirection] = React.useState(0)
-  const [isPaused, setIsPaused] = React.useState(false)
-  const [selectedProject, setSelectedProject] = React.useState<Project | null>(null)
-  const [carouselHeight, setCarouselHeight] = React.useState(0)
-  const carouselRef = React.useRef<HTMLDivElement>(null)
-  const touchStartX = React.useRef(0)
-  const n = projects.length
+  const [index, setIndex] = React.useState(0);
+  const [direction, setDirection] = React.useState(0);
+  const [isPaused, setIsPaused] = React.useState(false);
+  const [selectedProject, setSelectedProject] = React.useState<Project | null>(null);
+  const [carouselHeight, setCarouselHeight] = React.useState(0);
+  const carouselRef = React.useRef<HTMLDivElement>(null);
+  const touchStartX = React.useRef(0);
+  const n = projects.length;
 
   React.useLayoutEffect(() => {
     if (carouselRef.current) {
-      setCarouselHeight(carouselRef.current.offsetHeight)
+      setCarouselHeight(carouselRef.current.offsetHeight);
     }
-  }, [])
+  }, []);
 
-  const activeIndices = React.useMemo(
-    () => [index, (index + 1) % n, (index + 2) % n],
-    [index, n]
-  )
+  const activeIndices = React.useMemo(() => [index, (index + 1) % n, (index + 2) % n], [index, n]);
 
   const goNext = React.useCallback(() => {
-    setDirection(1)
-    setIndex((prev) => (prev + 1) % n)
-  }, [n])
+    setDirection(1);
+    setIndex((prev) => (prev + 1) % n);
+  }, [n]);
 
   const goPrev = React.useCallback(() => {
-    setDirection(-1)
-    setIndex((prev) => (prev - 1 + n) % n)
-  }, [n])
+    setDirection(-1);
+    setIndex((prev) => (prev - 1 + n) % n);
+  }, [n]);
 
   React.useEffect(() => {
-    if (isPaused) return
-    const id = setInterval(goNext, 4500)
-    return () => clearInterval(id)
-  }, [isPaused, goNext, carouselHeight])
+    if (isPaused) return;
+    const id = setInterval(goNext, 4500);
+    return () => clearInterval(id);
+  }, [isPaused, goNext, carouselHeight]);
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") goPrev()
-      if (e.key === "ArrowRight") goNext()
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [goNext, goPrev])
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [goNext, goPrev]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-  }
+    touchStartX.current = e.touches[0].clientX;
+  };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const diff = touchStartX.current - e.changedTouches[0].clientX
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) goNext()
-      else goPrev()
+      if (diff > 0) goNext();
+      else goPrev();
     }
-  }
+  };
 
   const exitAnimation = (pos: number) => {
     if (direction > 0) {
-      return pos === 0
-        ? { y: 30, scale: 0.95, opacity: 0 }
-        : { y: 20, opacity: 0 }
+      return pos === 0 ? { y: 30, scale: 0.95, opacity: 0 } : { y: 20, opacity: 0 };
     }
-    return pos === 0
-      ? { y: -30, scale: 0.95, opacity: 0 }
-      : { y: -20, opacity: 0 }
-  }
+    return pos === 0 ? { y: -30, scale: 0.95, opacity: 0 } : { y: -20, opacity: 0 };
+  };
 
   const enterAnimation = (pos: number) => {
     if (direction > 0) {
-      return pos === 0
-        ? { y: -20, scale: 0.98, opacity: 0 }
-        : { y: 15, opacity: 0 }
+      return pos === 0 ? { y: -20, scale: 0.98, opacity: 0 } : { y: 15, opacity: 0 };
     }
-    return pos === 0
-      ? { y: 20, scale: 0.98, opacity: 0 }
-      : { y: -15, opacity: 0 }
-  }
+    return pos === 0 ? { y: 20, scale: 0.98, opacity: 0 } : { y: -15, opacity: 0 };
+  };
 
   return (
-    <section id="projects" className="border-t border-border/40 py-24">
+    <section id="projects" className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={fadeUp}
@@ -235,10 +230,10 @@ export function Showcase() {
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Featured Systems & Automation Demos
           </h2>
-          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-            Explore AI-powered systems built to solve real operational challenges
-            — combining automation workflows, AI agents, and intelligent
-            integrations to create scalable business solutions.
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
+            Explore AI-powered systems built to solve real operational challenges — combining
+            automation workflows, AI agents, and intelligent integrations to create scalable
+            business solutions.
           </p>
         </motion.div>
 
@@ -255,7 +250,7 @@ export function Showcase() {
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
               transition={spring}
-              className="absolute -left-3 top-1/3 z-10 hidden -translate-y-1/2 rounded-full border bg-background p-2 text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground lg:flex"
+              className="bg-background text-muted-foreground hover:bg-accent hover:text-foreground absolute top-1/3 -left-3 z-10 hidden -translate-y-1/2 rounded-full border p-2 shadow-sm transition-colors lg:flex"
               aria-label="Previous project"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -265,7 +260,7 @@ export function Showcase() {
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
               transition={spring}
-              className="absolute -right-3 top-1/3 z-10 hidden -translate-y-1/2 rounded-full border bg-background p-2 text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground lg:flex"
+              className="bg-background text-muted-foreground hover:bg-accent hover:text-foreground absolute top-1/3 -right-3 z-10 hidden -translate-y-1/2 rounded-full border p-2 shadow-sm transition-colors lg:flex"
               aria-label="Next project"
             >
               <ChevronRight className="h-5 w-5" />
@@ -273,14 +268,18 @@ export function Showcase() {
 
             <div
               ref={carouselRef}
-              style={carouselHeight > 0 ? { minHeight: carouselHeight + 100, overflow: "hidden" } : undefined}
+              style={
+                carouselHeight > 0
+                  ? { minHeight: carouselHeight + 100, overflow: "hidden" }
+                  : undefined
+              }
             >
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <AnimatePresence mode="popLayout">
                   {activeIndices.map((projectIndex, pos) => {
-                    const project = projects[projectIndex]
-                    const isFeatured = pos === 0
-                    const isRight = pos === 2
+                    const project = projects[projectIndex];
+                    const isFeatured = pos === 0;
+                    const isRight = pos === 2;
 
                     return (
                       <motion.div
@@ -289,8 +288,8 @@ export function Showcase() {
                           isFeatured
                             ? "row-start-1 lg:col-span-2"
                             : isRight
-                            ? "row-start-3 lg:col-start-2 lg:row-start-2"
-                            : "row-start-2 lg:col-start-1 lg:row-start-2"
+                              ? "row-start-3 lg:col-start-2 lg:row-start-2"
+                              : "row-start-2 lg:col-start-1 lg:row-start-2"
                         }
                         initial={enterAnimation(pos)}
                         animate={{ y: 0, scale: 1, opacity: 1 }}
@@ -318,7 +317,7 @@ export function Showcase() {
                           />
                         )}
                       </motion.div>
-                    )
+                    );
                   })}
                 </AnimatePresence>
               </div>
@@ -327,16 +326,20 @@ export function Showcase() {
                 {projects.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => { setDirection(i > index ? 1 : -1); setIndex(i) }}
+                    onClick={() => {
+                      setDirection(i > index ? 1 : -1);
+                      setIndex(i);
+                    }}
                     className="relative flex h-2 items-center justify-center"
                     aria-label={`Go to slide ${i + 1}`}
                   >
                     <motion.span
                       animate={{
                         width: i === index ? 32 : 8,
-                        backgroundColor: i === index
-                          ? "hsl(var(--primary))"
-                          : "hsl(var(--muted-foreground) / 0.3)",
+                        backgroundColor:
+                          i === index
+                            ? "hsl(var(--primary))"
+                            : "hsl(var(--muted-foreground) / 0.3)",
                       }}
                       transition={{ type: "spring", stiffness: 300, damping: 25 }}
                       className="block h-2 rounded-full"
@@ -357,32 +360,51 @@ export function Showcase() {
                 whileInView="visible"
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ delay: i * 0.1, duration: 0.4 }}
-                whileTap={{ scale: 0.98, transition: { type: "spring", stiffness: 400, damping: 20 } }}
+                whileTap={{
+                  scale: 0.98,
+                  transition: { type: "spring", stiffness: 400, damping: 20 },
+                }}
               >
-                <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-b from-card to-background transition-all duration-300 hover:border-primary/30">
+                <Card className="border-primary/20 from-card to-background hover:border-primary/30 relative overflow-hidden bg-gradient-to-b transition-all duration-300">
                   <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
+                    <div className="bg-primary/5 absolute -top-24 -right-24 h-48 w-48 rounded-full blur-3xl" />
                   </div>
                   <CardHeader className="relative">
-                    <Badge variant="secondary" className="mb-3 w-fit">{project.category}</Badge>
+                    <Badge variant="secondary" className="mb-3 w-fit">
+                      {project.category}
+                    </Badge>
                     <CardTitle className="text-lg">{project.name}</CardTitle>
-                    <CardDescription className="mt-2 text-sm leading-relaxed">{project.description}</CardDescription>
+                    <CardDescription className="mt-2 text-sm leading-relaxed">
+                      {project.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="relative">
                     <div className="flex flex-wrap gap-1.5">
                       {project.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
                   </CardContent>
                   <CardFooter className="relative gap-3">
                     {project.hasVideo && (
-                      <Button size="sm" className="gap-1.5" onClick={() => setSelectedProject(project)}>
+                      <Button
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => setSelectedProject(project)}
+                      >
                         <Play className="h-3.5 w-3.5" /> Watch Demo
                       </Button>
                     )}
-                    <Button size="sm" variant="outline" className="group gap-1.5" onClick={() => setSelectedProject(project)}>
-                      View Case Study <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="group gap-1.5"
+                      onClick={() => setSelectedProject(project)}
+                    >
+                      View Case Study{" "}
+                      <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
                     </Button>
                   </CardFooter>
                 </Card>
@@ -399,11 +421,7 @@ export function Showcase() {
           transition={{ delay: 0.4, duration: 0.5 }}
           className="mt-12 flex justify-center"
         >
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            transition={spring}
-          >
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
             <Link href="/projects">
               <Button variant="outline" size="lg" className="group gap-2">
                 View All Projects
@@ -420,5 +438,5 @@ export function Showcase() {
         onClose={() => setSelectedProject(null)}
       />
     </section>
-  )
+  );
 }

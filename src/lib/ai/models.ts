@@ -1,10 +1,10 @@
 export interface ModelConfig {
-  id: string
-  name: string
-  provider: "groq" | "openrouter"
-  tier: "fast" | "accurate" | "fallback"
-  maxTokens: number
-  temperature: number
+  id: string;
+  name: string;
+  provider: "groq" | "openrouter";
+  tier: "fast" | "accurate" | "fallback";
+  maxTokens: number;
+  temperature: number;
 }
 
 export const models: ModelConfig[] = [
@@ -64,13 +64,15 @@ export const models: ModelConfig[] = [
     maxTokens: 4096,
     temperature: 0.7,
   },
-]
+];
 
 export function getModelForTier(tier: ModelConfig["tier"]): ModelConfig | undefined {
-  return models.find((m) => m.tier === tier)
+  return models.find((m) => m.tier === tier);
 }
 
 export function getFastestModel(provider: "groq" | "openrouter"): ModelConfig | undefined {
-  return models.find((m) => m.provider === provider && m.tier === "fast")
-    || models.find((m) => m.provider === provider)
+  return (
+    models.find((m) => m.provider === provider && m.tier === "fast") ||
+    models.find((m) => m.provider === provider)
+  );
 }

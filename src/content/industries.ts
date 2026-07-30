@@ -1,14 +1,21 @@
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react";
 import {
-  Stethoscope, Landmark, Building2, Truck,
-  Home, GraduationCap, ShoppingBag, Megaphone,
-  Headphones, FileText,
-} from "lucide-react"
+  Stethoscope,
+  Landmark,
+  Building2,
+  Truck,
+  Home,
+  GraduationCap,
+  ShoppingBag,
+  Megaphone,
+  Headphones,
+  FileText,
+} from "lucide-react";
 
 export interface Industry {
-  name: string
-  icon: LucideIcon
-  slug: string
+  name: string;
+  icon: LucideIcon;
+  slug: string;
 }
 
 export const industries: Industry[] = [
@@ -22,7 +29,7 @@ export const industries: Industry[] = [
   { name: "Marketing", icon: Megaphone, slug: "marketing" },
   { name: "Customer Support", icon: Headphones, slug: "customer-support" },
   { name: "Document Intelligence", icon: FileText, slug: "document-intelligence" },
-]
+];
 
 export const allIndustries = [
   "All",
@@ -47,4 +54,4 @@ export const allIndustries = [
   "Government",
   "Document Intelligence",
   "Custom Solutions",
-]
+];

@@ -1,37 +1,37 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react";
 
 interface UseIntersectionOptions {
-  threshold?: number
-  rootMargin?: string
-  once?: boolean
+  threshold?: number;
+  rootMargin?: string;
+  once?: boolean;
 }
 
 export function useIntersection(options: UseIntersectionOptions = {}) {
-  const { threshold = 0.1, rootMargin = "0px", once = true } = options
-  const ref = useRef<HTMLDivElement>(null)
-  const [isVisible, setIsVisible] = useState(false)
+  const { threshold = 0.1, rootMargin = "0px", once = true } = options;
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
+    const el = ref.current;
+    if (!el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsVisible(true)
-          if (once) observer.unobserve(el)
+          setIsVisible(true);
+          if (once) observer.unobserve(el);
         } else if (!once) {
-          setIsVisible(false)
+          setIsVisible(false);
         }
       },
-      { threshold, rootMargin }
-    )
+      { threshold, rootMargin },
+    );
 
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [threshold, rootMargin, once])
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold, rootMargin, once]);
 
-  return { ref, isVisible }
+  return { ref, isVisible };
 }

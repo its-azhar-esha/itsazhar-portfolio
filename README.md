@@ -62,12 +62,12 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 The Supabase client lives in `src/lib/supabase/`:
 
-| File | Client | Import from | Used In |
-|------|--------|-------------|---------|
-| `client.ts` | Browser (client-side) | `@/lib/supabase` | Client components, `useEffect` calls |
-| `server.ts` | Server (per-request) | `@/lib/supabase` | Server components, Server Actions |
-| `middleware.ts` | Middleware (request/response) | `@/lib/supabase` | `middleware.ts` at app root |
-| `admin.ts` | Service Role (admin) | `@/lib/supabase` | API routes, cron, migrations |
+| File            | Client                        | Import from      | Used In                              |
+| --------------- | ----------------------------- | ---------------- | ------------------------------------ |
+| `client.ts`     | Browser (client-side)         | `@/lib/supabase` | Client components, `useEffect` calls |
+| `server.ts`     | Server (per-request)          | `@/lib/supabase` | Server components, Server Actions    |
+| `middleware.ts` | Middleware (request/response) | `@/lib/supabase` | `middleware.ts` at app root          |
+| `admin.ts`      | Service Role (admin)          | `@/lib/supabase` | API routes, cron, migrations         |
 
 Each client is lazily initialized and reused within its environment to avoid duplicate connections.
 

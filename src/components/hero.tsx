@@ -1,27 +1,22 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { motion, useInView } from "framer-motion"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { fadeUp, scaleIn, slideUp, spring, springSoft, cardHover } from "@/lib/motion"
-import Link from "next/link"
+import * as React from "react";
+import { motion, useInView } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { fadeUp, scaleIn, slideUp, spring, springSoft, cardHover } from "@/lib/motion";
+import Link from "next/link";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const stats = [
   { value: "12+", label: "Automation Systems Built" },
   { value: "50+", label: "Workflows Created" },
   { value: "15+", label: "AI Automation Services" },
   { value: "100%", label: "Documented Systems" },
-]
+];
 
-const trustItems = [
-  "AI Agents",
-  "n8n",
-  "APIs",
-  "Workflow Automation",
-  "Business Systems",
-]
+const trustItems = ["AI Agents", "n8n", "APIs", "Workflow Automation", "Business Systems"];
 
 const particlePositions = [
   { left: "15%", top: "20%" },
@@ -32,95 +27,89 @@ const particlePositions = [
   { left: "90%", top: "75%" },
   { left: "30%", top: "85%" },
   { left: "65%", top: "45%" },
-]
+];
 
 function AnimatedStat({ value, label }: { value: string; label: string }) {
-  const ref = React.useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-50px" })
-  const [count, setCount] = React.useState(0)
-  const match = value.match(/^(\d+)(.*)$/)
-  const target = match ? parseInt(match[1]) : 0
-  const suffix = match ? match[2] : ""
+  const ref = React.useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-50px" });
+  const [count, setCount] = React.useState(0);
+  const match = value.match(/^(\d+)(.*)$/);
+  const target = match ? parseInt(match[1]) : 0;
+  const suffix = match ? match[2] : "";
 
   React.useEffect(() => {
-    if (!inView) return
-    const duration = 1500
-    const start = performance.now()
+    if (!inView) return;
+    const duration = 1500;
+    const start = performance.now();
     const step = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.floor(eased * target))
-      if (progress < 1) requestAnimationFrame(step)
-    }
-    const id = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(id)
-  }, [inView, target])
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    const id = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(id);
+  }, [inView, target]);
 
   return (
     <motion.div
       ref={ref}
       whileHover={{ ...cardHover, transition: springSoft }}
       whileTap={{ scale: 0.97, transition: spring }}
-      className="group relative overflow-hidden rounded-xl border bg-card p-6 text-center transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+      className="group bg-card hover:border-primary/30 hover:shadow-primary/5 relative overflow-hidden rounded-xl border p-6 text-center transition-all duration-300 hover:shadow-lg"
     >
       <p className="text-3xl font-bold tracking-tight md:text-4xl">
-        {count}{suffix}
+        {count}
+        {suffix}
       </p>
-      <p className="mt-1.5 text-sm text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground mt-1.5 text-sm">{label}</p>
     </motion.div>
-  )
+  );
 }
 
 export function Hero() {
-  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 })
-  const sectionRef = React.useRef<HTMLElement>(null)
-  const [isDesktop, setIsDesktop] = React.useState(false)
-
-  React.useEffect(() => {
-    setIsDesktop(window.innerWidth >= 1024)
-    const onResize = () => setIsDesktop(window.innerWidth >= 1024)
-    window.addEventListener("resize", onResize)
-    return () => window.removeEventListener("resize", onResize)
-  }, [])
+  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+  const sectionRef = React.useRef<HTMLElement>(null);
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   const handleMouseMove = React.useCallback(
     (e: React.MouseEvent) => {
-      if (!isDesktop || !sectionRef.current) return
-      const rect = sectionRef.current.getBoundingClientRect()
-      const x = (e.clientX - rect.left) / rect.width - 0.5
-      const y = (e.clientY - rect.top) / rect.height - 0.5
-      setMousePos({ x, y })
+      if (!isDesktop || !sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      setMousePos({ x, y });
     },
-    [isDesktop]
-  )
+    [isDesktop],
+  );
 
   return (
     <section
       id="home"
       ref={sectionRef}
       onMouseMove={handleMouseMove}
-      className="relative overflow-hidden pb-20 pt-32 md:pt-40"
+      className="relative overflow-hidden pt-32 pb-20 md:pt-40"
     >
       <div className="pointer-events-none absolute inset-0">
         <motion.div
           animate={{ x: mousePos.x * -8, y: mousePos.y * -8 }}
           transition={{ type: "spring", stiffness: 150, damping: 15 }}
-          className="absolute top-0 left-1/2 -translate-x-1/2 h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl"
+          className="bg-primary/5 absolute top-0 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full blur-3xl"
         />
         <motion.div
           animate={{ x: mousePos.x * 6, y: mousePos.y * 6 }}
           transition={{ type: "spring", stiffness: 150, damping: 15 }}
-          className="absolute top-1/3 right-0 h-[400px] w-[400px] rounded-full bg-primary/3 blur-3xl"
+          className="bg-primary/3 absolute top-1/3 right-0 h-[400px] w-[400px] rounded-full blur-3xl"
         />
         <motion.div
           animate={{ x: mousePos.x * -10, y: mousePos.y * -6 }}
           transition={{ type: "spring", stiffness: 150, damping: 15 }}
-          className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-primary/5 blur-3xl"
+          className="bg-primary/5 absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full blur-3xl"
         />
         {particlePositions.map((pos, i) => (
           <motion.div
             key={i}
-            className="absolute h-1 w-1 rounded-full bg-primary/20"
+            className="bg-primary/20 absolute h-1 w-1 rounded-full"
             style={{ left: pos.left, top: pos.top }}
             animate={{
               y: [0, -(20 + i * 2), 0],
@@ -175,7 +164,7 @@ export function Hero() {
               initial="hidden"
               animate="visible"
               transition={{ delay: 0.35, duration: 0.5 }}
-              className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+              className="from-foreground via-foreground to-foreground/60 bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl md:text-6xl lg:text-7xl"
             >
               Scale everything.
             </motion.p>
@@ -186,12 +175,12 @@ export function Hero() {
             initial="hidden"
             animate="visible"
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="mx-auto mt-6 max-w-[620px] text-lg text-muted-foreground md:text-xl"
+            className="text-muted-foreground mx-auto mt-6 max-w-[620px] text-lg md:text-xl"
           >
-            I design and build intelligent automation systems that eliminate
-            repetitive work, streamline operations, and help businesses scale
-            faster. From AI agents and n8n workflows to custom integrations, I
-            turn complex processes into reliable automated systems.
+            I design and build intelligent automation systems that eliminate repetitive work,
+            streamline operations, and help businesses scale faster. From AI agents and n8n
+            workflows to custom integrations, I turn complex processes into reliable automated
+            systems.
           </motion.p>
 
           <motion.div
@@ -213,11 +202,7 @@ export function Hero() {
                 </Button>
               </Link>
             </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={spring}
-            >
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
               <Link href="/projects">
                 <Button variant="outline" size="xl" className="text-base">
                   View Projects
@@ -242,13 +227,16 @@ export function Hero() {
                   hidden: { opacity: 0, y: 8 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
                 }}
-                className="inline-flex items-center gap-1.5 rounded-full border bg-background/50 px-3 py-1 text-xs text-muted-foreground backdrop-blur-sm transition-all duration-200 hover:border-primary/30 hover:text-foreground"
+                className="bg-background/50 text-muted-foreground hover:border-primary/30 hover:text-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs backdrop-blur-sm transition-all duration-200"
               >
                 <motion.span
                   whileHover={{ scale: 1.2 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   className="text-primary"
-                >✓</motion.span> {item}
+                >
+                  ✓
+                </motion.span>{" "}
+                {item}
               </motion.span>
             ))}
           </motion.div>
@@ -267,5 +255,5 @@ export function Hero() {
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

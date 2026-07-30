@@ -1,8 +1,8 @@
-import type { Metadata } from "next"
-import { ArrowRight, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type { Metadata } from "next";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -16,11 +16,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     title: "Services | AI Automation Solutions",
-    description:
-      "AI agents, n8n workflow automation, API integration, and custom AI solutions.",
+    description: "AI agents, n8n workflow automation, API integration, and custom AI solutions.",
   },
   alternates: { canonical: "https://azhar.dev/services" },
-}
+};
 
 const services = [
   {
@@ -89,12 +88,12 @@ const services = [
       "End-to-end implementation",
     ],
   },
-]
+];
 
 export default function ServicesPage() {
   return (
     <div className="pt-24 md:pt-32">
-      <section className="border-b border-border/40 py-16 md:py-24">
+      <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <Badge variant="secondary" className="mb-4 gap-1.5 px-4 py-1.5">
@@ -104,10 +103,10 @@ export default function ServicesPage() {
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
               What I build.
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground">
-              Intelligent automation systems designed around real business needs.
-              From AI agents to workflow orchestration, I build scalable solutions
-              that reduce manual effort and improve efficiency.
+            <p className="text-muted-foreground mt-6 text-lg">
+              Intelligent automation systems designed around real business needs. From AI agents to
+              workflow orchestration, I build scalable solutions that reduce manual effort and
+              improve efficiency.
             </p>
           </div>
         </div>
@@ -117,7 +116,10 @@ export default function ServicesPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
-              <Card key={service.title} className="transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+              <Card
+                key={service.title}
+                className="hover:border-primary/30 hover:shadow-primary/5 transition-all duration-300 hover:shadow-lg"
+              >
                 <CardHeader>
                   <CardTitle className="text-lg">{service.title}</CardTitle>
                   <CardDescription className="mt-2 text-sm">{service.description}</CardDescription>
@@ -125,8 +127,11 @@ export default function ServicesPage() {
                 <CardContent>
                   <ul className="space-y-2">
                     {service.items.map((item) => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      <li
+                        key={item}
+                        className="text-muted-foreground flex items-center gap-2 text-sm"
+                      >
+                        <span className="bg-primary h-1.5 w-1.5 shrink-0 rounded-full" />
                         {item}
                       </li>
                     ))}
@@ -144,5 +149,5 @@ export default function ServicesPage() {
         </div>
       </section>
     </div>
-  )
+  );
 }

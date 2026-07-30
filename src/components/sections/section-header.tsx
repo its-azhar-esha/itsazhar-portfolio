@@ -1,17 +1,23 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { fadeUp } from "@/lib/motion"
+import { motion } from "framer-motion";
+import { fadeUp } from "@/lib/motion";
 
 interface SectionHeaderProps {
-  title: string
-  description?: string
-  badge?: string
-  badgeIcon?: React.ReactNode
-  center?: boolean
+  title: string;
+  description?: string;
+  badge?: string;
+  badgeIcon?: React.ReactNode;
+  center?: boolean;
 }
 
-export function SectionHeader({ title, description, badge, badgeIcon, center = true }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  description,
+  badge,
+  badgeIcon,
+  center = true,
+}: SectionHeaderProps) {
   return (
     <motion.div
       variants={fadeUp}
@@ -27,16 +33,14 @@ export function SectionHeader({ title, description, badge, badgeIcon, center = t
           viewport={{ once: true }}
           transition={{ delay: 0.1, duration: 0.4 }}
         >
-          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
+          <span className="bg-card text-muted-foreground mb-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium">
             {badgeIcon && <span className="text-primary">{badgeIcon}</span>}
             {badge}
           </span>
         </motion.div>
       )}
       <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
-      {description && (
-        <p className="mt-4 max-w-2xl text-lg text-muted-foreground">{description}</p>
-      )}
+      {description && <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{description}</p>}
     </motion.div>
-  )
+  );
 }

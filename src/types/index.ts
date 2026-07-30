@@ -1,5 +1,5 @@
-export type { Project, ProjectStatus } from "./project"
-export type { Service } from "./service"
-export type { NavItem } from "./navigation"
-export type { SocialLink } from "./social"
-export type { TimelineEvent, Value, BuildStep, Tool } from "./about"
+export type { Project, ProjectStatus } from "./project";
+export type { Service } from "./service";
+export type { NavItem } from "./navigation";
+export type { SocialLink } from "./social";
+export type { TimelineEvent, Value, BuildStep, Tool } from "./about";

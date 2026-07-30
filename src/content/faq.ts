@@ -1,8 +1,8 @@
 export interface FAQItem {
-  id: string
-  question: string
-  answer: string
-  category?: string
+  id: string;
+  question: string;
+  answer: string;
+  category?: string;
 }
 
 export const faqItems: FAQItem[] = [
@@ -42,4 +42,4 @@ export const faqItems: FAQItem[] = [
     answer:
       "Book a free 15-minute automation audit. I will review your workflow and identify the best automation opportunities.",
   },
-]
+];

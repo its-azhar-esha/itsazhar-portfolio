@@ -1,28 +1,28 @@
-import { Search, Layers, Cpu, Settings, Quote } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { Search, Layers, Cpu, Settings, Quote } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export interface TimelineEvent {
-  year: string
-  title: string
-  description: string
+  year: string;
+  title: string;
+  description: string;
 }
 
 export interface Value {
-  icon: LucideIcon
-  title: string
-  description: string
+  icon: LucideIcon;
+  title: string;
+  description: string;
 }
 
 export interface BuildStep {
-  icon: LucideIcon
-  title: string
-  description: string
+  icon: LucideIcon;
+  title: string;
+  description: string;
 }
 
 export interface Tool {
-  name: string
-  icon?: string
-  category?: string
+  name: string;
+  icon?: string;
+  category?: string;
 }
 
 export const roles = [
@@ -31,14 +31,32 @@ export const roles = [
   "Connecting Systems",
   "Saving Thousands of Hours",
   "Creating Intelligent Workflows",
-]
+];
 
 export const buildSteps: BuildStep[] = [
-  { icon: Search, title: "Discovery", description: "Understand your business workflow, pain points, and automation goals." },
-  { icon: Layers, title: "Workflow Design", description: "Map existing processes, identify bottlenecks, and design the automation approach." },
-  { icon: Cpu, title: "Development", description: "Build and configure the automation system using n8n, AI agents, and integrations." },
-  { icon: Settings, title: "Optimization", description: "Rigorously test, deploy, document, and optimize for long-term reliability." },
-]
+  {
+    icon: Search,
+    title: "Discovery",
+    description: "Understand your business workflow, pain points, and automation goals.",
+  },
+  {
+    icon: Layers,
+    title: "Workflow Design",
+    description:
+      "Map existing processes, identify bottlenecks, and design the automation approach.",
+  },
+  {
+    icon: Cpu,
+    title: "Development",
+    description:
+      "Build and configure the automation system using n8n, AI agents, and integrations.",
+  },
+  {
+    icon: Settings,
+    title: "Optimization",
+    description: "Rigorously test, deploy, document, and optimize for long-term reliability.",
+  },
+];
 
 export const tools: Tool[] = [
   { name: "OpenAI", icon: "openai", category: "AI" },
@@ -129,19 +147,59 @@ export const tools: Tool[] = [
   { name: "DigitalOcean", category: "Infrastructure" },
   { name: "Linux", category: "Infrastructure" },
   { name: "NGINX", category: "Infrastructure" },
-]
+];
 
 export const timeline: TimelineEvent[] = [
-  { year: "2021", title: "Started Learning", description: "Began exploring automation and AI technologies to solve real problems." },
-  { year: "2022", title: "Built First Workflow", description: "Created my first automated workflow using n8n and API integrations." },
-  { year: "2023", title: "First AI System", description: "Developed and deployed my first production AI automation system." },
-  { year: "2024", title: "Portfolio Launch", description: "Launched my portfolio to showcase automation systems to the world." },
-  { year: "2025+", title: "Building Enterprise Solutions", description: "Delivering enterprise-grade automation systems for global clients." },
-]
+  {
+    year: "2021",
+    title: "Started Learning",
+    description: "Began exploring automation and AI technologies to solve real problems.",
+  },
+  {
+    year: "2022",
+    title: "Built First Workflow",
+    description: "Created my first automated workflow using n8n and API integrations.",
+  },
+  {
+    year: "2023",
+    title: "First AI System",
+    description: "Developed and deployed my first production AI automation system.",
+  },
+  {
+    year: "2024",
+    title: "Portfolio Launch",
+    description: "Launched my portfolio to showcase automation systems to the world.",
+  },
+  {
+    year: "2025+",
+    title: "Building Enterprise Solutions",
+    description: "Delivering enterprise-grade automation systems for global clients.",
+  },
+];
 
 export const values: Value[] = [
-  { icon: Quote, title: "Build once. Automate forever.", description: "I design systems that keep running without constant maintenance — reliable, self-sustaining, and built to last." },
-  { icon: Quote, title: "Simple beats complicated.", description: "The best automation is invisible. Simple, maintainable, and easy to understand — never over-engineered." },
-  { icon: Quote, title: "Reliable over flashy.", description: "Production-ready systems that work consistently. I prioritize stability over experimental features." },
-  { icon: Quote, title: "Business first. Technology second.", description: "Every solution starts with a real business problem. Tools are chosen to serve the outcome, not the other way around." },
-]
+  {
+    icon: Quote,
+    title: "Build once. Automate forever.",
+    description:
+      "I design systems that keep running without constant maintenance — reliable, self-sustaining, and built to last.",
+  },
+  {
+    icon: Quote,
+    title: "Simple beats complicated.",
+    description:
+      "The best automation is invisible. Simple, maintainable, and easy to understand — never over-engineered.",
+  },
+  {
+    icon: Quote,
+    title: "Reliable over flashy.",
+    description:
+      "Production-ready systems that work consistently. I prioritize stability over experimental features.",
+  },
+  {
+    icon: Quote,
+    title: "Business first. Technology second.",
+    description:
+      "Every solution starts with a real business problem. Tools are chosen to serve the outcome, not the other way around.",
+  },
+];

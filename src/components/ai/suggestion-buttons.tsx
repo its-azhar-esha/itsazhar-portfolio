@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface SuggestionButtonsProps {
-  suggestions: string[]
-  onSelect: (suggestion: string) => void
-  isLoading: boolean
+  suggestions: string[];
+  onSelect: (suggestion: string) => void;
+  isLoading: boolean;
 }
 
 export function SuggestionButtons({ suggestions, onSelect, isLoading }: SuggestionButtonsProps) {
-  if (!suggestions || suggestions.length === 0) return null
+  if (!suggestions || suggestions.length === 0) return null;
 
   return (
     <motion.div
@@ -34,12 +34,12 @@ export function SuggestionButtons({ suggestions, onSelect, isLoading }: Suggesti
             "rounded-full border px-3 py-1.5 text-xs transition-all duration-200",
             "border-border text-muted-foreground",
             "hover:border-primary/40 hover:text-foreground hover:bg-accent/30",
-            "disabled:cursor-not-allowed disabled:opacity-40"
+            "disabled:cursor-not-allowed disabled:opacity-40",
           )}
         >
           {suggestion}
         </motion.button>
       ))}
     </motion.div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
       "Real AI automation projects across 20+ industries — Healthcare, Finance, Logistics, and more.",
   },
   alternates: { canonical: "https://azhar.dev/projects" },
-}
+};
 
 export default function ProjectsLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return children;
 }
