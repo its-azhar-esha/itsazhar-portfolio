@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 
 const Analytics = dynamic(() =>
   import("@/components/analytics").then((m) => ({ default: m.Analytics })),
@@ -173,6 +174,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <VercelAnalytics />
       </body>
     </html>
   );
