@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Boxes, Download, FolderKanban } from "lucide-react";
+import { ArrowRight, Boxes, FolderKanban, Search, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,69 +11,28 @@ import {
 } from "@/lib/hub/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
-import { RESOURCE_TYPE_LABELS } from "@/constants/hub";
+import { RESOURCE_TYPES, RESOURCE_TYPE_LABELS } from "@/constants/hub";
 import type { PublicResource, PublicCollection } from "@/types/hub";
+import { ResourceCard } from "@/components/hub/resource-card";
 
-function ResourceCard({ resource }: { resource: PublicResource }) {
-  return (
-    <Link
-      href={`/hub/${resource.slug}`}
-      className="group border-border/50 bg-card hover:border-primary/30 flex h-full flex-col overflow-hidden rounded-xl border transition-all duration-200 hover:shadow-lg"
-    >
-      <div className="bg-muted relative aspect-video overflow-hidden">
-        {resource.coverUrl ? (
-          <Image
-            src={resource.coverUrl}
-            alt={resource.title}
-            fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="bg-primary/10 text-primary flex h-full w-full items-center justify-center">
-            <Boxes className="h-10 w-10" />
-          </div>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-primary text-xs font-medium tracking-wide uppercase">
-            {RESOURCE_TYPE_LABELS[resource.type]}
-          </span>
-          {resource.category && (
-            <>
-              <span className="text-muted-foreground text-xs">·</span>
-              <span className="text-muted-foreground text-xs">{resource.category.name}</span>
-            </>
-          )}
-          {resource.access_level === "premium" && (
-            <span className="text-primary border-primary/30 bg-primary/10 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase">
-              Premium
-            </span>
-          )}
-        </div>
-        <h2 className="group-hover:text-primary text-base font-semibold tracking-tight transition-colors duration-200">
-          {resource.title}
-        </h2>
-        <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-relaxed">
-          {resource.summary}
-        </p>
-        <div className="mt-auto pt-4">
-          <span className="text-primary inline-flex items-center gap-1 text-sm font-medium">
-            {resource.files.length > 0 ? (
-              <>
-                <Download className="h-3.5 w-3.5" />
-                {resource.files.length > 1 ? `${resource.files.length} files` : "Download"}
-              </>
-            ) : (
-              "View resource"
-            )}
-            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
+type SortKey = "featured" | "newest" | "downloads";
+type PriceFilter = "all" | "free" | "paid";
+
+function sortResources(resources: PublicResource[], sort: SortKey): PublicResource[] {
+  const sorted = [...resources];
+  if (sort === "newest") {
+    sorted.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  } else if (sort === "downloads") {
+    sorted.sort((a, b) => b.downloads_count - a.downloads_count);
+  } else {
+    sorted.sort(
+      (a, b) =>
+        Number(b.featured) - Number(a.featured) ||
+        a.display_order - b.display_order ||
+        b.downloads_count - a.downloads_count,
+    );
+  }
+  return sorted;
 }
 
 function CollectionCard({ collection }: { collection: PublicCollection }) {
@@ -81,7 +40,7 @@ function CollectionCard({ collection }: { collection: PublicCollection }) {
   return (
     <Link
       href={first ? `/hub/${first.slug}` : "/hub"}
-      className="group border-border/50 bg-card hover:border-primary/30 relative flex h-full min-h-[180px] flex-col justify-end overflow-hidden rounded-xl border p-6 transition-all duration-200 hover:shadow-lg"
+      className="group border-border/50 bg-card hover:border-primary/30 relative flex h-full min-h-[150px] flex-col justify-end overflow-hidden rounded-xl border p-5 transition-all duration-200 hover:shadow-lg"
     >
       {collection.coverUrl ? (
         <Image
@@ -97,16 +56,13 @@ function CollectionCard({ collection }: { collection: PublicCollection }) {
         </div>
       )}
       <div className="relative">
-        <div className="mb-2 flex items-center gap-2">
-          <FolderKanban className="text-primary h-4 w-4" />
-          <span className="text-muted-foreground text-xs">
-            {collection.items.length} resource{collection.items.length === 1 ? "" : "s"}
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <FolderKanban className="text-primary h-3.5 w-3.5" />
+          <span className="text-muted-foreground text-[11px]">
+            {collection.items.length} item{collection.items.length === 1 ? "" : "s"}
           </span>
         </div>
-        <h3 className="text-lg font-semibold text-white drop-shadow-md">{collection.name}</h3>
-        <p className="mt-1 line-clamp-2 text-xs text-white/80 drop-shadow-md">
-          {collection.description}
-        </p>
+        <h3 className="text-base font-semibold text-white drop-shadow-md">{collection.name}</h3>
       </div>
     </Link>
   );
@@ -126,9 +82,20 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HubPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; type?: string; category?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    type?: string;
+    category?: string;
+    price?: string;
+    sort?: string;
+  }>;
 }) {
   const params = await searchParams;
+  const price: PriceFilter =
+    params.price === "free" || params.price === "paid" ? params.price : "all";
+  const sort: SortKey =
+    params.sort === "newest" || params.sort === "downloads" ? params.sort : "featured";
+
   const [resources, categories, collections, settings] = await Promise.all([
     getPublicResourcesAction({
       search: params.search,
@@ -140,23 +107,52 @@ export default async function HubPage({
     getPublicSiteSettings(),
   ]);
 
-  const featured = resources.filter((r) => r.featured).slice(0, 3);
-  const rest = resources.filter((r) => !featured.some((f) => f.id === r.id));
+  const filtered = resources.filter((r) => {
+    if (price === "free") return r.pricing.model === "free";
+    if (price === "paid") return r.pricing.model !== "free";
+    return true;
+  });
+  const visible = sortResources(filtered, sort);
+
+  const freeCount = resources.filter((r) => r.pricing.model === "free").length;
+  const paidCount = resources.length - freeCount;
+  const totalDownloads = resources.reduce((sum, r) => sum + r.downloads_count, 0);
+
+  const selectClass =
+    "border-border bg-background text-foreground focus:border-primary/40 h-9 rounded-lg border px-3 text-sm focus:outline-none";
 
   return (
     <div className="pt-24 md:pt-32">
       <header className="border-border/40 border-b">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20 lg:px-8">
-          <Badge variant="secondary" className="mb-4">
-            Automation Hub
-          </Badge>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Free tools to automate your business
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="gap-1.5">
+              <Sparkles className="h-3 w-3" />
+              Automation Hub
+            </Badge>
+          </div>
+          <h1 className="mt-4 max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+            Browse tools, agents &amp; templates
           </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Templates, AI agents, prompts and guides — tested in real client work, free to copy and
-            adapt.
+          <p className="text-muted-foreground mt-3 max-w-2xl text-base sm:text-lg">
+            Tested in real client work. Free to copy, adapt and ship — or grab the premium versions
+            that save you hours.
           </p>
+          <div className="text-muted-foreground mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <span>
+              <strong className="text-foreground">{resources.length}</strong> resources
+            </span>
+            <span>
+              <strong className="text-emerald-500">{freeCount}</strong> free
+            </span>
+            <span>
+              <strong className="text-primary">{paidCount}</strong> paid
+            </span>
+            <span>
+              <strong className="text-foreground">{totalDownloads.toLocaleString()}</strong>{" "}
+              downloads
+            </span>
+          </div>
         </div>
       </header>
 
@@ -177,7 +173,7 @@ export default async function HubPage({
             {categories.map((c) => (
               <Link
                 key={c.id}
-                href={`/hub?category=${c.id}`}
+                href={`/hub?category=${c.id}${params.price ? `&price=${params.price}` : ""}${params.sort ? `&sort=${params.sort}` : ""}`}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                   params.category === c.id
@@ -192,11 +188,11 @@ export default async function HubPage({
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {collections.length > 0 && (
-          <div className="mb-12">
-            <h2 className="mb-5 text-lg font-semibold tracking-tight">Collections</h2>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-10">
+            <h2 className="mb-4 text-base font-semibold tracking-tight">Collections</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {collections.map((collection) => (
                 <CollectionCard key={collection.id} collection={collection} />
               ))}
@@ -204,68 +200,91 @@ export default async function HubPage({
           </div>
         )}
 
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">
-            {featured.length > 0 ? "Featured" : "All resources"}
-          </h2>
-          <form action="/hub" method="get" className="flex items-center gap-2">
-            <input type="hidden" name="type" value={params.type ?? ""} />
-            <input type="hidden" name="category" value={params.category ?? ""} />
-            <input
-              name="search"
-              defaultValue={params.search ?? ""}
-              placeholder="Search resources..."
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 h-9 w-56 rounded-lg border px-3 text-sm focus:outline-none"
-            />
-            <Button type="submit" size="sm" variant="outline">
-              Search
-            </Button>
-          </form>
-        </div>
+        <form
+          action="/hub"
+          method="get"
+          className="border-border/60 bg-card mb-8 rounded-xl border p-4"
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="relative lg:col-span-2">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <input
+                name="search"
+                defaultValue={params.search ?? ""}
+                placeholder="Search templates, agents, prompts…"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 h-9 w-full rounded-lg border pr-3 pl-9 text-sm focus:outline-none"
+              />
+            </div>
+            <select name="type" defaultValue={params.type ?? ""} className={selectClass}>
+              <option value="">All types</option>
+              {RESOURCE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {RESOURCE_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+            <select name="price" defaultValue={price} className={selectClass}>
+              <option value="all">All prices</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+            <select name="sort" defaultValue={sort} className={selectClass}>
+              <option value="featured">Featured</option>
+              <option value="newest">Newest</option>
+              <option value="downloads">Most downloaded</option>
+            </select>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            {params.category && (
+              <span className="text-muted-foreground text-xs">
+                Category:{" "}
+                {categories.find((c) => c.id === params.category)?.name ?? params.category}
+              </span>
+            )}
+            <div className="flex items-center gap-2">
+              {(params.search ||
+                params.type ||
+                params.price !== "all" ||
+                params.sort !== "featured") && (
+                <Link
+                  href="/hub"
+                  className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+                >
+                  Clear filters
+                </Link>
+              )}
+              <Button type="submit" size="sm" className="gap-1.5">
+                <Search className="h-3.5 w-3.5" />
+                Search
+              </Button>
+            </div>
+          </div>
+        </form>
 
-        {resources.length === 0 ? (
+        {visible.length === 0 ? (
           <div className="mx-auto max-w-7xl py-16 text-center">
             <Boxes className="text-muted-foreground mx-auto h-12 w-12" />
             <h2 className="mt-4 text-lg font-semibold">No resources found</h2>
             <p className="text-muted-foreground mt-2 text-sm">
-              {params.search || params.type || params.category
+              {params.search || params.type || params.category || price !== "all"
                 ? "Try different filters or search terms."
                 : "Resources are on the way — check back soon."}
             </p>
           </div>
         ) : (
           <>
-            {featured.length > 0 && (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {featured.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} />
-                ))}
-              </div>
-            )}
-            {rest.length > 0 && (
-              <div
-                className={cn(
-                  "grid gap-6 sm:grid-cols-2 lg:grid-cols-3",
-                  featured.length > 0 && "mt-6",
-                )}
-              >
-                {rest.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} />
-                ))}
-              </div>
-            )}
-            {resources.length > 0 && (
-              <p className="text-muted-foreground mt-8 text-center text-xs">
-                {resources.length} resource{resources.length === 1 ? "" : "s"} ·{" "}
-                {resources.reduce((sum, r) => sum + r.files.length, 0)} downloadable file
-                {resources.reduce((sum, r) => sum + r.files.length, 0) === 1 ? "" : "s"} ·{" "}
-                {resources.reduce((sum, r) => sum + r.downloads_count, 0)} downloads
-              </p>
-            )}
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {visible.map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} />
+              ))}
+            </div>
+            <p className="text-muted-foreground mt-8 text-center text-xs">
+              {visible.length} of {resources.length} resource{resources.length === 1 ? "" : "s"}
+            </p>
           </>
         )}
 
-        <div className="border-border/40 mt-16 flex flex-col items-center rounded-2xl border py-12 text-center">
+        <div className="border-border/40 mt-14 flex flex-col items-center rounded-2xl border py-12 text-center">
           <p className="text-muted-foreground text-sm">
             Want a custom automation built around your exact workflow?
           </p>

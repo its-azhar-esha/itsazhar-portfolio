@@ -2,6 +2,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ChatProvider } from "@/providers";
 import { PageTransition } from "@/components/page-transition";
+import { ToastProvider } from "@/components/ui/toast";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { resolveMediaValue } from "@/lib/media/repository";
 import dynamic from "next/dynamic";
@@ -34,20 +35,22 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <ChatProvider enabled={settings.show_ai_chat}>
-      <div className="flex min-h-screen flex-col">
-        <Navbar
-          logoUrl={logoUrl}
-          bookingUrl={settings.booking_url}
-          showBlog={settings.show_blog}
-          showHub={settings.show_hub}
-          showPlayground={settings.show_playground}
-        />
-        <main id="main-content" className="flex-1 pb-[72px] md:pb-0">
-          <PageTransition>{children}</PageTransition>
-        </main>
-        <MobileNav settings={settings} />
-        <Footer settings={settings} logoUrl={logoUrl} />
-      </div>
+      <ToastProvider>
+        <div className="flex min-h-screen flex-col">
+          <Navbar
+            logoUrl={logoUrl}
+            bookingUrl={settings.booking_url}
+            showBlog={settings.show_blog}
+            showHub={settings.show_hub}
+            showPlayground={settings.show_playground}
+          />
+          <main id="main-content" className="flex-1 pb-[72px] md:pb-0">
+            <PageTransition>{children}</PageTransition>
+          </main>
+          <MobileNav settings={settings} />
+          <Footer settings={settings} logoUrl={logoUrl} />
+        </div>
+      </ToastProvider>
     </ChatProvider>
   );
 }

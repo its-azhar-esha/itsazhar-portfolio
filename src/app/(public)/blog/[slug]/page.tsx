@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CalendarDays, User } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CopyLinkButton } from "@/components/blog/copy-link-button";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPublicBlogPostAction } from "@/lib/blog/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/site";
 
 function humanizeCategory(slug: string): string {
   return slug
@@ -63,17 +65,29 @@ function estimateReadTime(content: string): number {
   return Math.max(1, Math.round(words / 200));
 }
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part.charAt(0))
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPublicBlogPostAction(slug);
   if (!post) notFound();
 
   const readTime = estimateReadTime(post.content);
+  const postUrl = `${SITE_URL}/blog/${post.slug}`;
+  const shareText = encodeURIComponent(`${post.title} — by ${post.author}`);
 
   return (
     <article className="pt-24 md:pt-32">
-      <header className="border-border/40 border-b">
-        <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 md:py-20">
+      <header className="border-border/40 relative overflow-hidden border-b">
+        <div className="from-primary/15 pointer-events-none absolute -top-24 left-1/2 h-64 w-[42rem] -translate-x-1/2 rounded-full bg-gradient-to-r via-transparent to-transparent blur-3xl" />
+        <div className="relative mx-auto max-w-3xl px-4 py-14 sm:px-6 md:py-20">
           <div className="mb-6">
             <Link
               href="/blog"
@@ -100,16 +114,46 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <p className="text-muted-foreground mt-5 text-lg leading-relaxed">{post.excerpt}</p>
           )}
 
-          <div className="text-muted-foreground mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <span className="flex items-center gap-1.5">
-              <User className="h-4 w-4" />
-              {post.author}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-4 w-4" />
-              {formatDate(post.publishedAt)}
-            </span>
-            <span>{readTime} min read</span>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="bg-primary/15 text-primary flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold">
+                {initials(post.author)}
+              </span>
+              <div>
+                <p className="text-sm font-semibold">{post.author}</p>
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3 w-3" />
+                    {formatDate(post.publishedAt)}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock3 className="h-3 w-3" />
+                    {readTime} min read
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${shareText}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share on X"
+                className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary flex h-9 w-9 items-center justify-center rounded-lg border transition-colors"
+              >
+                <span className="text-xs font-bold">𝕏</span>
+              </a>
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share on LinkedIn"
+                className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary flex h-9 w-9 items-center justify-center rounded-lg border transition-colors"
+              >
+                <span className="text-xs font-bold">in</span>
+              </a>
+              <CopyLinkButton url={postUrl} />
+            </div>
           </div>
         </div>
       </header>
@@ -145,6 +189,26 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             ))}
           </div>
         )}
+
+        <div className="border-border/60 bg-card mt-12 flex flex-wrap items-center justify-between gap-4 rounded-xl border p-5">
+          <div className="flex items-center gap-3">
+            <span className="bg-primary/15 text-primary flex h-11 w-11 items-center justify-center rounded-full text-xs font-bold">
+              {initials(post.author)}
+            </span>
+            <div>
+              <p className="text-xs font-semibold tracking-wide uppercase">Written by</p>
+              <p className="font-semibold">{post.author || "Azhar"}</p>
+              <p className="text-muted-foreground text-xs">
+                AI automation specialist building systems for businesses worldwide.
+              </p>
+            </div>
+          </div>
+          <Link href="/contact">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              Get in touch <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
 
         <div className="border-border/40 border-t py-14 md:py-20">
           <div className="flex flex-col items-center text-center">

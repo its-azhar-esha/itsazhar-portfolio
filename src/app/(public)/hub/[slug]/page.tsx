@@ -162,7 +162,57 @@ export default async function ResourceDetailPage({
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="border-border/50 bg-card space-y-4 rounded-xl border p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+                    Price
+                  </p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight">
+                    {resource.pricing.model === "free" ? (
+                      <span className="text-emerald-500">Free</span>
+                    ) : (
+                      <span className="text-primary">
+                        {resource.pricing.price
+                          ? `${resource.pricing.currency ?? "$"}${resource.pricing.price}`
+                          : "Paid"}
+                        {resource.pricing.model === "subscription" && (
+                          <span className="text-muted-foreground text-sm font-medium">/mo</span>
+                        )}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    {resource.pricing.model === "free"
+                      ? "Download free, forever."
+                      : resource.pricing.model === "subscription"
+                        ? "Subscription · cancel anytime"
+                        : "One-time purchase"}
+                  </p>
+                </div>
+                {resource.access_level === "premium" && (
+                  <span className="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2.5 py-1 text-[10px] font-bold tracking-wide text-black uppercase shadow-md">
+                    Premium
+                  </span>
+                )}
+              </div>
+              {resource.pricing.model !== "free" && resource.pricing.purchase_url ? (
+                <a
+                  href={resource.pricing.purchase_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  Get access
+                </a>
+              ) : (
+                <div className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-500">
+                  <Download className="h-4 w-4" />
+                  Free download
+                </div>
+              )}
+
+              <div className="border-border/50 flex items-center justify-between border-t pt-3">
                 <p className="text-sm font-semibold">Files</p>
                 <p className="text-muted-foreground text-xs">
                   {resource.files.length} file{resource.files.length === 1 ? "" : "s"}
@@ -202,30 +252,6 @@ export default async function ResourceDetailPage({
                       )}
                     </div>
                   ))}
-                </div>
-              )}
-
-              {resource.pricing.model !== "free" && (
-                <div className="border-border/50 rounded-lg border px-4 py-3">
-                  <p className="text-xs font-semibold">
-                    {resource.pricing.model === "one_time" ? "One-time purchase" : "Subscription"}
-                  </p>
-                  <p className="text-muted-foreground mt-0.5 text-sm">
-                    {resource.pricing.price
-                      ? `${resource.pricing.currency ?? ""} ${resource.pricing.price}`
-                      : "Paid resource"}
-                  </p>
-                  {resource.pricing.purchase_url && (
-                    <a
-                      href={resource.pricing.purchase_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-primary text-primary-foreground mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
-                    >
-                      <Download className="h-4 w-4" />
-                      Get access
-                    </a>
-                  )}
                 </div>
               )}
 
