@@ -69,7 +69,7 @@ export async function buildCmsKnowledge(message: string): Promise<string> {
 }
 
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
-const NAME_RE = /(?:my name is|i'?m|i am|call me)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/;
+const NAME_RE = /(?:my name is|i'?m|i am|call me)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/i;
 
 const capturedLeads = new Map<string, number>();
 

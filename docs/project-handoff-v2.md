@@ -1009,5 +1009,16 @@ using` helper → default `'{}'` → GIN index. Verified values parse + `contain
    `NEXT_PUBLIC_SITE_URL` (set this Vercel env var when a custom domain is
    attached) with default `https://itsazhar-portfolio.vercel.app` (the
    project's verified production domain).
+9. **Public lead capture broken (RLS + `Prefer: return=representation`)** —
+   `createLead` used `.insert().select().single()`; supabase-js requests
+   `Prefer: return=representation`, whose representation SELECT hits the
+   `leads` table with no anon SELECT policy → whole insert rejected with
+   "new row violates row-level security policy". This silently broke BOTH
+   the public contact form and the new chat lead capture (caught via the
+   best-effort guard). FIX: `createLead` inserts without `.select()` and
+   returns a synthetic `Lead` row (id `""`; status `"new"`; timestamps now).
+   Verified end-to-end locally (chat → DB row with source `chat`) and the
+   anon REST pattern. Lesson: never `.select()` after an anon-role insert
+   on a table with write-only RLS.
 
-- **Last Updated:** 2026-07-31 (Phase 8F — project edit fix 00017, settings expansion 00018, blog CMS 00019, Instagram-style mobile nav, AI live context + chat lead capture, SITE_URL canonical fix)
+- **Last Updated:** 2026-07-31 (Phase 8F — project edit fix 00017, settings expansion 00018, blog CMS 00019, Instagram-style mobile nav, AI live context + chat lead capture, SITE_URL canonical fix, public lead-capture RLS fix)

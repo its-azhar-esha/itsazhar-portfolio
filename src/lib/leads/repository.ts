@@ -35,7 +35,7 @@ function rowToLead(row: Database["public"]["Tables"]["leads"]["Row"]): Lead {
   };
 }
 
-/** Public lead capture. RLS allows anonymous inserts. */
+/** Public lead capture. RLS allows anonymous inserts but never reads. */
 export async function createLead(input: {
   name: string;
   email: string;
@@ -45,20 +45,25 @@ export async function createLead(input: {
 }): Promise<Result<Lead>> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from(TABLE)
-      .insert({
-        name: input.name,
-        email: input.email,
-        phone: input.phone || null,
-        message: input.message || null,
-        source: input.source ?? "contact",
-      } as never)
-      .select()
-      .single();
+    const { error } = await supabase.from(TABLE).insert({
+      name: input.name,
+      email: input.email,
+      phone: input.phone || null,
+      message: input.message || null,
+      source: input.source ?? "contact",
+    } as never);
     if (error) return fail(error.message);
-    if (!data) return fail("Failed to submit lead — no data returned.");
-    return ok(rowToLead(data));
+    return ok({
+      id: "",
+      name: input.name,
+      email: input.email,
+      phone: input.phone || null,
+      message: input.message || null,
+      source: input.source ?? "contact",
+      status: "new",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to submit lead");
   }
