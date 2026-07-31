@@ -40,7 +40,7 @@ self.addEventListener("fetch", (event) => {
           return cached || caches.match("/offline")
         })
 
-      return cached || fetchPromise
+      return fetchPromise
     })
   )
 })

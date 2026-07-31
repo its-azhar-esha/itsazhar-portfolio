@@ -11,8 +11,12 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/admin/projects/new")) return "New Project";
   if (pathname.match(/^\/admin\/projects\/[\w-]+\/edit$/)) return "Edit Project";
   if (pathname.startsWith("/admin/projects")) return "Projects";
+  if (pathname.startsWith("/admin/services/new")) return "New Service";
+  if (pathname.match(/^\/admin\/services\/[\w-]+\/edit$/)) return "Edit Service";
+  if (pathname.startsWith("/admin/services")) return "Services";
   if (pathname.startsWith("/admin/media")) return "Media";
   if (pathname.startsWith("/admin/ai")) return "AI";
+  if (pathname.startsWith("/admin/seo")) return "SEO";
   if (pathname.startsWith("/admin/content/about")) return "About Page";
   if (pathname.startsWith("/admin/content/hero")) return "Hero Section";
   if (pathname.startsWith("/admin/content")) return "Content";

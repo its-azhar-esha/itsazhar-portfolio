@@ -6,9 +6,11 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   FolderKanban,
+  Briefcase,
   ImageIcon,
   Sparkles,
   FileText,
+  Search,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,9 +19,11 @@ import { spring } from "@/lib/motion";
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Projects", href: "/admin/projects", icon: FolderKanban },
+  { label: "Services", href: "/admin/services", icon: Briefcase },
   { label: "Media", href: "/admin/media", icon: ImageIcon },
   { label: "AI", href: "/admin/ai", icon: Sparkles },
   { label: "Content", href: "/admin/content", icon: FileText },
+  { label: "SEO", href: "/admin/seo", icon: Search },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

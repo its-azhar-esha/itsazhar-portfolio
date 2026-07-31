@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/database.types";
 import type { ContentEntry, CreateContentInput, UpdateContentInput } from "@/types/content";
 import type { Result } from "@/lib/result";
@@ -7,26 +6,6 @@ import { ok, fail } from "@/lib/result";
 import { MOCK_CONTENT } from "./mock-data";
 
 const TABLE = "content_entries" as const;
-
-export async function getSupabase() {
-  const cookieStore = await cookies();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  return createServerClient<Database>(url || "", key || "", {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          /* ignore */
-        }
-      },
-    },
-  });
-}
 
 function rowToContentEntry(
   row: Database["public"]["Tables"]["content_entries"]["Row"],
@@ -44,7 +23,7 @@ function rowToContentEntry(
 
 export async function list(): Promise<Result<ContentEntry[]>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from(TABLE)
       .select("*")
@@ -60,7 +39,7 @@ export async function list(): Promise<Result<ContentEntry[]>> {
 
 export async function findByKey(key: string): Promise<Result<ContentEntry>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const { data, error } = await supabase.from(TABLE).select("*").eq("key", key).maybeSingle();
     if (error || !data) {
       const mock = MOCK_CONTENT.find((c) => c.key === key);
@@ -75,7 +54,7 @@ export async function findByKey(key: string): Promise<Result<ContentEntry>> {
 
 export async function create(input: CreateContentInput): Promise<Result<ContentEntry>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
 
     const { data: existing } = await supabase
       .from(TABLE)
@@ -99,7 +78,7 @@ export async function create(input: CreateContentInput): Promise<Result<ContentE
 
 export async function update(id: string, input: UpdateContentInput): Promise<Result<ContentEntry>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
 
     if (input.key) {
       const { data: existing } = await supabase
@@ -127,7 +106,7 @@ export async function update(id: string, input: UpdateContentInput): Promise<Res
 
 export async function remove(id: string): Promise<Result<void>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const { error } = await supabase.from(TABLE).delete().eq("id", id);
     if (error) return fail(error.message);
     return ok(undefined);

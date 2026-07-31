@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 import { createContentSchema, updateContentSchema } from "@/lib/validation";
-import { create, update, remove, getSupabase } from "./repository";
+import { create, update, remove } from "./repository";
 import type { ContentEntry, CreateContentInput, UpdateContentInput } from "@/types/content";
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
@@ -11,7 +12,7 @@ export async function createContentAction(
   input: Record<string, unknown>,
 ): Promise<Result<ContentEntry>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -36,7 +37,7 @@ export async function updateContentAction(
   input: Record<string, unknown>,
 ): Promise<Result<ContentEntry>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -58,7 +59,7 @@ export async function updateContentAction(
 
 export async function deleteContentAction(id: string): Promise<Result<void>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

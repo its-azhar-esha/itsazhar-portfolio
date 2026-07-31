@@ -2,20 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers";
-import { Navbar } from "@/components/navbar";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { Footer } from "@/components/footer";
-import { ChatProvider } from "@/providers";
-import { PageTransition } from "@/components/page-transition";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 
 const Analytics = dynamic(() =>
   import("@/components/analytics").then((m) => ({ default: m.Analytics })),
-);
-
-const MobileNav = dynamic(() =>
-  import("@/components/mobile-nav").then((m) => ({ default: m.MobileNav })),
 );
 
 const geistSans = Geist({
@@ -157,7 +149,7 @@ export default function RootLayout({
         />
         <GoogleAnalytics gaId="G-XXXXXXXXXX" />
       </head>
-      <body className="bg-background text-foreground flex min-h-full flex-col">
+      <body className="bg-background text-foreground min-h-full antialiased">
         <a
           href="#main-content"
           className="focus:bg-primary focus:text-primary-foreground sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg"
@@ -179,14 +171,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <ChatProvider>
-            <Navbar />
-            <main id="main-content" className="flex-1 pb-[72px] md:pb-0">
-              <PageTransition>{children}</PageTransition>
-            </main>
-            <MobileNav />
-            <Footer />
-          </ChatProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

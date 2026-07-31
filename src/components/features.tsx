@@ -2,50 +2,67 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Bot, Workflow, Cable, FileText, Building2, Cpu } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { fadeUp, cardEntrance } from "@/lib/motion";
+import { SERVICE_ICONS, type ServiceIconName } from "@/constants/services";
+import type { PublicService } from "@/types/service";
 
-const features = [
+interface FeatureItem {
+  icon: ServiceIconName;
+  title: string;
+  description: string;
+}
+
+const fallbackFeatures: FeatureItem[] = [
   {
-    icon: Bot,
+    icon: "bot",
     title: "AI Agents & Intelligent Assistants",
     description:
       "Build AI-powered assistants that understand requests, make decisions, and automate complex tasks across business operations.",
   },
   {
-    icon: Workflow,
+    icon: "workflow",
     title: "Workflow Automation with n8n",
     description:
       "Design reliable automation workflows that connect your tools, move data automatically, and eliminate repetitive manual processes.",
   },
   {
-    icon: Cable,
+    icon: "cable",
     title: "API & System Integration",
     description:
       "Connect different platforms, databases, and services to create seamless automated ecosystems.",
   },
   {
-    icon: FileText,
+    icon: "file_text",
     title: "Document Intelligence Systems",
     description:
       "Extract, classify, analyze, and process documents using AI-powered automation pipelines.",
   },
   {
-    icon: Building2,
+    icon: "building2",
     title: "Business Process Automation",
     description:
       "Transform slow manual processes into efficient, scalable systems that save time and reduce errors.",
   },
   {
-    icon: Cpu,
+    icon: "cpu",
     title: "Custom AI Automation Solutions",
     description:
       "Build tailored automation systems based on unique business challenges and operational goals.",
   },
 ];
 
-function ServiceCard({ feature, i }: { feature: (typeof features)[0]; i: number }) {
+function toFeatureItems(services: PublicService[]): FeatureItem[] {
+  return services.map((s) => ({
+    icon: s.icon,
+    title: s.title,
+    description: s.short_description,
+  }));
+}
+
+function ServiceCard({ feature, i }: { feature: FeatureItem; i: number }) {
   const [expanded, setExpanded] = React.useState(false);
+  const Icon = SERVICE_ICONS[feature.icon] ?? SERVICE_ICONS.bot;
 
   return (
     <motion.div
@@ -64,7 +81,7 @@ function ServiceCard({ feature, i }: { feature: (typeof features)[0]; i: number 
       className="group bg-card hover:border-primary/30 hover:shadow-primary/5 cursor-pointer rounded-xl border p-6 transition-all duration-300 hover:shadow-lg md:cursor-default"
     >
       <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg">
-        <feature.icon className="h-5 w-5" />
+        <Icon className="h-5 w-5" />
       </div>
       <h3 className="mt-4 font-semibold">{feature.title}</h3>
       <div className="md:hidden">
@@ -106,7 +123,12 @@ function ServiceCard({ feature, i }: { feature: (typeof features)[0]; i: number 
   );
 }
 
-export function Features() {
+export function Features({ services }: { services?: PublicService[] }) {
+  const features = React.useMemo<FeatureItem[]>(() => {
+    if (services && services.length > 0) return toFeatureItems(services);
+    return fallbackFeatures;
+  }, [services]);
+
   return (
     <section id="services" className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

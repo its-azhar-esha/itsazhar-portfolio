@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { findByKey, create, update, getSupabase } from "@/lib/content/repository";
+import { createClient } from "@/lib/supabase/server";
+import { findByKey, create, update } from "@/lib/content/repository";
 import { aboutContentSchema } from "@/lib/validation";
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
@@ -13,7 +14,7 @@ export async function saveAboutContentAction(
   input: Record<string, unknown>,
 ): Promise<Result<ContentEntry>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

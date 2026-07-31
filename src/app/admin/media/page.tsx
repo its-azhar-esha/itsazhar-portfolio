@@ -1,4 +1,6 @@
-import { MediaLibrary } from "@/components/admin/media/media-library";
+import { MediaManager } from "@/components/admin/media/media-manager";
+
+export const dynamic = "force-dynamic";
 
 export default function AdminMediaPage() {
   return (
@@ -6,10 +8,10 @@ export default function AdminMediaPage() {
       <div className="mb-8">
         <h2 className="text-lg font-semibold">Media</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Upload and manage images, videos, and documents.
+          Upload and manage reusable images for every CMS module.
         </p>
       </div>
-      <MediaLibrary />
+      <MediaManager />
     </div>
   );
 }

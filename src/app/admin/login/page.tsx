@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
   }, [isPending, state]);
 
   return (
-    <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-12">
+    <div className="flex h-full items-center justify-center px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/server";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validation";
 import type { Database } from "@/database.types";
 import type { DbProject, Project } from "@/types/project";
@@ -16,29 +15,9 @@ import {
 } from "./public";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
+import { resolveMediaValue, resolveMediaValues } from "@/lib/media/repository";
 
 const TABLE = "projects" as const;
-
-async function getSupabase() {
-  const cookieStore = await cookies();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-
-  return createServerClient<Database>(url || "", key || "", {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          /* ignore */
-        }
-      },
-    },
-  });
-}
 
 function rowToDbProject(row: Database["public"]["Tables"]["projects"]["Row"]): DbProject {
   return {
@@ -77,7 +56,7 @@ export async function createProjectAction(
   input: Record<string, unknown>,
 ): Promise<Result<DbProject>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
 
     const {
       data: { user },
@@ -119,7 +98,7 @@ export async function updateProjectAction(
   input: Record<string, unknown>,
 ): Promise<Result<DbProject>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
 
     const {
       data: { user },
@@ -167,7 +146,7 @@ export async function updateProjectAction(
 
 export async function deleteProjectAction(id: string): Promise<Result<void>> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
 
     const {
       data: { user },
@@ -191,16 +170,28 @@ export async function publishProjectAction(id: string): Promise<Result<DbProject
 
 /* ─── Public read server actions ─── */
 
+async function resolveProjectMedia(project: Project): Promise<Project> {
+  const cover = project.coverImage ? await resolveMediaValue(project.coverImage) : null;
+  const og = project.og_image ? await resolveMediaValue(project.og_image) : null;
+  const gallery = project.gallery?.length ? await resolveMediaValues(project.gallery) : [];
+  return {
+    ...project,
+    coverImage: cover ?? project.coverImage,
+    og_image: og ?? project.og_image,
+    gallery: project.gallery ? gallery.filter((v): v is string => v !== null) : undefined,
+  };
+}
+
 export async function getPublicProjectsAction(): Promise<Project[]> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from(TABLE)
       .select("*")
       .in("status", ["active"])
       .order("order", { ascending: true });
     if (error || !data || data.length === 0) return getMockProjects();
-    return data.map((row) => toProject(rowToDbProject(row)));
+    return Promise.all(data.map((row) => resolveProjectMedia(toProject(rowToDbProject(row)))));
   } catch {
     return getMockProjects();
   }
@@ -208,7 +199,7 @@ export async function getPublicProjectsAction(): Promise<Project[]> {
 
 export async function getPublicProjectAction(slug: string): Promise<Project | null> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from(TABLE)
       .select("*")
@@ -216,7 +207,7 @@ export async function getPublicProjectAction(slug: string): Promise<Project | nu
       .eq("slug", slug)
       .maybeSingle();
     if (error || !data) return getMockProject(slug);
-    return toProject(rowToDbProject(data));
+    return resolveProjectMedia(toProject(rowToDbProject(data)));
   } catch {
     return getMockProject(slug);
   }
@@ -224,7 +215,7 @@ export async function getPublicProjectAction(slug: string): Promise<Project | nu
 
 export async function getPublicSlugsAction(): Promise<string[]> {
   try {
-    const supabase = await getSupabase();
+    const supabase = await createClient();
     const { data, error } = await supabase.from(TABLE).select("slug").in("status", ["active"]);
     if (error || !data || data.length === 0) return getMockSlugs();
     return data.map((r: { slug: string }) => r.slug);

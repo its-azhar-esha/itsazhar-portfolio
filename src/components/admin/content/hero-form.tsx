@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MediaPicker } from "@/components/admin/media/media-picker";
+import { MediaField } from "@/components/media/media-field";
 import { saveHeroContentAction } from "@/lib/hero/actions";
-import { AlertCircle, CheckCircle2, ImageIcon, Loader2, Save, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Save, X } from "lucide-react";
 import type { HeroContent } from "@/types/hero";
 
 interface HeroEditorProps {
@@ -135,8 +135,6 @@ export function HeroEditor({ initial }: HeroEditorProps) {
     null,
   );
   const [jsonError, setJsonError] = React.useState<string | null>(null);
-  const [mediaPickerOpen, setMediaPickerOpen] = React.useState(false);
-  const [mediaTarget, setMediaTarget] = React.useState<"image" | "video">("image");
   const messageTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasChanges = React.useMemo(
@@ -159,11 +157,6 @@ export function HeroEditor({ initial }: HeroEditorProps) {
   function handleChange(partial: Partial<FormState>) {
     setFields((prev) => ({ ...prev, ...partial }));
     if (message) setMessage(null);
-  }
-
-  function openMediaPicker(target: "image" | "video") {
-    setMediaTarget(target);
-    setMediaPickerOpen(true);
   }
 
   function validateJson(): boolean {
@@ -410,47 +403,19 @@ export function HeroEditor({ initial }: HeroEditorProps) {
                 description="Optional background image or video for the hero section."
               >
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Background Image</Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        value={fields.backgroundImage}
-                        onChange={(e) => handleChange({ backgroundImage: e.target.value })}
-                        placeholder="/images/hero-bg.jpg"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openMediaPicker("image")}
-                        className="shrink-0 gap-2"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                        Browse
-                      </Button>
-                    </div>
-                  </div>
+                  <MediaField
+                    label="Background Image"
+                    description="Hero section background image."
+                    value={fields.backgroundImage}
+                    onChange={(value) => handleChange({ backgroundImage: value ?? "" })}
+                  />
                   <div className="space-y-2">
                     <Label>Background Video</Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        value={fields.backgroundVideo}
-                        onChange={(e) => handleChange({ backgroundVideo: e.target.value })}
-                        placeholder="/hero-bg.mp4"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openMediaPicker("video")}
-                        className="shrink-0 gap-2"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                        Browse
-                      </Button>
-                    </div>
+                    <Input
+                      value={fields.backgroundVideo}
+                      onChange={(e) => handleChange({ backgroundVideo: e.target.value })}
+                      placeholder="/hero-bg.mp4"
+                    />
                   </div>
                 </div>
               </SectionCard>
@@ -507,15 +472,6 @@ export function HeroEditor({ initial }: HeroEditorProps) {
           {hasChanges && !saving && <span className="text-xs text-amber-500">Unsaved changes</span>}
         </div>
       </div>
-
-      <MediaPicker
-        open={mediaPickerOpen}
-        onClose={() => setMediaPickerOpen(false)}
-        onSelect={(url) => {
-          if (mediaTarget === "image") handleChange({ backgroundImage: url });
-          else handleChange({ backgroundVideo: url });
-        }}
-      />
     </div>
   );
 }

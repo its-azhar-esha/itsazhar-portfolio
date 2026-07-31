@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MediaField } from "@/components/media/media-field";
 import type { FormFields } from "./project-form";
 
 interface SeoSectionProps {
@@ -55,16 +56,13 @@ export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="og_image">OpenGraph Image URL</Label>
-          <Input
-            id="og_image"
+          <MediaField
+            label="OpenGraph Image"
+            description="Recommended: 1200×630px."
             value={fields.og_image}
-            onChange={(e) => onChange({ og_image: e.target.value })}
-            placeholder="https://example.com/og-image.jpg"
+            onChange={(value) => onChange({ og_image: value ?? "" })}
+            previewClassName="aspect-video w-full max-w-xs"
           />
-          <p className="text-muted-foreground text-xs">
-            Recommended: 1200×630px. Upload will be implemented later.
-          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="keywords">Keywords</Label>

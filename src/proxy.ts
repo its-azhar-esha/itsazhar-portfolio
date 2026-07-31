@@ -7,23 +7,22 @@ const ADMIN = "/admin";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isAdminPath = pathname === ADMIN || pathname.startsWith("/admin/");
-  if (!isAdminPath) {
-    return createMiddlewareClient(request).response;
-  }
-
   const { supabase, response } = createMiddlewareClient(request);
 
   if (!supabase) {
     return response;
   }
 
-  // getUser() validates the session with the Auth server and refreshes tokens
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let isAuthenticated = false;
 
-  const isAuthenticated = !!user;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    isAuthenticated = !!user;
+  } catch {
+    // getUser() failed (network, timeout, etc.) — treat as unauthenticated
+  }
 
   if (!isAuthenticated && pathname !== ADMIN_LOGIN) {
     const loginUrl = new URL(ADMIN_LOGIN, request.url);

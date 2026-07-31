@@ -1,11 +1,16 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Plus, X, Video } from "lucide-react";
-import { MediaPicker } from "@/components/admin/media/media-picker";
+import { Plus, X } from "lucide-react";
+import { MediaField } from "@/components/media/media-field";
+import { MediaPicker } from "@/components/media/media-picker";
+import { resolveMediaUrlAction } from "@/lib/media/actions";
+import { toMediaReference } from "@/lib/media/reference";
+import type { MediaFile } from "@/types/media";
 import type { FormFields } from "./project-form";
 
 interface MediaSectionProps {
@@ -13,10 +18,36 @@ interface MediaSectionProps {
   onChange: (fields: Partial<FormFields>) => void;
 }
 
-export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
-  const [pickerField, setPickerField] = React.useState<"thumbnail" | "gallery" | "video" | null>(
-    null,
+function ResolvedImage({
+  value,
+  alt,
+  className,
+}: {
+  value: string;
+  alt: string;
+  className?: string;
+}) {
+  const [url, setUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    resolveMediaUrlAction(value).then((url) => {
+      if (!active) return;
+      if (url) setUrl(url);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+
+  if (!url) return null;
+  return (
+    <Image src={url} alt={alt} fill sizes="(min-width: 640px) 33vw, 50vw" className={className} />
   );
+}
+
+export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
+  const [galleryPickerOpen, setGalleryPickerOpen] = React.useState(false);
 
   const galleryUrls = React.useMemo(
     () => fields.images.split("\n").filter(Boolean),
@@ -35,39 +66,13 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="thumbnail">Thumbnail</Label>
-        <div className="flex gap-2">
-          <Input
-            id="thumbnail"
-            value={fields.thumbnail}
-            onChange={(e) => onChange({ thumbnail: e.target.value })}
-            placeholder="https://example.com/thumbnail.jpg"
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setPickerField("thumbnail")}
-            title="Select from media library"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-        </div>
-        {fields.thumbnail && (
-          <div className="bg-muted relative mt-2 aspect-video w-full max-w-xs overflow-hidden rounded-lg">
-            <img
-              src={fields.thumbnail}
-              alt="Thumbnail preview"
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-        )}
-      </div>
+      <MediaField
+        label="Thumbnail"
+        description="Cover image displayed on the project card."
+        value={fields.thumbnail}
+        onChange={(value) => onChange({ thumbnail: value ?? "" })}
+        previewClassName="aspect-video w-full max-w-xs"
+      />
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -76,7 +81,7 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setPickerField("gallery")}
+            onClick={() => setGalleryPickerOpen(true)}
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
             Add Image
@@ -89,13 +94,10 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
                 key={i}
                 className="group bg-muted relative aspect-video overflow-hidden rounded-lg"
               >
-                <img
-                  src={url}
+                <ResolvedImage
+                  value={url}
                   alt={`Gallery image ${i + 1}`}
                   className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
                 />
                 <button
                   type="button"
@@ -130,34 +132,20 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
 
       <div className="space-y-2">
         <Label htmlFor="video_url">Intro Video URL</Label>
-        <div className="flex gap-2">
-          <Input
-            id="video_url"
-            value={fields.video_url}
-            onChange={(e) => onChange({ video_url: e.target.value })}
-            placeholder="https://youtube.com/watch?v=..."
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setPickerField("video")}
-            title="Select from media library"
-          >
-            <Video className="h-4 w-4" />
-          </Button>
-        </div>
+        <Input
+          id="video_url"
+          value={fields.video_url}
+          onChange={(e) => onChange({ video_url: e.target.value })}
+          placeholder="https://youtube.com/watch?v=..."
+        />
       </div>
 
       <MediaPicker
-        open={pickerField !== null}
-        onClose={() => setPickerField(null)}
-        onSelect={(url) => {
-          if (pickerField === "thumbnail") onChange({ thumbnail: url });
-          else if (pickerField === "gallery") addToGallery(url);
-          else if (pickerField === "video") onChange({ video_url: url });
-          setPickerField(null);
+        open={galleryPickerOpen}
+        onClose={() => setGalleryPickerOpen(false)}
+        onSelect={(media: MediaFile) => {
+          addToGallery(toMediaReference(media.id));
+          setGalleryPickerOpen(false);
         }}
       />
     </div>

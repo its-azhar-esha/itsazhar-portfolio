@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MediaPicker } from "@/components/admin/media/media-picker";
+import { MediaField } from "@/components/media/media-field";
 import { saveAboutContentAction } from "@/lib/about/actions";
-import { AlertCircle, CheckCircle2, ImageIcon, Loader2, Save, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Save, X } from "lucide-react";
 import type { AboutContent } from "@/types/about";
 
 interface AboutEditorProps {
@@ -187,7 +187,6 @@ export function AboutEditor({ initial }: AboutEditorProps) {
     null,
   );
   const [jsonErrors, setJsonErrors] = React.useState<Record<string, string>>({});
-  const [mediaPickerOpen, setMediaPickerOpen] = React.useState(false);
   const messageTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasChanges = React.useMemo(
@@ -361,27 +360,12 @@ export function AboutEditor({ initial }: AboutEditorProps) {
                 description="Profile image and intro video for the About page."
               >
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Profile Image</Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        value={fields.profileImage}
-                        onChange={(e) => handleChange({ profileImage: e.target.value })}
-                        placeholder="/images/profile.jpg"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setMediaPickerOpen(true)}
-                        className="shrink-0 gap-2"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                        Browse
-                      </Button>
-                    </div>
-                  </div>
+                  <MediaField
+                    label="Profile Image"
+                    description="Profile image shown on the About page."
+                    value={fields.profileImage}
+                    onChange={(value) => handleChange({ profileImage: value ?? "" })}
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="introVideoUrl">Intro Video URL</Label>
                     <Input
@@ -610,12 +594,6 @@ export function AboutEditor({ initial }: AboutEditorProps) {
           {hasChanges && !saving && <span className="text-xs text-amber-500">Unsaved changes</span>}
         </div>
       </div>
-
-      <MediaPicker
-        open={mediaPickerOpen}
-        onClose={() => setMediaPickerOpen(false)}
-        onSelect={(url) => handleChange({ profileImage: url })}
-      />
     </div>
   );
 }
