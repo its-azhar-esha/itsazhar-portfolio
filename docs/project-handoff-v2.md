@@ -1120,4 +1120,32 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
     module-scope mutable counters or `Date.now()` in handlers (use a
     `useRef` counter instead).
 
-- **Last Updated:** 2026-08-01 (Phase 9A/9B — Automation Hub + Workflow Playground)
+### Phase 9C — Public ToastProvider fix, Hub marketplace, Blog polish (2026-08-01)
+
+1. **Critical fix: public client crash** — `WorkflowBuilder` (builder +
+   share pages) and `DownloadButton` (hub detail) call `useToast()`, which
+   throws without a `ToastProvider`. It was only mounted in the admin
+   shell, so every Playground click collapsed into the public error
+   boundary ("Something went wrong"). Fix: wrap the public layout in
+   `ToastProvider` (`src/app/(public)/layout.tsx`). This is why the page
+   HTML 200-probes looked fine: client components are lazy-referenced in
+   the RSC payload and only render/hydrate on the client.
+2. **Hub marketplace** — `/hub` rewritten as a storefront: stats bar
+   (total/free/paid/downloads), sticky filter bar (search, type, price
+   all/free/paid, sort featured/newest/most-downloaded — all URL-driven),
+   and a new `src/components/hub/resource-card.tsx` with cover + type
+   badge, Premium/Featured badges, file/download counts and a price tag
+   (Free = emerald pill, `$X`, `From $X/mo`). Detail page sidebar gains a
+   prominent price header + Free download / Get access CTA.
+3. **Blog polish** — listing: gradient hero with article/reading-time/
+   topic stats, category pills, reading-time + date meta rows, author
+   avatar rows, Featured badge, gradient fallback covers. Detail: author
+   header block, X/LinkedIn/copy-link share buttons (`CopyLinkButton`
+   client component — no inline handlers in server components), author
+   card before the CTA.
+4. **Gotcha** — lucide-react has also dropped `Linkedin` (brand icons) →
+   use a text "in" badge like the 𝕏 one. Event handlers (`onClick`) are
+   invalid in server components — the copy button must be a client
+   component.
+
+- **Last Updated:** 2026-08-01 (Phase 9C — ToastProvider fix, hub marketplace, blog polish)
