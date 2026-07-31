@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Inbox, Mail, Phone, Search, Trash2, Users } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Inbox, Mail, Phone, Search, Trash2, Users, X } from "lucide-react";
 import { getLeadsAction, updateLeadStatusAction, deleteLeadAction } from "@/lib/leads/actions";
 import { LEAD_STATUSES } from "@/types/lead";
 import type { Lead, LeadStatus } from "@/types/lead";
@@ -18,6 +19,168 @@ const STATUS_STYLES: Record<LeadStatus, string> = {
 
 const PAGE_SIZE = 20;
 
+function LeadDetailDialog({
+  lead,
+  onClose,
+  onStatusChange,
+  onDelete,
+}: {
+  lead: Lead | null;
+  onClose: () => void;
+  onStatusChange: (lead: Lead, next: LeadStatus) => Promise<void>;
+  onDelete: (lead: Lead) => void;
+}) {
+  const [updating, setUpdating] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  async function handleStatusChange(next: LeadStatus) {
+    if (!lead || lead.status === next) return;
+    setUpdating(true);
+    setError(null);
+    try {
+      await onStatusChange(lead, next);
+    } catch {
+      setError("Could not update the lead status.");
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  return (
+    <AnimatePresence>
+      {lead && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            className="border-border/50 bg-background fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Lead from ${lead.name}`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+                  <Users className="text-primary h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold">{lead.name}</h3>
+                  <p className="text-muted-foreground text-xs">
+                    Received {new Date(lead.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className={`text-[10px] capitalize ${STATUS_STYLES[lead.status]}`}
+              >
+                {lead.status}
+              </Badge>
+              <span className="text-muted-foreground text-[11px]">via {lead.source}</span>
+            </div>
+
+            <div className="mt-5 space-y-4 text-sm">
+              <a
+                href={`mailto:${lead.email}`}
+                className="text-primary inline-flex items-center gap-2 hover:underline"
+              >
+                <Mail className="h-4 w-4" /> {lead.email}
+              </a>
+              {lead.phone && (
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2"
+                >
+                  <Phone className="h-4 w-4" /> {lead.phone}
+                </a>
+              )}
+              {lead.message && (
+                <div className="border-border/40 bg-muted/40 rounded-lg border p-3">
+                  <p className="text-muted-foreground mb-1 text-[11px] font-semibold tracking-wide uppercase">
+                    Message
+                  </p>
+                  <p className="leading-relaxed whitespace-pre-wrap">{lead.message}</p>
+                </div>
+              )}
+              <div className="text-muted-foreground text-xs">
+                Last updated {new Date(lead.updated_at).toLocaleString()}
+              </div>
+            </div>
+
+            {error && <p className="text-destructive mt-4 text-xs">{error}</p>}
+
+            <div className="mt-6 flex items-center justify-between gap-3 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs">Status</span>
+                <select
+                  value={lead.status}
+                  disabled={updating}
+                  onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
+                  className="border-border/40 bg-background hover:bg-accent/50 h-8 rounded-md border px-2 text-xs capitalize transition-colors outline-none"
+                  aria-label={`Change status for ${lead.name}`}
+                >
+                  {LEAD_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="text-muted-foreground"
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(lead)}
+                  className="text-red-500 hover:text-red-500"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function LeadsManager() {
   const [items, setItems] = React.useState<Lead[]>([]);
   const [count, setCount] = React.useState(0);
@@ -28,6 +191,7 @@ export function LeadsManager() {
   const [searchInput, setSearchInput] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [selected, setSelected] = React.useState<Lead | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Lead | null>(null);
 
   async function fetchLeads() {
@@ -76,13 +240,19 @@ export function LeadsManager() {
   }, [searchInput]);
 
   async function handleStatusChange(lead: Lead, next: LeadStatus) {
-    if (lead.status === next) return;
     const result = await updateLeadStatusAction(lead.id, { status: next });
     if (result.success) {
-      setItems((prev) => prev.map((l) => (l.id === lead.id ? result.data : l)));
+      const updated = result.data;
+      setItems((prev) => prev.map((l) => (l.id === lead.id ? updated : l)));
+      setSelected((prev) => (prev?.id === lead.id ? updated : prev));
     } else {
       setError(result.error);
     }
+  }
+
+  function handleDeleteClick(lead: Lead) {
+    setSelected(null);
+    setDeleteTarget(lead);
   }
 
   async function handleDelete() {
@@ -152,9 +322,10 @@ export function LeadsManager() {
       ) : (
         <div className="border-border/40 overflow-hidden rounded-lg border">
           {items.map((lead) => (
-            <div
+            <button
               key={lead.id}
-              className="border-border/40 hover:bg-accent/40 flex flex-col gap-3 border-b p-4 transition-colors last:border-b-0 sm:flex-row sm:items-center"
+              onClick={() => setSelected(lead)}
+              className="border-border/40 hover:bg-accent/40 flex w-full flex-col gap-3 border-b p-4 text-left transition-colors last:border-b-0 sm:flex-row sm:items-center"
             >
               <div className="bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
                 <Users className="text-primary h-4 w-4" />
@@ -162,7 +333,10 @@ export function LeadsManager() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold">{lead.name}</p>
-                  <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[lead.status]}`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] capitalize ${STATUS_STYLES[lead.status]}`}
+                  >
                     {lead.status}
                   </Badge>
                   <span className="text-muted-foreground text-[11px]">
@@ -186,30 +360,10 @@ export function LeadsManager() {
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={lead.status}
-                  onChange={(e) => handleStatusChange(lead, e.target.value as LeadStatus)}
-                  className="border-border/40 bg-background hover:bg-accent/50 h-8 rounded-md border px-2 text-xs capitalize transition-colors outline-none"
-                  aria-label={`Change status for ${lead.name}`}
-                >
-                  {LEAD_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setDeleteTarget(lead)}
-                  aria-label={`Delete lead from ${lead.name}`}
-                >
-                  <Trash2 className="text-destructive h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
+              <span className="text-muted-foreground/50 text-[11px] font-medium uppercase sm:pr-1">
+                View →
+              </span>
+            </button>
           ))}
         </div>
       )}
@@ -242,6 +396,13 @@ export function LeadsManager() {
           </div>
         </div>
       )}
+
+      <LeadDetailDialog
+        lead={selected}
+        onClose={() => setSelected(null)}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDeleteClick}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

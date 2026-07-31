@@ -26,3 +26,7 @@ export {
 export { siteSettingsSchema } from "./schemas/settings";
 
 export { submitLeadSchema, updateLeadStatusSchema } from "./schemas/lead";
+
+export { createCaseStudySchema, updateCaseStudySchema } from "./schemas/case-study";
+
+export { createTestimonialSchema, updateTestimonialSchema } from "./schemas/testimonial";

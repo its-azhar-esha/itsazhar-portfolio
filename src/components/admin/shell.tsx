@@ -1,43 +1,63 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
 import { AdminMobileMenu } from "./mobile-menu";
+import { ToastProvider } from "@/components/ui/toast";
+import type { SiteSettings } from "@/types/settings";
 
-function getPageTitle(pathname: string): string {
-  if (pathname === "/admin") return "Dashboard";
-  if (pathname.startsWith("/admin/projects/new")) return "New Project";
-  if (pathname.match(/^\/admin\/projects\/[\w-]+\/edit$/)) return "Edit Project";
-  if (pathname.startsWith("/admin/projects")) return "Projects";
-  if (pathname.startsWith("/admin/services/new")) return "New Service";
-  if (pathname.match(/^\/admin\/services\/[\w-]+\/edit$/)) return "Edit Service";
-  if (pathname.startsWith("/admin/services")) return "Services";
-  if (pathname.startsWith("/admin/media")) return "Media";
-  if (pathname.startsWith("/admin/ai")) return "AI";
-  if (pathname.startsWith("/admin/seo")) return "SEO";
-  if (pathname.startsWith("/admin/content/about")) return "About Page";
-  if (pathname.startsWith("/admin/content/hero")) return "Hero Section";
-  if (pathname.startsWith("/admin/content")) return "Content";
-  if (pathname.startsWith("/admin/settings")) return "Settings";
-  return "Dashboard";
-}
-
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  settings,
+}: {
+  children: React.ReactNode;
+  settings: SiteSettings;
+}) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  const currentTitle = getPageTitle(pathname);
+  const showBack = pathname !== "/admin";
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/admin");
+    }
+  }
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <AdminMobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <div className="flex flex-1 flex-col md:ml-60">
-        <AdminHeader title={currentTitle} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1">{children}</main>
+    <ToastProvider>
+      <div className="flex min-h-screen">
+        <AdminSidebar settings={settings} />
+        <AdminMobileMenu
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          settings={settings}
+        />
+        <div className="flex flex-1 flex-col md:ml-60">
+          <AdminHeader onMenuClick={() => setMobileOpen(true)} />
+          <main className="flex-1">
+            {showBack && (
+              <div className="mx-auto max-w-5xl px-4 pt-5 sm:px-6">
+                <button
+                  onClick={handleBack}
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium transition-colors"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+              </div>
+            )}
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

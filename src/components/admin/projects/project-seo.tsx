@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TagInput } from "@/components/ui/tag-input";
 import { MediaField } from "@/components/media/media-field";
 import type { FormFields } from "./project-form";
 
@@ -73,14 +74,21 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="keywords">Keywords</Label>
-          <Input
+          <TagInput
             id="keywords"
-            value={fields.keywords}
-            onChange={(e) => onChange({ keywords: e.target.value })}
-            placeholder="AI, automation, fleet management"
+            value={
+              fields.keywords
+                ? fields.keywords
+                    .split(",")
+                    .map((k) => k.trim())
+                    .filter(Boolean)
+                : []
+            }
+            onChange={(tags) => onChange({ keywords: tags.join(", ") })}
+            placeholder="Type a keyword and press Enter"
+            hint="Press Enter or comma to add, Backspace to remove the last one."
+            error={errors?.keywords}
           />
-          <p className="text-muted-foreground text-xs">Comma-separated keywords.</p>
-          {errors?.keywords && <p className="text-xs text-red-500">{errors.keywords}</p>}
         </div>
       </div>
     </div>

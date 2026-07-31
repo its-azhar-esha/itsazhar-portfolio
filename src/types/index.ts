@@ -8,6 +8,18 @@ export type {
 } from "./project";
 export type { Service } from "./service";
 export type { DbService, CreateServiceInput, UpdateServiceInput, PublicService } from "./service";
+export type {
+  DbCaseStudy,
+  CreateCaseStudyInput,
+  UpdateCaseStudyInput,
+  PublicCaseStudy,
+} from "./case-study";
+export type {
+  DbTestimonial,
+  CreateTestimonialInput,
+  UpdateTestimonialInput,
+  PublicTestimonial,
+} from "./testimonial";
 export type { NavItem } from "./navigation";
 export type { SocialLink } from "./social";
 export type { AboutContent } from "./about";

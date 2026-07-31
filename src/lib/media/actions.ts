@@ -26,7 +26,6 @@ import type {
   UpdateMediaInput,
   ReplaceMediaInput,
   MediaPage,
-  MediaSort,
   MediaKind,
 } from "@/types/media";
 import type { Result } from "@/lib/result";

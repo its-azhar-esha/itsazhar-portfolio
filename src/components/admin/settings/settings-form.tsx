@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { saveSiteSettingsAction } from "@/lib/settings/actions";
 import { siteSettingsSchema } from "@/lib/validation";
-import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { Loader2, Save } from "lucide-react";
 import type { SiteSettings } from "@/types/settings";
 
 interface SettingsFormProps {
@@ -30,6 +31,13 @@ function toFormValues(settings: SiteSettings) {
     footer_text: settings.footer_text,
     maintenance_mode: settings.maintenance_mode,
     show_ai_chat: settings.show_ai_chat,
+    show_hero: settings.show_hero,
+    show_showcase: settings.show_showcase,
+    show_services: settings.show_services,
+    show_case_studies: settings.show_case_studies,
+    show_about: settings.show_about,
+    show_testimonials: settings.show_testimonials,
+    show_contact: settings.show_contact,
     featured_projects_enabled: settings.featured_projects_enabled,
     featured_services_enabled: settings.featured_services_enabled,
     ga4_measurement_id: settings.ga4_measurement_id ?? "",
@@ -104,48 +112,31 @@ export function SettingsForm({ initial }: SettingsFormProps) {
   const defaultValues = React.useMemo(() => toFormValues(initial), [initial]);
   const [fields, setFields] = React.useState<FormValues>(defaultValues);
   const [saving, setSaving] = React.useState(false);
-  const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(
-    null,
-  );
-  const messageTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toast = useToast();
 
   const hasChanges = React.useMemo(
     () => JSON.stringify(fields) !== JSON.stringify(defaultValues),
     [fields, defaultValues],
   );
 
-  React.useEffect(() => {
-    return () => {
-      if (messageTimer.current) clearTimeout(messageTimer.current);
-    };
-  }, []);
-
-  function showMessage(type: "success" | "error", text: string) {
-    if (messageTimer.current) clearTimeout(messageTimer.current);
-    setMessage({ type, text });
-    messageTimer.current = setTimeout(() => setMessage(null), 4000);
-  }
-
   function handleChange(partial: Partial<FormValues>) {
     setFields((prev) => ({ ...prev, ...partial }));
-    if (message) setMessage(null);
   }
 
   async function handleSave() {
     setSaving(true);
-    setMessage(null);
     try {
       const parsed = siteSettingsSchema.safeParse(fields);
       if (!parsed.success) {
-        showMessage("error", parsed.error.issues.map((i) => i.message).join("; "));
+        toast.error(parsed.error.issues.map((i) => i.message).join("; "));
         return;
       }
       const result = await saveSiteSettingsAction(parsed.data);
       if (!result.success) {
-        showMessage("error", result.error);
+        toast.error(result.error);
         return;
       }
-      showMessage("success", "Site settings saved successfully.");
+      toast.success("Site settings saved successfully.");
     } finally {
       setSaving(false);
     }
@@ -153,23 +144,6 @@ export function SettingsForm({ initial }: SettingsFormProps) {
 
   return (
     <div className="space-y-6">
-      {message && (
-        <div
-          className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm ${
-            message.type === "success"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
-              : "border-red-500/30 bg-red-500/10 text-red-600"
-          }`}
-        >
-          {message.type === "success" ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-          ) : (
-            <AlertCircle className="h-4 w-4 shrink-0" />
-          )}
-          <span>{message.text}</span>
-        </div>
-      )}
-
       <SectionCard title="Site Identity" description="Name and tagline used across the site.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Site Name">
@@ -277,17 +251,55 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             checked={fields.show_ai_chat}
             onCheckedChange={(v) => handleChange({ show_ai_chat: v })}
           />
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Page Sections"
+        description="Show or hide each section on the public homepage. Off sections also show an Off badge in the sidebar."
+      >
+        <div className="divide-border/40 divide-y">
           <ToggleRow
-            label="Featured Projects Section"
-            description="Show the featured projects (case studies) section on the homepage."
-            checked={fields.featured_projects_enabled}
-            onCheckedChange={(v) => handleChange({ featured_projects_enabled: v })}
+            label="Hero Section"
+            description="Intro banner with headline and CTA."
+            checked={fields.show_hero}
+            onCheckedChange={(v) => handleChange({ show_hero: v })}
           />
           <ToggleRow
-            label="Featured Services Section"
-            description="Show the featured services section on the homepage."
-            checked={fields.featured_services_enabled}
-            onCheckedChange={(v) => handleChange({ featured_services_enabled: v })}
+            label="Showcase Section"
+            description="Featured projects showcase."
+            checked={fields.show_showcase}
+            onCheckedChange={(v) => handleChange({ show_showcase: v })}
+          />
+          <ToggleRow
+            label="Services Section"
+            description="AI services grid."
+            checked={fields.show_services}
+            onCheckedChange={(v) => handleChange({ show_services: v })}
+          />
+          <ToggleRow
+            label="Case Studies Section"
+            description="From manual to automated — case study cards."
+            checked={fields.show_case_studies}
+            onCheckedChange={(v) => handleChange({ show_case_studies: v })}
+          />
+          <ToggleRow
+            label="About Section"
+            description="About / bio section."
+            checked={fields.show_about}
+            onCheckedChange={(v) => handleChange({ show_about: v })}
+          />
+          <ToggleRow
+            label="Testimonials Section"
+            description="Animated testimonial carousel."
+            checked={fields.show_testimonials}
+            onCheckedChange={(v) => handleChange({ show_testimonials: v })}
+          />
+          <ToggleRow
+            label="Contact Section"
+            description="Contact form and details."
+            checked={fields.show_contact}
+            onCheckedChange={(v) => handleChange({ show_contact: v })}
           />
         </div>
       </SectionCard>

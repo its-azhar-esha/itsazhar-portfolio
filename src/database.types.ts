@@ -1,4 +1,4 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
   public: {
@@ -91,6 +91,53 @@ export interface Database {
           solution?: string | null;
           workflow?: Json;
           impact?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      case_studies: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          subtitle: string;
+          challenge: string;
+          solution: string;
+          workflow: Json;
+          impact: string;
+          icon: string;
+          display_order: number;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          subtitle?: string;
+          challenge: string;
+          solution: string;
+          workflow?: Json;
+          impact: string;
+          icon?: string;
+          display_order?: number;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          subtitle?: string;
+          challenge?: string;
+          solution?: string;
+          workflow?: Json;
+          impact?: string;
+          icon?: string;
+          display_order?: number;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -283,6 +330,13 @@ export interface Database {
           footer_text: string;
           maintenance_mode: boolean;
           show_ai_chat: boolean;
+          show_hero: boolean;
+          show_showcase: boolean;
+          show_services: boolean;
+          show_case_studies: boolean;
+          show_about: boolean;
+          show_testimonials: boolean;
+          show_contact: boolean;
           featured_projects_enabled: boolean;
           featured_services_enabled: boolean;
           ga4_measurement_id: string | null;
@@ -305,6 +359,13 @@ export interface Database {
           footer_text?: string;
           maintenance_mode?: boolean;
           show_ai_chat?: boolean;
+          show_hero?: boolean;
+          show_showcase?: boolean;
+          show_services?: boolean;
+          show_case_studies?: boolean;
+          show_about?: boolean;
+          show_testimonials?: boolean;
+          show_contact?: boolean;
           featured_projects_enabled?: boolean;
           featured_services_enabled?: boolean;
           ga4_measurement_id?: string | null;
@@ -327,11 +388,59 @@ export interface Database {
           footer_text?: string;
           maintenance_mode?: boolean;
           show_ai_chat?: boolean;
+          show_hero?: boolean;
+          show_showcase?: boolean;
+          show_services?: boolean;
+          show_case_studies?: boolean;
+          show_about?: boolean;
+          show_testimonials?: boolean;
+          show_contact?: boolean;
           featured_projects_enabled?: boolean;
           featured_services_enabled?: boolean;
           ga4_measurement_id?: string | null;
           gtm_id?: string | null;
           clarity_project_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      testimonials: {
+        Row: {
+          id: string;
+          name: string;
+          role: string;
+          company: string | null;
+          quote: string;
+          rating: number;
+          avatar: string | null;
+          display_order: number;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          role?: string;
+          company?: string | null;
+          quote: string;
+          rating?: number;
+          avatar?: string | null;
+          display_order?: number;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          role?: string;
+          company?: string | null;
+          quote?: string;
+          rating?: number;
+          avatar?: string | null;
+          display_order?: number;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };

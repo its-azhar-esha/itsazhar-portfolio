@@ -10,6 +10,7 @@ import { SEO_ROBOTS } from "@/constants/seo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TagInput } from "@/components/ui/tag-input";
 import { MediaField } from "@/components/media/media-field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -253,14 +254,21 @@ export function SeoForm({ entry }: SeoFormProps) {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="keywords">Keywords</Label>
-              <Input
+              <TagInput
                 id="keywords"
-                value={fields.keywords}
-                onChange={(e) => handleChange({ keywords: e.target.value })}
-                placeholder="AI, automation, workflow"
+                value={
+                  fields.keywords
+                    ? fields.keywords
+                        .split(",")
+                        .map((k) => k.trim())
+                        .filter(Boolean)
+                    : []
+                }
+                onChange={(tags) => handleChange({ keywords: tags.join(", ") })}
+                placeholder="Type a keyword and press Enter"
+                hint="Press Enter or comma to add, Backspace to remove the last one."
+                error={errors.keywords}
               />
-              <p className="text-muted-foreground text-xs">Comma-separated keywords.</p>
-              {errors.keywords && <p className="text-destructive text-xs">{errors.keywords}</p>}
             </div>
             <div className="space-y-2">
               <MediaField

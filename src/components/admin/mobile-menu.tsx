@@ -7,30 +7,79 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   LayoutDashboard,
+  Users,
   FolderKanban,
+  Briefcase,
+  BookOpen,
+  MessageSquareQuote,
   ImageIcon,
   Sparkles,
   FileText,
+  Search,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth";
+import type { SiteSettings } from "@/types/settings";
 
-const navItems = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Projects", href: "/admin/projects", icon: FolderKanban },
-  { label: "Media", href: "/admin/media", icon: ImageIcon },
-  { label: "AI", href: "/admin/ai", icon: Sparkles },
-  { label: "Content", href: "/admin/content", icon: FileText },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
-];
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  enabled?: boolean;
+}
+
+function buildNavItems(settings: SiteSettings): NavItem[] {
+  return [
+    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { label: "Leads", href: "/admin/leads", icon: Users },
+    {
+      label: "Projects",
+      href: "/admin/projects",
+      icon: FolderKanban,
+      enabled: settings.show_showcase,
+    },
+    {
+      label: "Services",
+      href: "/admin/services",
+      icon: Briefcase,
+      enabled: settings.show_services,
+    },
+    {
+      label: "Case Studies",
+      href: "/admin/case-studies",
+      icon: BookOpen,
+      enabled: settings.show_case_studies,
+    },
+    {
+      label: "Testimonials",
+      href: "/admin/testimonials",
+      icon: MessageSquareQuote,
+      enabled: settings.show_testimonials,
+    },
+    { label: "Media", href: "/admin/media", icon: ImageIcon },
+    { label: "AI", href: "/admin/ai", icon: Sparkles, enabled: settings.show_ai_chat },
+    {
+      label: "Content",
+      href: "/admin/content",
+      icon: FileText,
+      enabled: settings.show_hero || settings.show_about,
+    },
+    { label: "SEO", href: "/admin/seo", icon: Search },
+    { label: "Settings", href: "/admin/settings", icon: Settings },
+  ];
+}
 
 interface AdminMobileMenuProps {
   open: boolean;
   onClose: () => void;
+  settings: SiteSettings;
 }
 
-export function AdminMobileMenu({ open, onClose }: AdminMobileMenuProps) {
+export function AdminMobileMenu({ open, onClose, settings }: AdminMobileMenuProps) {
   const pathname = usePathname();
+  const navItems = buildNavItems(settings);
 
   useEffect(() => {
     if (open) {
@@ -96,12 +145,26 @@ export function AdminMobileMenu({ open, onClose }: AdminMobileMenuProps) {
                     >
                       <Icon className="h-4 w-4" />
                       {item.label}
+                      {item.enabled === false && (
+                        <span className="text-muted-foreground/70 ml-auto rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase">
+                          Off
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
               })}
             </ul>
-            <div className="border-border/40 border-t p-3">
+            <div className="border-border/40 space-y-1 border-t p-3">
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="text-muted-foreground hover:bg-destructive/10 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:text-red-500"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </button>
+              </form>
               <Link
                 href="/"
                 onClick={onClose}

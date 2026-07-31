@@ -12,6 +12,13 @@ export interface SiteSettings {
   footer_text: string;
   maintenance_mode: boolean;
   show_ai_chat: boolean;
+  show_hero: boolean;
+  show_showcase: boolean;
+  show_services: boolean;
+  show_case_studies: boolean;
+  show_about: boolean;
+  show_testimonials: boolean;
+  show_contact: boolean;
   featured_projects_enabled: boolean;
   featured_services_enabled: boolean;
   ga4_measurement_id: string | null;
@@ -38,6 +45,13 @@ export const DEFAULT_SITE_SETTINGS: Omit<SiteSettings, "id" | "created_at" | "up
   footer_text: "© 2026 Azhar (itsazhar.com). All rights reserved.",
   maintenance_mode: false,
   show_ai_chat: true,
+  show_hero: true,
+  show_showcase: true,
+  show_services: true,
+  show_case_studies: true,
+  show_about: true,
+  show_testimonials: false,
+  show_contact: true,
   featured_projects_enabled: true,
   featured_services_enabled: true,
   ga4_measurement_id: null,
