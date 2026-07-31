@@ -492,42 +492,65 @@ docs/                 project-handoff-v2.md, media-architecture.md,
 
 ## 10. Current Public Pages
 
-| Route              | Notes                                                          |
-| ------------------ | -------------------------------------------------------------- |
-| `/`                | Hero, Showcase, Features, Case Studies, About, Contact, CTA    |
-| `/about`           | About page (client sections)                                   |
-| `/projects`        | Project listing                                                |
-| `/projects/[slug]` | Project detail (dynamic)                                       |
-| `/services`        | Services listing                                               |
-| `/services/[slug]` | Service detail (dynamic)                                       |
-| `/contact`         | Contact page + "Book a Free Audit" lead form (`lead-form.tsx`) |
-| `/offline`         | Service-worker offline fallback page                           |
-| `/robots.txt`      | Robots file                                                    |
-| `/sitemap.xml`     | Sitemap (dynamic)                                              |
-| `/api/chat`        | AI chat route handler                                          |
-| `/_not-found`      | App 404                                                        |
+| Route                         | Notes                                                          |
+| ----------------------------- | -------------------------------------------------------------- |
+| `/`                           | Hero, Showcase, Features, Case Studies, About, Contact, CTA    |
+| `/about`                      | About page (client sections)                                   |
+| `/projects`                   | Project listing                                                |
+| `/projects/[slug]`            | Project detail (dynamic)                                       |
+| `/services`                   | Services listing                                               |
+| `/services/[slug]`            | Service detail (dynamic)                                       |
+| `/contact`                    | Contact page + "Book a Free Audit" lead form (`lead-form.tsx`) |
+| `/blog`                       | Blog listing (category chips, featured, grid)                  |
+| `/blog/[slug]`                | Blog post detail (metadata, reading time, CTA)                 |
+| `/hub`                        | Automation Hub (resources, categories, collections)            |
+| `/hub/[slug]`                 | Resource detail + files/downloads (premium gating)             |
+| `/playground`                 | Workflow template library (search/filters)                     |
+| `/playground/builder`         | Visual workflow builder (`@xyflow/react`)                      |
+| `/playground/template/[slug]` | Template detail + "Use this template"                          |
+| `/playground/share/[code]`    | Read-only shared workflow + remix link                         |
+| `/offline`                    | Service-worker offline fallback page                           |
+| `/robots.txt`                 | Robots file                                                    |
+| `/sitemap.xml`                | Sitemap (dynamic)                                              |
+| `/api/chat`                   | AI chat route handler                                          |
+| `/_not-found`                 | App 404                                                        |
 
 ## 11. Current Admin Pages
 
-| Route                       | Purpose                                           |
-| --------------------------- | ------------------------------------------------- |
-| `/admin`                    | Dashboard shell home (lead stats + activity feed) |
-| `/admin/login`              | Email/password sign-in                            |
-| `/admin/leads`              | Lead CRM (list/search/status/delete)              |
-| `/admin/content/hero`       | Hero content editor                               |
-| `/admin/content/about`      | About content editor                              |
-| `/admin/projects`           | Project list                                      |
-| `/admin/projects/new`       | Create project                                    |
-| `/admin/projects/[id]/edit` | Edit project                                      |
-| `/admin/seo`                | SEO list                                          |
-| `/admin/seo/new`            | Create SEO entry                                  |
-| `/admin/seo/[id]/edit`      | Edit SEO entry                                    |
-| `/admin/services`           | Service list                                      |
-| `/admin/services/new`       | Create service                                    |
-| `/admin/services/[id]/edit` | Edit service                                      |
-| `/admin/media`              | Media manager                                     |
-| `/admin/ai`                 | AI assistant UI                                   |
-| `/admin/settings`           | Settings (shell)                                  |
+| Route                          | Purpose                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| `/admin`                       | Dashboard shell home (lead stats + activity feed)     |
+| `/admin/login`                 | Email/password sign-in                                |
+| `/admin/leads`                 | Lead CRM (list/search/status/delete)                  |
+| `/admin/content/hero`          | Hero content editor                                   |
+| `/admin/content/about`         | About content editor                                  |
+| `/admin/projects`              | Project list                                          |
+| `/admin/projects/new`          | Create project                                        |
+| `/admin/projects/[id]/edit`    | Edit project                                          |
+| `/admin/seo`                   | SEO list                                              |
+| `/admin/seo/new`               | Create SEO entry                                      |
+| `/admin/seo/[id]/edit`         | Edit SEO entry                                        |
+| `/admin/services`              | Service list                                          |
+| `/admin/services/new`          | Create service                                        |
+| `/admin/services/[id]/edit`    | Edit service                                          |
+| `/admin/services`              | Service list                                          |
+| `/admin/media`                 | Media manager                                         |
+| `/admin/ai`                    | AI assistant UI                                       |
+| `/admin/settings`              | Settings (show_blog/show_hub/show_playground toggles) |
+| `/admin/blog`                  | Blog list (search/status/featured)                    |
+| `/admin/blog/new`              | Create post                                           |
+| `/admin/blog/[id]/edit`        | Edit post                                             |
+| `/admin/hub`                   | Resource list (search/filters)                        |
+| `/admin/hub/new`               | Create resource (files, changelog, pricing, SEO)      |
+| `/admin/hub/[id]/edit`         | Edit resource                                         |
+| `/admin/hub/categories`        | Resource category manager                             |
+| `/admin/hub/collections`       | Collection manager (resource picker)                  |
+| `/admin/playground`            | Workflow template list                                |
+| `/admin/playground/new`        | Create template (embedded builder + walkthrough)      |
+| `/admin/playground/[id]/edit`  | Edit template                                         |
+| `/admin/playground/node-types` | Node library manager (key/icon/schema/JSON)           |
+| `/admin/playground/categories` | Workflow category manager                             |
+| `/admin/playground/shared`     | Visitor-shared workflows (view/delete)                |
 
 ## 12. Coding Standards
 
@@ -1021,4 +1044,80 @@ using` helper → default `'{}'` → GIN index. Verified values parse + `contain
    anon REST pattern. Lesson: never `.select()` after an anon-role insert
    on a table with write-only RLS.
 
-- **Last Updated:** 2026-07-31 (Phase 8F — project edit fix 00017, settings expansion 00018, blog CMS 00019, Instagram-style mobile nav, AI live context + chat lead capture, SITE_URL canonical fix, public lead-capture RLS fix)
+### Phase 9A/9B — Automation Hub + Workflow Playground (2026-08-01)
+
+Migrations `00020` (automation hub), `00021` (workflow playground), `00022`
+(hub/playground toggles) — all applied remotely; `src/database.types.ts`
+hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
+
+1. **Hub data model** (migration 00020) — one polymorphic `resources` table:
+   type enum (template/agent/integration/prompt/workflow/starter_kit/guide/
+   course/ebook/tool/other), summary + markdown `content`, `category_id`,
+   tags, cover/og images, `version`, JSONB `changelog` + `metadata`, JSONB
+   `pricing` (model/price/currency/purchase_url), `access_level`
+   free/premium, featured, SEO fields, keywords. Plus `resource_categories`,
+   `resource_files` (label/description/`file_ref`/size/type/download_count),
+   `resource_collections` + `resource_collection_items`.
+   RLS: anon = SELECT published only (+ `increment_resource_download(file_id)`
+   security-definer RPC returning `file_ref`); authenticated = full CRUD.
+   Public downloads never `SELECT` after insert — resolved via RPC, media
+   refs resolved at render time.
+2. **Playground data model** (migration 00021) — `workflow_node_types`
+   (key/name/category/icon/color/description + JSONB `config_schema` +
+   `default_config`), `workflow_categories`, `workflow_templates` (JSONB
+   `nodes`/`edges`/`canvas`/`walkthrough`, difficulty, tags, thumbnail,
+   featured, views_count, SEO fields) + `increment_workflow_template_views`
+   RPC, `user_workflows` (anon INSERT without select; share_code; read-only
+   security-definer `get_shared_workflow(p_code)` so anon never has table
+   SELECT; authenticated-only listing/deletion).
+3. **Module layout** — `src/lib/hub/` with `repository.ts` (typed CRUD, all
+   Result), `actions.ts` (admin + public server actions, mock fallbacks via
+   `mock-data.ts` mirroring migration seeds), `index.ts` barrel;
+   validation re-exported from `src/lib/validation` (`schemas/hub.ts`).
+   `src/constants/hub.ts` holds type/status/label constants shared by
+   validation and UI; `src/types/hub.ts` holds Public* shapes with media
+   already resolved (covers/thumbnails/OG) and SEO fields.
+4. **Settings toggles** (migration 00022) — `show_hub`, `show_playground`
+   (DEFAULT true) added to `site_settings`; toggles in the settings form;
+   navbar/footer/mobile-nav/admin-sidebar items conditionally rendered.
+5. **Admin Hub** — `/admin/hub` (list: search, status/type filters,
+   publish/draft, delete), `/admin/hub/new` + `/admin/hub/[id]/edit`
+   (ResourceForm: details, access/pricing, files repeater with MediaField,
+   changelog editor, publication + SEO), `/admin/hub/categories`,
+   `/admin/hub/collections` (resource picker). No media duplication — all
+   uploads go through `MediaField`/`src/lib/media/upload.ts`.
+6. **Public Hub** — `/hub` (hero, category chips, collections, featured
+   grid, search form, CTA) and `/hub/[slug]` (markdown body via
+   `@/lib/markdown`, files sidebar + `DownloadButton` client action → RPC →
+   `window.open`, changelog `<details>`, pricing panel, SEO metadata,
+   booking CTA). Sitemap + AI assistant context (`cms-context.ts`) include
+   hub resources.
+7. **Admin Playground** — `/admin/playground` (template list),
+   `/admin/playground/new` + `[id]/edit` (TemplateForm with the builder
+   embedded in "form" mode: canvas + walkthrough steps + details + SEO),
+   `/admin/playground/node-types` (key/name/category/icon/color + JSON
+   editors for config_schema/default_config), `/admin/playground/categories`,
+   `/admin/playground/shared` (view/delete visitor workflows).
+8. **Public Playground** — `/playground` (featured + category/difficulty
+   filters + search), `/playground/builder` (full builder; `?t=<slug>`
+   loads a template, `?template=<json>` loads a remixed share payload),
+   `/playground/template/[slug]` (detail + "Use this template"), and
+   `/playground/share/[code]` (read-only canvas + Remix button). Builder
+   features: drag/click-to-add palette from DB node types, config inspector
+   driven by `config_schema`, smoothstep edges, MiniMap/Controls, export/
+   import JSON, template loading, walkthrough panel, and Save & Share
+   (anon insert → share link with copy button).
+9. **Lint/build** — `npx tsc --noEmit` 0 errors; `npm run lint` 0 errors
+   (1 intentional warning: `<img>` in markdown.tsx); `npm run build` green
+   (route count 55: +13 hub routes, +6 playground public/admin routes,
+   +sitemap entries).
+10. **TypeScript/lint gotchas this phase** — supabase-js 2.111 `insert()`
+    rejects typed objects even for blog_posts (Schema fallback) → house
+    pattern `.insert(x as never)` + row cast everywhere; zod v4
+    `z.record(z.string(), z.unknown())`; lucide-react dropped brand icons
+    (`Slack` gone → `MessagesSquare`); eslint react-hooks v6: no
+    components created during render (hoist `ResourcePicker` out), no
+    module-scope mutable counters or `Date.now()` in handlers (use a
+    `useRef` counter instead).
+
+- **Last Updated:** 2026-08-01 (Phase 9A/9B — Automation Hub + Workflow Playground)

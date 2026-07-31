@@ -38,6 +38,8 @@ function rowToSiteSettings(
     show_testimonials: row.show_testimonials,
     show_contact: row.show_contact,
     show_blog: row.show_blog,
+    show_hub: row.show_hub,
+    show_playground: row.show_playground,
     featured_projects_enabled: row.featured_projects_enabled,
     featured_services_enabled: row.featured_services_enabled,
     ga4_measurement_id: row.ga4_measurement_id,

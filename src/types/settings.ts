@@ -26,6 +26,8 @@ export interface SiteSettings {
   show_testimonials: boolean;
   show_contact: boolean;
   show_blog: boolean;
+  show_hub: boolean;
+  show_playground: boolean;
   featured_projects_enabled: boolean;
   featured_services_enabled: boolean;
   ga4_measurement_id: string | null;
@@ -67,6 +69,8 @@ export const DEFAULT_SITE_SETTINGS: Omit<SiteSettings, "id" | "created_at" | "up
   show_testimonials: false,
   show_contact: true,
   show_blog: true,
+  show_hub: true,
+  show_playground: true,
   featured_projects_enabled: true,
   featured_services_enabled: true,
   ga4_measurement_id: null,

@@ -46,6 +46,8 @@ function toFormValues(settings: SiteSettings) {
     show_testimonials: settings.show_testimonials,
     show_contact: settings.show_contact,
     show_blog: settings.show_blog,
+    show_hub: settings.show_hub,
+    show_playground: settings.show_playground,
     featured_projects_enabled: settings.featured_projects_enabled,
     featured_services_enabled: settings.featured_services_enabled,
     ga4_measurement_id: settings.ga4_measurement_id ?? "",
@@ -368,6 +370,18 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             description="Show the blog in navigation and enable the blog module."
             checked={fields.show_blog}
             onCheckedChange={(v) => handleChange({ show_blog: v })}
+          />
+          <ToggleRow
+            label="Automation Hub"
+            description="Show the resource library (/hub) in navigation and enable the hub module."
+            checked={fields.show_hub}
+            onCheckedChange={(v) => handleChange({ show_hub: v })}
+          />
+          <ToggleRow
+            label="Workflow Playground"
+            description="Show the playground (/playground) in navigation and enable the playground module."
+            checked={fields.show_playground}
+            onCheckedChange={(v) => handleChange({ show_playground: v })}
           />
         </div>
       </SectionCard>

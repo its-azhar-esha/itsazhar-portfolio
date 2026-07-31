@@ -18,6 +18,8 @@ import {
   Sparkles,
   X,
   CalendarCheck,
+  Boxes,
+  Workflow,
 } from "lucide-react";
 import { useChat } from "@/providers";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -62,6 +64,8 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
       visible: settings.show_testimonials,
     },
     { label: "Blog", href: "/blog", icon: Newspaper, visible: settings.show_blog },
+    { label: "Hub", href: "/hub", icon: Boxes, visible: settings.show_hub },
+    { label: "Playground", href: "/playground", icon: Workflow, visible: settings.show_playground },
   ].filter((item) => item.visible);
 
   const bookHref = settings.booking_url || "/contact";

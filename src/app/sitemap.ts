@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getProjectSlugs } from "@/lib/projects-data";
 import { getPublicBlogPostsAction } from "@/lib/blog/actions";
+import { getPublicResourcesAction, getPublicTemplatesAction } from "@/lib/hub/actions";
 import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -38,6 +39,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/hub`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/playground`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/playground/builder`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    },
   ];
 
   const slugs = await getProjectSlugs();
@@ -57,5 +76,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...projectPages, ...blogPages];
+  const resources = await getPublicResourcesAction();
+  const resourcePages = resources.map((resource) => ({
+    url: `${baseUrl}/hub/${resource.slug}`,
+    lastModified: new Date(resource.updated_at),
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
+  const templates = await getPublicTemplatesAction();
+  const templatePages = templates.map((template) => ({
+    url: `${baseUrl}/playground/template/${template.slug}`,
+    lastModified: new Date(template.updated_at),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...projectPages, ...blogPages, ...resourcePages, ...templatePages];
 }

@@ -23,13 +23,17 @@ interface NavbarProps {
   logoUrl?: string | null;
   bookingUrl?: string | null;
   showBlog?: boolean;
+  showHub?: boolean;
+  showPlayground?: boolean;
 }
 
-export function Navbar({ logoUrl, bookingUrl, showBlog }: NavbarProps) {
+export function Navbar({ logoUrl, bookingUrl, showBlog, showHub, showPlayground }: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const pathname = usePathname();
   const bookHref = bookingUrl || "/contact";
-  const links = showBlog ? [...navLinks, { label: "Blog", href: "/blog" }] : navLinks;
+  let links = showBlog ? [...navLinks, { label: "Blog", href: "/blog" }] : navLinks;
+  links = showHub ? [...links, { label: "Hub", href: "/hub" }] : links;
+  links = showPlayground ? [...links, { label: "Playground", href: "/playground" }] : links;
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

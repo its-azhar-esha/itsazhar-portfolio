@@ -1,6 +1,7 @@
 import { getPublicServicesAction } from "@/lib/services/actions";
 import { getPublicProjectsAction } from "@/lib/projects/actions";
 import { getPublicBlogPostsAction } from "@/lib/blog/actions";
+import { getPublicResourcesAction, getPublicTemplatesAction } from "@/lib/hub/actions";
 import { createLead } from "@/lib/leads/repository";
 
 const CACHE_TTL_MS = 60_000;
@@ -11,6 +12,8 @@ interface CmsCache {
   services: string;
   projects: string;
   blog: string;
+  hub: string;
+  playground: string;
 }
 
 let cache: CmsCache | null = null;
@@ -19,10 +22,12 @@ async function loadCmsCache(): Promise<CmsCache> {
   const now = Date.now();
   if (cache && now - cache.at < CACHE_TTL_MS) return cache;
 
-  const [services, projects, posts] = await Promise.all([
+  const [services, projects, posts, resources, templates] = await Promise.all([
     getPublicServicesAction().catch(() => []),
     getPublicProjectsAction().catch(() => []),
     getPublicBlogPostsAction().catch(() => []),
+    getPublicResourcesAction().catch(() => []),
+    getPublicTemplatesAction().catch(() => []),
   ]);
 
   const servicesBlock = services.length
@@ -47,7 +52,31 @@ async function loadCmsCache(): Promise<CmsCache> {
         .join("\n")
     : "- (no published blog posts yet)";
 
-  cache = { at: now, services: servicesBlock, projects: projectsBlock, blog: postsBlock };
+  const hubBlock = resources.length
+    ? resources
+        .slice(0, 10)
+        .map((r) => `- ${r.title} (/hub/${r.slug}) — ${r.summary || "no summary"}`)
+        .join("\n")
+    : "- (no hub resources yet)";
+
+  const playgroundBlock = templates.length
+    ? templates
+        .slice(0, 8)
+        .map(
+          (t) =>
+            `- ${t.title} (/playground/template/${t.slug}) — ${t.description || "no description"}`,
+        )
+        .join("\n")
+    : "- (no playground templates yet)";
+
+  cache = {
+    at: now,
+    services: servicesBlock,
+    projects: projectsBlock,
+    blog: postsBlock,
+    hub: hubBlock,
+    playground: playgroundBlock,
+  };
   return cache;
 }
 
@@ -61,6 +90,10 @@ export async function buildCmsKnowledge(message: string): Promise<string> {
     const sections = [`## LIVE SERVICES\n${ctx.services}`, `## LIVE PROJECTS\n${ctx.projects}`];
     if (/blog|article|post|news|insight|read/i.test(message)) {
       sections.push(`## RECENT BLOG POSTS\n${ctx.blog}`);
+    }
+    if (/hub|resource|template|download|tool|prompt|workflow template|playground/i.test(message)) {
+      sections.push(`## AUTOMATION HUB RESOURCES\n${ctx.hub}`);
+      sections.push(`## PLAYGROUND TEMPLATES\n${ctx.playground}`);
     }
     return sections.join("\n\n");
   } catch {

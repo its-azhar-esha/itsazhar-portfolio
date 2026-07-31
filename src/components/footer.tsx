@@ -51,7 +51,11 @@ export function Footer({ settings, logoUrl }: FooterProps) {
       icon: Mail,
     },
   ].filter((link): link is { label: string; href: string; icon: typeof Globe } => Boolean(link));
-  const links = settings.show_blog ? [...quickLinks, { label: "Blog", href: "/blog" }] : quickLinks;
+  let links = settings.show_blog ? [...quickLinks, { label: "Blog", href: "/blog" }] : quickLinks;
+  links = settings.show_hub ? [...links, { label: "Automation Hub", href: "/hub" }] : links;
+  links = settings.show_playground
+    ? [...links, { label: "Workflow Playground", href: "/playground" }]
+    : links;
 
   return (
     <footer className="border-border/40 border-t">

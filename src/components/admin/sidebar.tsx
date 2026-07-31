@@ -17,6 +17,8 @@ import {
   Users,
   LogOut,
   Newspaper,
+  Boxes,
+  Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
@@ -63,6 +65,18 @@ function buildNavItems(settings: SiteSettings): NavItem[] {
       href: "/admin/blog",
       icon: Newspaper,
       enabled: settings.show_blog,
+    },
+    {
+      label: "Hub",
+      href: "/admin/hub",
+      icon: Boxes,
+      enabled: settings.show_hub,
+    },
+    {
+      label: "Playground",
+      href: "/admin/playground",
+      icon: Workflow,
+      enabled: settings.show_playground,
     },
     { label: "Media", href: "/admin/media", icon: ImageIcon },
     {

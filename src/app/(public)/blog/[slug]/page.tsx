@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, CalendarDays, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { renderMarkdown } from "@/lib/blog/markdown";
+import { renderMarkdown } from "@/lib/markdown";
 import { getPublicBlogPostAction } from "@/lib/blog/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";

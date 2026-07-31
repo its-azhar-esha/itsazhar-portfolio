@@ -32,3 +32,19 @@ export { createCaseStudySchema, updateCaseStudySchema } from "./schemas/case-stu
 export { createTestimonialSchema, updateTestimonialSchema } from "./schemas/testimonial";
 
 export { createBlogPostSchema, updateBlogPostSchema } from "./schemas/blog";
+
+export {
+  createResourceCategorySchema,
+  updateResourceCategorySchema,
+  createResourceCollectionSchema,
+  updateResourceCollectionSchema,
+  createResourceSchema,
+  updateResourceSchema,
+  createWorkflowNodeTypeSchema,
+  updateWorkflowNodeTypeSchema,
+  createWorkflowCategorySchema,
+  updateWorkflowCategorySchema,
+  createWorkflowTemplateSchema,
+  updateWorkflowTemplateSchema,
+  createSharedWorkflowSchema,
+} from "./schemas/hub";
