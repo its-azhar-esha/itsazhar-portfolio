@@ -3,19 +3,24 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import type { Database } from "@/database.types";
 
-export function createClient(request: NextRequest) {
+export type MiddlewareSupabaseClient = ReturnType<typeof createServerClient<Database>>;
+
+export function createClient(request: NextRequest): {
+  supabase: MiddlewareSupabaseClient | null;
+  response: NextResponse;
+} {
   const url = env.supabaseUrl;
   const key = env.supabaseAnonKey;
 
   if (!url || !key) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        "[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
-          "Middleware client will not be available until these are set.",
-      );
-    }
+    console.warn(
+      "[Supabase] Supabase is not configured: set NEXT_PUBLIC_SUPABASE_URL and " +
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local (local development) or in " +
+        "Vercel Project Settings > Environment Variables (production), then redeploy. " +
+        "Admin route protection is disabled until configured.",
+    );
     return {
-      supabase: null as unknown as ReturnType<typeof createServerClient<Database>>,
+      supabase: null,
       response: NextResponse.next({ request }),
     };
   }

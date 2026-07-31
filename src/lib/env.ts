@@ -1,35 +1,29 @@
-export function getEnv(key: string, fallback = ""): string {
-  return process.env[key]?.trim() || fallback;
-}
+/**
+ * Environment access.
+ *
+ * IMPORTANT: only use static member access (`process.env.NEXT_PUBLIC_*`).
+ * Dynamic access (`process.env[key]`) works at runtime on the Node server
+ * but is silently broken in production browser bundles: bundlers replace
+ * `process.env` with a static object (Turbopack's polyfill starts with an
+ * empty `env = {}`) and only inline statically analyzable member reads.
+ * NEXT_PUBLIC_* values are inlined into client bundles at build time.
+ */
 
-export function hasEnv(key: string): boolean {
-  const val = process.env[key]?.trim();
-  return val !== undefined && val !== "";
-}
-
-export function requireEnv(key: string): string {
-  const val = getEnv(key);
-  if (!val) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        `[env] Missing required environment variable: ${key}. ` +
-          "Check .env.example for the full list of required variables.",
-      );
-    }
-    return "";
-  }
-  return val;
-}
+const nextPublicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+const nextPublicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
+const groqApiKey = process.env.GROQ_API_KEY?.trim() ?? "";
+const openrouterApiKey = process.env.OPENROUTER_API_KEY?.trim() ?? "";
 
 export const env = {
-  groqApiKey: getEnv("GROQ_API_KEY"),
-  openrouterApiKey: getEnv("OPENROUTER_API_KEY"),
-  hasGroq: hasEnv("GROQ_API_KEY"),
-  hasOpenRouter: hasEnv("OPENROUTER_API_KEY"),
-  hasAI: hasEnv("GROQ_API_KEY") || hasEnv("OPENROUTER_API_KEY"),
+  groqApiKey,
+  openrouterApiKey,
+  hasGroq: groqApiKey !== "",
+  hasOpenRouter: openrouterApiKey !== "",
+  hasAI: groqApiKey !== "" || openrouterApiKey !== "",
 
-  supabaseUrl: getEnv("NEXT_PUBLIC_SUPABASE_URL"),
-  supabaseAnonKey: getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-  supabaseServiceRoleKey: getEnv("SUPABASE_SERVICE_ROLE_KEY"),
-  hasSupabase: hasEnv("NEXT_PUBLIC_SUPABASE_URL") && hasEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  supabaseUrl: nextPublicSupabaseUrl,
+  supabaseAnonKey: nextPublicSupabaseAnonKey,
+  supabaseServiceRoleKey,
+  hasSupabase: nextPublicSupabaseUrl !== "" && nextPublicSupabaseAnonKey !== "",
 };

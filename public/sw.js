@@ -1,4 +1,4 @@
-const CACHE = "azhar-v1"
+const CACHE = "azhar-v2"
 
 const PRECACHE_URLS = [
   "/",

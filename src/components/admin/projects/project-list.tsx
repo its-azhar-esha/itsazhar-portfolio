@@ -2,39 +2,26 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import type { DbProject } from "@/types/project";
-import { getProjects } from "@/lib/projects";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { ProjectCard } from "./project-card";
 import { ProjectActions } from "./project-actions";
 import { ProjectEmptyState } from "./project-empty-state";
 
-export function ProjectList() {
-  const [projects, setProjects] = React.useState<DbProject[]>([]);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [retryCount, setRetryCount] = React.useState(0);
+interface ProjectListProps {
+  initialProjects: DbProject[];
+  initialError: string | null;
+}
 
-  React.useEffect(() => {
-    let cancelled = false;
-    getProjects().then((result) => {
-      if (cancelled) return;
-      if (result.success) {
-        setProjects(result.data.items);
-        setError(null);
-      } else {
-        setError(result.error);
-      }
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [retryCount]);
+export function ProjectList({ initialProjects, initialError }: ProjectListProps) {
+  const router = useRouter();
+  const projects = initialProjects;
+  const error = initialError;
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   const filtered = React.useMemo(
     () =>
@@ -48,16 +35,6 @@ export function ProjectList() {
     [projects, searchQuery],
   );
 
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="border-border/40 bg-card h-24 animate-pulse rounded-xl border" />
-        ))}
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -68,9 +45,7 @@ export function ProjectList() {
         <p className="text-muted-foreground mt-2 max-w-sm text-sm">{error}</p>
         <Button
           onClick={() => {
-            setRetryCount((c) => c + 1);
-            setLoading(true);
-            setError(null);
+            router.refresh();
           }}
           variant="outline"
           className="mt-6 gap-2"

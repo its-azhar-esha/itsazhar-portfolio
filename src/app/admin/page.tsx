@@ -1,61 +1,87 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { ArrowRight, FolderKanban, ImageIcon, Sparkles, FileText, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { staggerContainer, staggerItem } from "@/lib/motion";
 import Link from "next/link";
+import { getProjects } from "@/lib/projects";
+import { getServices } from "@/lib/services";
 
-const stats = [
-  { label: "Total Projects", value: "5", change: "+2 this quarter" },
-  { label: "Services", value: "6", change: "All active" },
-  { label: "AI Conversations", value: "—", change: "Waiting for data" },
-  { label: "Portfolio Views", value: "—", change: "Waiting for analytics" },
-];
+export const dynamic = "force-dynamic";
 
-const quickActions = [
-  {
-    label: "Manage Projects",
-    href: "/admin/projects",
-    icon: FolderKanban,
-    desc: "Add or update portfolio projects",
-  },
-  {
-    label: "Upload Media",
-    href: "/admin/media",
-    icon: ImageIcon,
-    desc: "Manage images and videos",
-  },
-  { label: "AI Settings", href: "/admin/ai", icon: Sparkles, desc: "Configure AI chat behavior" },
-  {
-    label: "Edit Content",
-    href: "/admin/content",
-    icon: FileText,
-    desc: "Update site copy and pages",
-  },
-  { label: "Settings", href: "/admin/settings", icon: Settings, desc: "Site configuration" },
-];
+export default async function AdminDashboard() {
+  const [projectsResult, servicesResult] = await Promise.all([
+    getProjects({ page: 1, pageSize: 1 }),
+    getServices(),
+  ]);
 
-const recentActivity = [
-  { action: "Project added", detail: "Fleet Guard — AI Monitoring System", time: "2 weeks ago" },
-  {
-    action: "Service updated",
-    detail: "Workflow Automation — pricing changed",
-    time: "3 weeks ago",
-  },
-  { action: "Deployment", detail: "Site v2 deployed to production", time: "1 month ago" },
-];
+  const projectCount = projectsResult.success ? projectsResult.data.pagination.total : 0;
+  const serviceCount = servicesResult.success ? servicesResult.data.length : 0;
+  const projectError = projectsResult.success ? null : projectsResult.error;
+  const serviceError = servicesResult.success ? null : servicesResult.error;
 
-export default function AdminDashboard() {
+  const stats = [
+    {
+      label: "Total Projects",
+      value: String(projectCount),
+      change: projectError ? `Error: ${projectError}` : "Across all statuses",
+    },
+    {
+      label: "Services",
+      value: String(serviceCount),
+      change: serviceError ? `Error: ${serviceError}` : "All statuses",
+    },
+    { label: "AI Conversations", value: "—", change: "Waiting for data" },
+    { label: "Portfolio Views", value: "—", change: "Waiting for analytics" },
+  ];
+
+  const quickActions = [
+    {
+      label: "Manage Projects",
+      href: "/admin/projects",
+      icon: FolderKanban,
+      desc: "Add or update portfolio projects",
+    },
+    {
+      label: "Upload Media",
+      href: "/admin/media",
+      icon: ImageIcon,
+      desc: "Manage images and videos",
+    },
+    {
+      label: "AI Assistant",
+      href: "/admin/ai",
+      icon: Sparkles,
+      desc: "Chat with your CMS content",
+    },
+    {
+      label: "Edit Content",
+      href: "/admin/content",
+      icon: FileText,
+      desc: "Update site copy and pages",
+    },
+    { label: "Settings", href: "/admin/settings", icon: Settings, desc: "Site configuration" },
+  ];
+
+  const recentActivity = [
+    {
+      action: "Migration 00007 applied",
+      detail: "Hosted DB reconciled — projects CMS unblocked",
+      time: "2026-07-31",
+    },
+    {
+      action: "Media + Services + SEO unblocked",
+      detail: "Migrations 00004–00006 applied to production DB",
+      time: "2026-07-31",
+    },
+    {
+      action: "Deployment",
+      detail: "Site deployed to production",
+      time: "ongoing",
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8"
-      >
-        <motion.div variants={staggerItem}>
+      <div className="space-y-8">
+        <div>
           <Card className="border-border/50 from-primary/5 to-background bg-gradient-to-br">
             <CardHeader>
               <CardTitle>Welcome back</CardTitle>
@@ -64,9 +90,9 @@ export default function AdminDashboard() {
               </p>
             </CardHeader>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div variants={staggerItem}>
+        <div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => (
               <Card key={stat.label} className="border-border/50">
@@ -82,14 +108,12 @@ export default function AdminDashboard() {
               </Card>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={staggerItem}>
+        <div>
           <Card className="border-border/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Quick Actions</CardTitle>
-              </div>
+              <CardTitle className="text-base">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -115,9 +139,9 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div variants={staggerItem}>
+        <div>
           <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="text-base">Recent Activity</CardTitle>
@@ -137,8 +161,8 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

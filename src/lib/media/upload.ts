@@ -1,8 +1,8 @@
 import { env } from "@/lib/env";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
-import { storeMediaAction } from "./actions";
+import { storeMediaAction, replaceMediaAction } from "./actions";
 import {
-  ALLOWED_IMAGE_MIME_TYPES,
+  ALLOWED_MEDIA_MIME_TYPES,
   MAX_MEDIA_FILE_SIZE_BYTES,
   MEDIA_BUCKET,
   MIME_EXTENSIONS,
@@ -22,12 +22,12 @@ export interface UploadMediaFileOptions {
   onProgress?: (progress: MediaUploadProgress) => void;
 }
 
-/** Client-side security gate: mime type + size, image only. */
+/** Client-side security gate: mime type + size. */
 export function validateMediaFile(file: File): string | null {
   const mime = file.type;
-  if (!ALLOWED_IMAGE_MIME_TYPES.includes(mime as (typeof ALLOWED_IMAGE_MIME_TYPES)[number])) {
+  if (!ALLOWED_MEDIA_MIME_TYPES.includes(mime as (typeof ALLOWED_MEDIA_MIME_TYPES)[number])) {
     const label = mime || "unknown";
-    return `Unsupported file type "${label}". Only JPG, PNG, WebP, GIF and AVIF images are allowed.`;
+    return `Unsupported file type "${label}". Allowed: images (JPG, PNG, WebP, GIF, AVIF), videos (MP4, WebM, MOV) and documents (PDF, TXT).`;
   }
   if (file.size <= 0) return "File is empty.";
   if (file.size > MAX_MEDIA_FILE_SIZE_BYTES) {
@@ -39,6 +39,7 @@ export function validateMediaFile(file: File): string | null {
 async function getImageDimensions(
   file: File,
 ): Promise<{ width: number | null; height: number | null }> {
+  if (!file.type.startsWith("image/")) return { width: null, height: null };
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const image = new Image();
@@ -141,5 +142,56 @@ export async function uploadMediaFile(
     return ok(result.data);
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Upload failed.");
+  }
+}
+
+/**
+ * Replaces the underlying file of an existing media record. The record id
+ * (and every `media:<uuid>` reference to it) stays unchanged; the old
+ * storage object is removed after the new one is in place.
+ */
+export async function replaceMediaFile(
+  file: File,
+  media: MediaFile,
+  options: UploadMediaFileOptions = {},
+): Promise<Result<MediaFile>> {
+  const validationError = validateMediaFile(file);
+  if (validationError) return fail(validationError);
+
+  const extension = MIME_EXTENSIONS[file.type];
+  const filename = `${crypto.randomUUID()}.${extension}`;
+  const { width, height } = await getImageDimensions(file);
+
+  try {
+    await uploadToStorage(file, filename, options.onProgress);
+
+    const supabase = createBrowserClient();
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(filename);
+
+    const result = await replaceMediaAction(media.id, {
+      filename,
+      original_name: file.name,
+      storage_path: filename,
+      public_url: publicUrl,
+      mime_type: file.type,
+      extension,
+      size_bytes: file.size,
+      width,
+      height,
+    });
+
+    if (!result.success) {
+      // Best-effort cleanup of the newly uploaded object; the old file is untouched.
+      supabase.storage.from(MEDIA_BUCKET).remove([filename]);
+      return result;
+    }
+
+    // Old file no longer referenced; remove best-effort.
+    supabase.storage.from(MEDIA_BUCKET).remove([media.storage_path]);
+    return ok(result.data);
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Replace failed.");
   }
 }

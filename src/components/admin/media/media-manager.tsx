@@ -11,21 +11,19 @@ import {
   List,
   Pencil,
   Search,
-  Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getMediaPageAction, deleteMediaAction } from "@/lib/media/actions";
+import { getMediaPageAction } from "@/lib/media/actions";
 import { MEDIA_DEFAULT_PAGE_SIZE, MEDIA_SORT_OPTIONS } from "@/constants/media";
 import { formatBytes, formatDimensions } from "@/lib/media/utils";
 import type { MediaFile, MediaSort } from "@/types/media";
 import { MediaCard } from "@/components/media/media-card";
 import { MediaThumbnail } from "@/components/media/media-thumbnail";
 import { MediaUploader } from "@/components/media/media-uploader";
-import { MediaEditDialog } from "./media-edit-dialog";
-import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
+import { MediaDetailDialog } from "./media-detail-dialog";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "grid" | "list";
@@ -45,9 +43,8 @@ export function MediaManager({ initialError }: MediaManagerProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(initialError ?? null);
   const [showUpload, setShowUpload] = React.useState(false);
-  const [editTarget, setEditTarget] = React.useState<MediaFile | null>(null);
-  const [editOpen, setEditOpen] = React.useState(false);
-  const [deleteTarget, setDeleteTarget] = React.useState<MediaFile | null>(null);
+  const [detailTarget, setDetailTarget] = React.useState<MediaFile | null>(null);
+  const [detailOpen, setDetailOpen] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [searchInput, setSearchInput] = React.useState("");
 
@@ -104,15 +101,9 @@ export function MediaManager({ initialError }: MediaManagerProps) {
     };
   }, [search, sort, page]);
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    const result = await deleteMediaAction(deleteTarget.id);
-    setDeleteTarget(null);
-    if (result.success) {
-      fetchPage();
-    } else {
-      setError(result.error);
-    }
+  function openDetail(media: MediaFile) {
+    setDetailTarget(media);
+    setDetailOpen(true);
   }
 
   function handleCopy(media: MediaFile) {
@@ -150,25 +141,13 @@ export function MediaManager({ initialError }: MediaManagerProps) {
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setEditTarget(media);
-          setEditOpen(true);
+          openDetail(media);
         }}
         className="bg-background/90 text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md shadow-sm backdrop-blur-sm transition-colors"
-        title="Edit metadata"
-        aria-label={`Edit metadata for ${media.original_name}`}
+        title="View details and edit metadata"
+        aria-label={`View details for ${media.original_name}`}
       >
         <Pencil className="h-3.5 w-3.5" />
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setDeleteTarget(media);
-        }}
-        className="bg-background/90 text-muted-foreground flex h-7 w-7 items-center justify-center rounded-md shadow-sm backdrop-blur-sm transition-colors hover:text-red-500"
-        title="Delete"
-        aria-label={`Delete ${media.original_name}`}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
       </button>
     </>
   );
@@ -284,7 +263,12 @@ export function MediaManager({ initialError }: MediaManagerProps) {
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {items.map((media) => (
-            <MediaCard key={media.id} media={media} actions={cardActions(media)} />
+            <MediaCard
+              key={media.id}
+              media={media}
+              onSelect={() => openDetail(media)}
+              actions={cardActions(media)}
+            />
           ))}
         </div>
       ) : (
@@ -292,7 +276,8 @@ export function MediaManager({ initialError }: MediaManagerProps) {
           {items.map((media) => (
             <div
               key={media.id}
-              className="border-border/40 hover:bg-accent/40 flex items-center gap-3 border-b p-3 transition-colors last:border-b-0"
+              onClick={() => openDetail(media)}
+              className="border-border/40 hover:bg-accent/40 flex cursor-pointer items-center gap-3 border-b p-3 transition-colors last:border-b-0"
             >
               <MediaThumbnail media={media} />
               <div className="min-w-0 flex-1">
@@ -305,7 +290,9 @@ export function MediaManager({ initialError }: MediaManagerProps) {
                   {new Date(media.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <div className="flex items-center gap-1">{cardActions(media)}</div>
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                {cardActions(media)}
+              </div>
             </div>
           ))}
         </div>
@@ -342,24 +329,18 @@ export function MediaManager({ initialError }: MediaManagerProps) {
         </div>
       )}
 
-      <MediaEditDialog
-        open={editOpen}
-        media={editTarget}
-        onClose={() => setEditOpen(false)}
-        onSaved={fetchPage}
-      />
-
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Delete media"
-        description={
-          deleteTarget
-            ? `Delete "${deleteTarget.original_name}"? This removes the file from storage and cannot be undone.`
-            : ""
-        }
-        confirmLabel="Delete"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+      <MediaDetailDialog
+        open={detailOpen}
+        media={detailTarget}
+        onClose={() => setDetailOpen(false)}
+        onChanged={(updated) => {
+          setDetailTarget(updated);
+          setItems((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+        }}
+        onDeleted={() => {
+          setDetailOpen(false);
+          fetchPage();
+        }}
       />
     </div>
   );

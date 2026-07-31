@@ -10,19 +10,29 @@ export async function signIn(formData: FormData): Promise<{ error: string } | un
     return { error: "Email and password are required." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    return { error: error.message };
+    if (error) {
+      return { error: error.message };
+    }
+
+    return undefined;
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Sign-in failed. Please try again.",
+    };
   }
-
-  return undefined;
 }
 
 export async function signOut(): Promise<void> {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Session cleanup is best-effort; redirect regardless.
+  }
   const { redirect } = await import("next/navigation");
   redirect("/admin/login");
 }

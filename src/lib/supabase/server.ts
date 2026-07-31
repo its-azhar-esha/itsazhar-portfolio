@@ -10,13 +10,11 @@ export async function createClient() {
   const key = env.supabaseAnonKey;
 
   if (!url || !key) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        "[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
-          "Server component client will not be available until these are set.",
-      );
-    }
-    return null as unknown as ReturnType<typeof createServerClient<Database>>;
+    throw new Error(
+      "[Supabase] Supabase is not configured: set NEXT_PUBLIC_SUPABASE_URL and " +
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local (local development) or in " +
+        "Vercel Project Settings > Environment Variables (production), then redeploy.",
+    );
   }
 
   return createServerClient<Database>(url, key, {

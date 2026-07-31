@@ -17,7 +17,10 @@ export { serviceContentSchema, createServiceSchema, updateServiceSchema } from "
 
 export {
   createMediaRecordSchema,
+  replaceMediaRecordSchema,
   updateMediaMetadataSchema,
   mediaReferenceSchema,
   mediaUrlOrReferenceSchema,
 } from "./schemas/media";
+
+export { siteSettingsSchema } from "./schemas/settings";
