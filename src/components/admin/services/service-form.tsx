@@ -44,7 +44,7 @@ function defaultFields(service?: DbService): FormFields {
     icon: service?.icon ?? "bot",
     featured: service?.featured ?? false,
     display_order: String(service?.display_order ?? 0),
-    status: service?.status ?? "draft",
+    status: service?.status ?? "published",
     seo_title: service?.seo_title ?? "",
     seo_description: service?.seo_description ?? "",
     seo_keywords: service?.seo_keywords?.join(", ") ?? "",

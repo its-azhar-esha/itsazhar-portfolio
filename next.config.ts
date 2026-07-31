@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : undefined;
+const supabaseOrigin = supabaseHostname ? `https://${supabaseHostname}` : undefined;
 
 const nextConfig: NextConfig = {
   images: {
@@ -27,9 +28,9 @@ const nextConfig: NextConfig = {
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://mc.yandex.ru",
             "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: blob: https://www.google-analytics.com https://mc.yandex.ru",
+            `img-src 'self' data: blob: ${supabaseOrigin ?? "https://*.supabase.co"} https://www.google-analytics.com https://mc.yandex.ru`,
             "font-src 'self' data:",
-            "connect-src 'self' https://www.google-analytics.com https://mc.yandex.ru https://api.groq.com https://openrouter.ai",
+            `connect-src 'self' ${supabaseOrigin ?? "https://*.supabase.co"} https://www.google-analytics.com https://mc.yandex.ru https://api.groq.com https://openrouter.ai`,
             "frame-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
