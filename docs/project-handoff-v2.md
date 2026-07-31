@@ -890,3 +890,48 @@ ref: main}`).
    edit of `src/lib/media/actions.ts` (or any action module).
 
 - **Last Updated:** 2026-07-31 (media module fix `44c70aa` — upload/edit/about errors resolved; pending browser retest + About prefill + SEO tag chips)
+
+### Phase 8E — Case Studies, Testimonials, Section Toggles, Admin UX (2026-07-31, commit 8a73bfc)
+
+1. **Migrations 00014-00016** (applied to remote, hand-synced database.types.ts):
+   - case_studies table (slug unique, title, subtitle, challenge, solution,
+     workflow jsonb, impact, icon, display_order, status) + RLS (anon: published
+     only; authenticated: full) + seed of the 3 original case studies
+     (fleet/lease/education, slugs verified, published).
+   - estimonials table (name, role, company, quote, rating 1-5, avatar,
+     display_order, status) + RLS same pattern; no seed.
+   - site_settings gains show_hero/show_showcase/show_services/show_case_studies/
+     show_about/show_testimonials/show_contact (NOT NULL DEFAULT true;
+     show_testimonials DEFAULT false), backfilled from
+     eatured_projects_enabled/eatured_services_enabled (legacy columns kept).
+2. **New modules** src/lib/case-studies/ and src/lib/testimonials/
+   (repository + server actions + Zod schemas reusing
+   mediaUrlOrReferenceSchema; Result<T> everywhere; revalidate /).
+   Public getter actions resolve vatar media references at render time.
+3. **Public side**: homepage sections gated by the 8 toggles; case-studies
+   component is DB-driven with mock fallback (no homepage regression);
+   new estimonials animated carousel (6s auto-rotate, pause-on-hover,
+   arrows/dots, initials fallback avatar) renders nothing when empty/off.
+4. **Admin**: Case Studies + Testimonials CRUD (list with search/publish/draft/
+   delete, form with auto-slug, TagInput workflow steps, rating select);
+   Settings form now has the 8 per-section toggles; sidebar + mobile menu show
+   an amber "Off" badge on sections disabled in Settings; new centered animated
+   "Admin Panel — itsazhar" header; back arrow on every subpage; Sign out in
+   sidebar/header; global toast system (src/components/ui/toast.tsx) wired
+   into the new forms/lists and Settings.
+5. **Leads**: rows are now compact; clicking opens a popup dialog with all
+   details (email/phone/message/source/status/timestamps) plus status change
+   and delete inside the dialog.
+6. **Keywords inputs** (project-seo.tsx, seo-form.tsx) switched from comma
+   strings to TagInput (Enter/comma add, Backspace remove, dedupe).
+7. **TypeScript note**: supabase-js typed queries where data is narrowed via
+   if (!data) and then iterated can infer
+   ever[]; use an annotated local
+   (const rows: Database[...]["Row"][] = data ?? []) — see
+   src/lib/testimonials/actions.ts getPublicTestimonialsAction.
+8. **Deployed**: webhook picked up 8a73bfc; deployment dpl_8wZt READY.
+   Verified on prod: homepage case studies from DB, testimonials section
+   hidden, admin case-studies page renders (auth cookie), settings JSON has
+   new toggles.
+
+- **Last Updated:** 2026-07-31 (Phase 8E 8a73bfc — case studies/testimonials modules, section toggles, admin shell UX, leads popup; pending user retest of project edit after hard refresh + About prefill + SEO tag chips)
