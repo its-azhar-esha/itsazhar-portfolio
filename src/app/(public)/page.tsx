@@ -9,21 +9,25 @@ import { CTA } from "@/components/cta";
 import { getPublicHeroContent } from "@/lib/hero";
 import { getPageMetadata } from "@/lib/seo";
 import { getPublicFeaturedServicesAction } from "@/lib/services";
+import { getPublicSiteSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return getPageMetadata("home");
 }
 
 export default async function Home() {
-  const heroContent = await getPublicHeroContent();
-  const featuredServices = await getPublicFeaturedServicesAction();
+  const [heroContent, featuredServices, settings] = await Promise.all([
+    getPublicHeroContent(),
+    getPublicFeaturedServicesAction(),
+    getPublicSiteSettings(),
+  ]);
 
   return (
     <>
       <Hero content={heroContent} />
       <Showcase />
-      <Features services={featuredServices} />
-      <CaseStudies />
+      {settings.featured_services_enabled ? <Features services={featuredServices} /> : null}
+      {settings.featured_projects_enabled ? <CaseStudies /> : null}
       <About />
       <Contact />
       <CTA />

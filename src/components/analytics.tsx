@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-export function Analytics() {
+export function Analytics({ gaId }: { gaId?: string }) {
   const pathname = usePathname();
   const initialised = useRef(false);
 
@@ -20,14 +20,14 @@ export function Analytics() {
       return;
     }
     try {
-      if (typeof window.gtag === "function") {
-        window.gtag("config", "G-XXXXXXXXXX", { page_path: pathname });
+      if (typeof window.gtag === "function" && gaId) {
+        window.gtag("config", gaId, { page_path: pathname });
       }
       if (typeof window.clarity === "function") {
         window.clarity("set", "page", pathname);
       }
     } catch {}
-  }, [pathname]);
+  }, [pathname, gaId]);
 
   return null;
 }

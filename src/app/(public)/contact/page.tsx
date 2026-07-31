@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { ArrowRight, Check, Sparkles, Clock, MapPin } from "lucide-react";
+import { ArrowRight, Check, Sparkles, Clock, MapPin, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialLinks } from "@/components/social-links";
 import { getPageMetadata } from "@/lib/seo";
+import { getPublicSiteSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return getPageMetadata("contact");
@@ -18,7 +19,9 @@ const benefits = [
   "No obligation",
 ];
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getPublicSiteSettings();
+
   return (
     <div className="pt-24 md:pt-32">
       <section className="border-border/40 border-b py-16 md:py-24">
@@ -93,8 +96,26 @@ export default function ContactPage() {
                 <CardContent className="space-y-3">
                   <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <MapPin className="text-primary h-4 w-4 shrink-0" />
-                    Remote, Worldwide
+                    {settings.location}
                   </div>
+                  {settings.contact_email ? (
+                    <a
+                      href={`mailto:${settings.contact_email}`}
+                      className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+                    >
+                      <Mail className="text-primary h-4 w-4 shrink-0" />
+                      {settings.contact_email}
+                    </a>
+                  ) : null}
+                  {settings.contact_phone ? (
+                    <a
+                      href={`tel:${settings.contact_phone}`}
+                      className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+                    >
+                      <Phone className="text-primary h-4 w-4 shrink-0" />
+                      {settings.contact_phone}
+                    </a>
+                  ) : null}
                   <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Clock className="text-primary h-4 w-4 shrink-0" />
                     Response Time: Within 24 Hours

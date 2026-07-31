@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { spring } from "@/lib/motion";
 import Link from "next/link";
+import type { SiteSettings } from "@/types/settings";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -15,25 +16,25 @@ const quickLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
-const socialLinks = [
-  {
-    label: "LinkedIn",
-    href: "https://linkedin.com/in/azharmahmudalif",
-    icon: Globe,
-  },
-  {
-    label: "Fiverr",
-    href: "https://fiverr.com/azhar_m_alif",
-    icon: ExternalLink,
-  },
-  {
-    label: "Email",
-    href: "mailto:azharmahmudalif@gmail.com",
-    icon: Mail,
-  },
-];
+export function Footer({ settings }: { settings: SiteSettings }) {
+  const socialLinks = [
+    settings.social_linkedin && {
+      label: "LinkedIn",
+      href: settings.social_linkedin,
+      icon: Globe,
+    },
+    settings.social_fiverr && {
+      label: "Fiverr",
+      href: settings.social_fiverr,
+      icon: ExternalLink,
+    },
+    settings.contact_email && {
+      label: "Email",
+      href: `mailto:${settings.contact_email}`,
+      icon: Mail,
+    },
+  ].filter((link): link is { label: string; href: string; icon: typeof Globe } => Boolean(link));
 
-export function Footer() {
   return (
     <footer className="border-border/40 border-t">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -41,16 +42,18 @@ export function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" aria-label="Home" className="flex items-center gap-2">
               <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-                <span className="text-primary-foreground text-sm font-bold">A</span>
+                <span className="text-primary-foreground text-sm font-bold">
+                  {settings.site_name.charAt(0)}
+                </span>
               </div>
-              <span className="text-lg font-semibold tracking-tight">Azhar</span>
+              <span className="text-lg font-semibold tracking-tight">{settings.site_name}</span>
             </Link>
             <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed">
               I build AI automation systems that eliminate repetitive work, connect business tools,
               and help teams operate smarter through AI agents, workflows, and intelligent
               integrations.
             </p>
-            <p className="text-muted-foreground mt-3 text-xs">AI Automation Specialist</p>
+            <p className="text-muted-foreground mt-3 text-xs">{settings.tagline}</p>
             <div className="mt-4 flex items-center gap-2">
               {socialLinks.map((link) => (
                 <motion.div
@@ -127,9 +130,7 @@ export function Footer() {
         <Separator className="my-8" />
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-muted-foreground text-xs">
-            &copy; 2026 Azhar (itsazhar.com). All rights reserved.
-          </p>
+          <p className="text-muted-foreground text-xs">{settings.footer_text}</p>
         </div>
       </div>
     </footer>

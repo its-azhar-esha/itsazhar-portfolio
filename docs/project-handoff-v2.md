@@ -704,6 +704,27 @@ migrations 00004–00007, fixed the hero/about first-save code bug.
   creates when the DB row is missing (never `update`s a mock id); surfaces
   DB errors instead of masking them
 
+### Phase 8D (2026-07-31) — Admin AI + Settings implemented
+
+- **`/admin/settings`** — full site config: identity, contact, socials, footer
+  text, toggles (maintenance mode, AI chat, featured projects/services
+  sections), analytics IDs (GA4/GTM/Clarity). New table `site_settings`
+  (migration 00008, seed row, RLS: public read + authenticated CRUD).
+  Module: `src/lib/settings/*` (schema → repository → actions), admin form
+  `src/components/admin/settings/settings-form.tsx`.
+- **`/admin/ai`** — content-aware CMS assistant. `/api/admin/chat` requires
+  `auth.getUser()`, builds a system prompt from live CMS data (projects,
+  services, SEO entries, hero/about), streams via existing `routeToAI`
+  (Groq → OpenRouter). UI: `src/components/admin/ai/admin-chat.tsx`.
+- **Public wiring** — root layout reads settings for GA4/GTM/Clarity
+  (scripts only load when an ID is set); public layout honors maintenance
+  mode (public-only screen) and `show_ai_chat`; footer is settings-driven;
+  home page gates featured sections; contact page shows settings email/phone/
+  location. All public reads fall back to defaults when Supabase is
+  unavailable (handoff §17 rule preserved).
+- **Dashboard** — real project/service counts from DB (was hardcoded).
+- **`sw.js`** — cache bumped to `azhar-v2`.
+
 ### Fix Status (verified 2026-07-31)
 
 - Migrations 00001–00003 marked applied remotely (`supabase migration repair`)
@@ -736,15 +757,20 @@ migrations 00004–00007, fixed the hero/about first-save code bug.
   `robots.txt` + `sitemap.xml` + `/api/chat`)
 - **TypeScript Status:** ✅ strict, 0 errors
 - **Lint Status:** ✅ 0 errors, 0 warnings
-- **Pending Migrations:** NONE — all 00001–00007 applied to hosted Supabase
+- **Pending Migrations:** NONE — all 00001–00008 applied to hosted Supabase
   (2026-07-31). Remote `projects` reconciled via 00007 (`thumbnail`, `images`,
-  `client`, `demo_url`, `keywords`, `order` added). Legacy `thumbnail_url`/
+  `client`, `demo_url`, `keywords`, `order` added). `site_settings` created via
+  00008 (seed row present, verified via REST). Legacy `thumbnail_url`/
   `gallery_urls` columns still present but unused by code.
 - **Open TODOs:**
-  1. Fix Vercel production 404 (deployment config, see §14)
-  2. Rotate leaked keys in `.env.example` (real values present)
-  3. Bump `sw.js` cache version / unregister stale service worker
-  4. Configure real analytics IDs
-  5. Manual CMS smoke test (migrations applied + hero/about save fixed
+  1. Fix Vercel production 404 (deployment config, see §14) — Vercel token
+     requested, not yet received
+  2. Rotate leaked keys in `.env.example` — real values scrubbed 2026-07-31
+     (file is gitignored; placeholders only now)
+  3. Analytics IDs — GA4/GTM/Clarity now managed via `/admin/settings`;
+     still need real IDs from the user
+  4. Manual CMS smoke test (migrations applied + hero/about save fixed
      2026-07-31, see §19)
-  6. Implement `/admin/ai` + `/admin/settings` (documented stub pages)
+  5. Phase 8D: `/admin/ai` content-aware assistant + `/admin/settings`
+     implemented 2026-07-31 (see §19); final polish (sitemap tuning, SEO
+     audits, perf budgets) still open

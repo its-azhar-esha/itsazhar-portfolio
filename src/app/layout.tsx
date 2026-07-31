@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
+import { getPublicSiteSettings } from "@/lib/settings";
 
 const Analytics = dynamic(() =>
   import("@/components/analytics").then((m) => ({ default: m.Analytics })),
@@ -83,11 +84,16 @@ export const metadata: Metadata = {
   alternates: { canonical: baseUrl },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getPublicSiteSettings();
+  const ga4Id = settings.ga4_measurement_id?.trim();
+  const gtmId = settings.gtm_id?.trim();
+  const clarityId = settings.clarity_project_id?.trim();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -147,7 +153,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <GoogleAnalytics gaId="G-XXXXXXXXXX" />
+        {ga4Id ? <GoogleAnalytics gaId={ga4Id} /> : null}
       </head>
       <body className="bg-background text-foreground min-h-full antialiased">
         <a
@@ -156,14 +162,16 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <GoogleTagManager gtmId="GTM-XXXXXXX" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,'clarity','script','CLARITY_ID');`,
-          }}
-        />
+        {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
+        {clarityId ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,'clarity','script','${clarityId}');`,
+            }}
+          />
+        ) : null}
         <Suspense fallback={null}>
-          <Analytics />
+          <Analytics gaId={ga4Id ?? undefined} />
         </Suspense>
         <ThemeProvider
           attribute="class"

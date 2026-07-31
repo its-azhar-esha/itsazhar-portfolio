@@ -20,8 +20,16 @@ export function useChat() {
   return ctx;
 }
 
-export function ChatProvider({ children }: { children: React.ReactNode }) {
+export function ChatProvider({
+  children,
+  enabled = true,
+}: {
+  children: React.ReactNode;
+  enabled?: boolean;
+}) {
   const [isOpen, setIsOpen] = React.useState(false);
+
+  if (!enabled) return <>{children}</>;
 
   return (
     <ChatContext.Provider value={{ isOpen, setIsOpen }}>

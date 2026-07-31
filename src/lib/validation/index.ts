@@ -22,3 +22,5 @@ export {
   mediaReferenceSchema,
   mediaUrlOrReferenceSchema,
 } from "./schemas/media";
+
+export { siteSettingsSchema } from "./schemas/settings";
