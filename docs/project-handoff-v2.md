@@ -36,9 +36,12 @@ freelance AI-automation specialist (Azhar Mahmud Alif). Public marketing site
 
 - Phases complete: Engineering Foundation → Auth → CMS Core → Project CMS →
   Production Hardening → SEO CMS → Services CMS → Media Infrastructure (8A) →
-  Media Integration (8B) → Image Optimization & Cleanup (8C)
-- Build: 31/31 routes, 0 TypeScript errors, 0 lint errors (last verified Phase 8C)
-- One open production issue: Vercel deployment serves the platform 404 (see §14)
+  Media Integration (8B) → Image Optimization & Cleanup (8C) → CMS
+  Reconciliation + Admin AI & Settings (8D, 2026-07-31)
+- Build: green, 0 TypeScript errors, 0 lint errors (verified after Phase 8D
+  merge to main, commit e04f8a2)
+- Production: live at `itsazhar-portfolio.vercel.app`, serving the full latest
+  build (all routes verified 200, 2026-07-31)
 
 ## 2. Architecture
 
@@ -519,13 +522,13 @@ docs/                 project-handoff-v2.md, media-architecture.md,
 
 ## 14. Known Bugs
 
-| Issue                                                                                       | Status                              | Priority        | Recommended fix                                                                                                                                                                                                                                                       |
-| ------------------------------------------------------------------------------------------- | ----------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel production returns platform `404: NOT_FOUND` (local + build fine)                    | Open (investigated, not a code bug) | High            | Deployment-side: verify production branch/alias points at the commit containing the `(public)` migration, check Framework Preset/Build Command/Output Directory in Vercel settings, configure env vars, redeploy, purge edge cache; test with `curl -I` and incognito |
-| Stale service worker serving old pages (`sw.js` cache `azhar-v1`)                           | Open                                | Medium          | Bump `CACHE` version per deploy; unregister SW + clear site data after redeploy; consider precaching only `/offline`                                                                                                                                                  |
-| `sw.js` `cache.addAll` install rejection if any precache URL 404s                           | Open                                | Low             | Make install tolerant (`Promise.allSettled`-style) or precache only static assets                                                                                                                                                                                     |
-| Real-looking secrets committed in `.env.example` (anon, publishable, service-role, AI keys) | Open                                | High (security) | Replace with placeholders; rotate the leaked keys in Supabase/console                                                                                                                                                                                                 |
-| Placeholder analytics IDs (`G-XXXXXXXXXX`, `GTM-XXXXXXX`, `CLARITY_ID`) in root layout      | Open                                | Low             | Replace with real IDs when analytics are configured                                                                                                                                                                                                                   |
+| Issue                                                                                       | Status                    | Priority        | Recommended fix                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------- | ------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel production returns platform `404: NOT_FOUND` (local + build fine)                    | **Resolved** (2026-07-31) | High            | Root cause: production `main` predated the `(public)` route-group code. Fix applied: merged full feature branch into `main` (e04f8a2), Vercel auto-deployed, all routes verified 200 (`/`, `/about`, `/services`, `/projects`, `/contact`, `/admin/*`, `/robots.txt`, `/sitemap.xml`) |
+| Stale service worker serving old pages (`sw.js` cache `azhar-v1`)                           | Open                      | Medium          | Bump `CACHE` version per deploy; unregister SW + clear site data after redeploy; consider precaching only `/offline`                                                                                                                                                                  |
+| `sw.js` `cache.addAll` install rejection if any precache URL 404s                           | Open                      | Low             | Make install tolerant (`Promise.allSettled`-style) or precache only static assets                                                                                                                                                                                                     |
+| Real-looking secrets committed in `.env.example` (anon, publishable, service-role, AI keys) | Open                      | High (security) | Replace with placeholders; rotate the leaked keys in Supabase/console                                                                                                                                                                                                                 |
+| Placeholder analytics IDs (`G-XXXXXXXXXX`, `GTM-XXXXXXX`, `CLARITY_ID`) in root layout      | Open                      | Low             | Replace with real IDs when analytics are configured                                                                                                                                                                                                                                   |
 
 ## 15. Technical Debt
 
@@ -618,7 +621,7 @@ accessibility pass, media architecture docs).
 | Maintainability      | Good — consistent module pattern, typed everywhere, docs (media-architecture, handoff), dead code removed in 8C                                                  |
 | Performance          | Good — next/image + AVIF/WebP, lazy loading, fill/sizes, no layout shift, static pages where possible                                                            |
 | Developer Experience | Good — strict TS, zero lint noise, clear boundaries, fast Turbopack builds                                                                                       |
-| Production Readiness | **Blocked** by the open Vercel 404 issue (deployment config, not code); code-side is ready — build green, 31/31 routes                                           |
+| Production Readiness | **Ready** — production live (2026-07-31), all routes 200, latest build deployed from `main` (e04f8a2), DB reconciled, env vars configured                        |
 
 ---
 
@@ -763,8 +766,8 @@ migrations 00004–00007, fixed the hero/about first-save code bug.
   00008 (seed row present, verified via REST). Legacy `thumbnail_url`/
   `gallery_urls` columns still present but unused by code.
 - **Open TODOs:**
-  1. Fix Vercel production 404 (deployment config, see §14) — Vercel token
-     requested, not yet received
+  1. ~~Fix Vercel production 404~~ — RESOLVED 2026-07-31 (merged to `main`
+     e04f8a2, all routes 200)
   2. Rotate leaked keys in `.env.example` — real values scrubbed 2026-07-31
      (file is gitignored; placeholders only now)
   3. Analytics IDs — GA4/GTM/Clarity now managed via `/admin/settings`;
