@@ -151,6 +151,10 @@ All repositories and actions return `Result<T>`; callers branch on
 - Unauthenticated → redirect `/admin/login`; authenticated at login →
   redirect `/admin`; otherwise return the `NextResponse.next()` from the
   middleware client so cookie refreshes are preserved
+- **POST (server action) requests are never redirected** — a transient
+  `getUser()` failure on an action POST caused RSC errors (digest
+  `3379654745` in production); actions enforce auth themselves and return
+  `fail("Authentication required.")`. Only GET/HEAD navigations redirect.
 - Missing env → middleware client returns `null` supabase + `NextResponse.next()`
 
 ### Cookie lifecycle
@@ -198,6 +202,9 @@ NextResponse.next(...)` again after auth calls). Reassignment discarded
    pre-migration pages and to avoid masking server changes with old caches.
    Manual action needed: bump `CACHE` version on deploy and unregister
    stale SWs (DevTools → Application → Service Workers).
+   **2026-07-31 update:** cache bumped to `azhar-v3`; `/admin/*` and
+   `/api/*` requests are now network-only (never served from cache, avoiding
+   stale admin UI and masked API failures).
 
 3. **Refresh loop (auth)**
    Related to #1 — caused by the same response reassignment + `getUser`
@@ -205,29 +212,47 @@ NextResponse.next(...)` again after auth calls). Reassignment discarded
    Fixed by the shared-response pattern; `getUser()` failures now degrade to
    "unauthenticated" without redirect loops.
 
+4. **Media upload failed in production (RSC error)**
+   Production CSP lacked the Supabase origin in `connect-src`/`img-src`, so
+   browser uploads (storage POST) and rendered storage URLs were blocked.
+   Fixed in `next.config.ts` by appending
+   `https://quekecvmdbzpxqglztsa.supabase.co` to both directives (deploy
+   `28aed50`). Uploads also failed with a Next 16 CSRF digest on server
+   actions; the proxy now never redirects POSTs (see §3).
+
 ## 4. Database
 
 All migrations in `supabase/migrations/`. `src/database.types.ts` is
 hand-synced with these migrations (regenerate via `supabase gen types`).
 
-| #     | File                                | Purpose                             | Tables                                                                                                                             | RLS                                                                                                                               |
-| ----- | ----------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 00001 | `00001_create_projects.sql`         | Projects table                      | `projects`                                                                                                                         | anon: select active only; authed: full CRUD. Unique slug, status/featured/order/industry/created_at indexes, `updated_at` trigger |
-| 00002 | `00002_add_project_rich_fields.sql` | Rich fields for public detail pages | alters `projects` (adds rich content columns)                                                                                      | inherited from 00001                                                                                                              |
-| 00003 | `00003_create_content_entries.sql`  | Reusable content store              | `content_entries` (key unique, title, JSONB content, status)                                                                       | anon: published only; authed: full CRUD. Indexes on key/status/content                                                            |
-| 00004 | `00004_create_seo_metadata.sql`     | SEO CMS                             | `seo_metadata` (page_key unique, title ≤70, description ≤160, keywords[], og_image, canonical_url, robots)                         | anon: read; authed: insert/update/delete. Seeds default entries for home/about/projects/services                                  |
-| 00005 | `00005_create_services.sql`         | Services CMS                        | `services` (slug unique, status, featured, display_order, JSONB content)                                                           | anon: published only; authed: full CRUD. `updated_at` trigger                                                                     |
-| 00006 | `00006_create_media_files.sql`      | Media library                       | `media` bucket (public) + `media_files` (filename, storage_path, public_url nullable, mime, size, width/height, alt_text, caption) | anon: read; authed: CRUD. Storage object policies (public read, authed upload/update/delete). 10 MB image-only enforcements       |
+| #     | File                                         | Purpose                                    | Tables                                                                                                                                                        | RLS                                                                                                                               |
+| ----- | -------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 00001 | `00001_create_projects.sql`                  | Projects table                             | `projects`                                                                                                                                                    | anon: select active only; authed: full CRUD. Unique slug, status/featured/order/industry/created_at indexes, `updated_at` trigger |
+| 00002 | `00002_add_project_rich_fields.sql`          | Rich fields for public detail pages        | alters `projects` (adds rich content columns)                                                                                                                 | inherited from 00001                                                                                                              |
+| 00003 | `00003_create_content_entries.sql`           | Reusable content store                     | `content_entries` (key unique, title, JSONB content, status)                                                                                                  | anon: published only; authed: full CRUD. Indexes on key/status/content                                                            |
+| 00004 | `00004_create_seo_metadata.sql`              | SEO CMS                                    | `seo_metadata` (page_key unique, title ≤70, description ≤160, keywords[], og_image, canonical_url, robots)                                                    | anon: read; authed: insert/update/delete. Seeds default entries for home/about/projects/services                                  |
+| 00005 | `00005_create_services.sql`                  | Services CMS                               | `services` (slug unique, status, featured, display_order, JSONB content)                                                                                      | anon: published only; authed: full CRUD. `updated_at` trigger                                                                     |
+| 00006 | `00006_create_media_files.sql`               | Media library                              | `media` bucket (public) + `media_files` (filename, storage_path, public_url nullable, mime, size, width/height, alt_text, caption)                            | anon: read; authed: CRUD. Storage object policies (public read, authed upload/update/delete). 10 MB image-only enforcements       |
+| 00007 | `00007_reconcile_remote_projects.sql`        | Reconcile dashboard-created `projects`     | adds `thumbnail`, `images`, `client`, `demo_url`, `keywords`, `"order"` to the remote table                                                                   | inherited                                                                                                                         |
+| 00008 | `00008_create_site_settings.sql`             | Site-wide settings                         | `site_settings` (key unique, JSONB settings, updated_at)                                                                                                      | anon: read; authed: update. Seeded default row (analytics IDs null, toggles on)                                                   |
+| 00009 | `00009_leads.sql`                            | Lead CRM                                   | `leads` (name, email, phone, message, source, status `new/contacted/closed`, created_at)                                                                      | anon: insert only; authed: select/update/delete. `updated_at` trigger, status index                                               |
+| 00011 | `00011_reconcile_projects_status_check.sql`  | Align remote projects status constraint    | remote constraint was `('draft','published','archived')` (dashboard-created); now `('draft','active','published','archived')` so app `'active'` works         | inherited                                                                                                                         |
+| 00012 | `00012_seed_projects_and_services.sql`       | Seed real rows from mock data              | inserts 5 projects (fleet-guard, lease-intelligence, document-intelligence, client-onboarding, product-matcher) + 6 services, `on conflict (slug) do nothing` | inherited                                                                                                                         |
+| 00013 | `00013_reconcile_projects_public_policy.sql` | Reconcile remote anonymous projects policy | remote policy filtered `status='published'`; recreated as `'active'` to match app queries                                                                     | anon: active only; authed: full CRUD                                                                                              |
 
 **Constraints & relationships:** no foreign keys between CMS tables (they are
 decoupled by design — media references are string-based `media:<uuid>`).
 Unique constraints: `projects.slug`, `content_entries.key`,
-`seo_metadata.page_key`, `services.slug`; unique `media_files.filename`.
+`seo_metadata.page_key`, `services.slug`, `leads` has no unique constraints;
+unique `media_files.filename`.
 
-**Deployment status:** migrations 00001–00006 exist in the repo and build
-fine locally. They must be applied to the hosted Supabase project
-(`quekecvmdbzpxqglztsa.supabase.co`) via `supabase db push` or the SQL editor —
-application state is not verifiable from this repository.
+**Deployment status:** migrations 00001–00013 are **all applied** to the
+hosted Supabase project (`quekecvmdbzpxqglztsa.supabase.co`) via
+`supabase db push`. DB now contains: 5 seeded projects (status `active`),
+7 services (6 seeded + "Test service", all `published`), 1 test media file,
+1 site_settings row, 0 leads. The remote `projects` table was originally
+created in the dashboard (status constraint `published`-based) — 00011/00013
+reconcile it to the app's `active` convention.
 
 ## 5. CMS Modules
 
@@ -296,6 +321,24 @@ application state is not verifiable from this repository.
   `serviceContentSchema` (JSONB content)
 - **Actions:** CRUD + publish/draft/feature + public reads + slugs
 - **Status:** complete (no image fields in the form — nothing to migrate)
+
+### Leads (Lead CRM)
+
+- **Purpose:** capture and manage sales leads from the public "Book a Free
+  Audit" form (2026-07-31)
+- **Public:** `/contact` → `lead-form.tsx` (client form; `submitLeadAction`,
+  no auth required, RLS anon-insert)
+- **Admin:** `/admin/leads` → `leads-manager.tsx` (search, status filter,
+  status dropdown, delete with confirm, pagination); dashboard shows a
+  "New Leads" stat card + quick action
+- **Repository:** `leads/repository.ts` (`createLead` anon-safe, `getLeads`
+  paginated/search/status-filtered, `updateLeadStatus`, `deleteLead`,
+  `getLeadStats`)
+- **Validation:** `submitLeadSchema`, `updateLeadStatusSchema` (lead.ts)
+- **Actions:** `leads/actions.ts` — submit (public) + authed CRUD; client
+  components import from `@/lib/leads/actions` directly (never the barrel)
+- **Types:** `src/types/lead.ts` (`Lead`, `LeadStats`, `LEAD_STATUSES`)
+- **Status:** complete
 
 ### Media
 
@@ -449,41 +492,42 @@ docs/                 project-handoff-v2.md, media-architecture.md,
 
 ## 10. Current Public Pages
 
-| Route              | Notes                                                       |
-| ------------------ | ----------------------------------------------------------- |
-| `/`                | Hero, Showcase, Features, Case Studies, About, Contact, CTA |
-| `/about`           | About page (client sections)                                |
-| `/projects`        | Project listing                                             |
-| `/projects/[slug]` | Project detail (dynamic)                                    |
-| `/services`        | Services listing                                            |
-| `/services/[slug]` | Service detail (dynamic)                                    |
-| `/contact`         | Contact page                                                |
-| `/offline`         | Service-worker offline fallback page                        |
-| `/robots.txt`      | Robots file                                                 |
-| `/sitemap.xml`     | Sitemap (dynamic)                                           |
-| `/api/chat`        | AI chat route handler                                       |
-| `/_not-found`      | App 404                                                     |
+| Route              | Notes                                                          |
+| ------------------ | -------------------------------------------------------------- |
+| `/`                | Hero, Showcase, Features, Case Studies, About, Contact, CTA    |
+| `/about`           | About page (client sections)                                   |
+| `/projects`        | Project listing                                                |
+| `/projects/[slug]` | Project detail (dynamic)                                       |
+| `/services`        | Services listing                                               |
+| `/services/[slug]` | Service detail (dynamic)                                       |
+| `/contact`         | Contact page + "Book a Free Audit" lead form (`lead-form.tsx`) |
+| `/offline`         | Service-worker offline fallback page                           |
+| `/robots.txt`      | Robots file                                                    |
+| `/sitemap.xml`     | Sitemap (dynamic)                                              |
+| `/api/chat`        | AI chat route handler                                          |
+| `/_not-found`      | App 404                                                        |
 
 ## 11. Current Admin Pages
 
-| Route                       | Purpose                |
-| --------------------------- | ---------------------- |
-| `/admin`                    | Dashboard shell home   |
-| `/admin/login`              | Email/password sign-in |
-| `/admin/content/hero`       | Hero content editor    |
-| `/admin/content/about`      | About content editor   |
-| `/admin/projects`           | Project list           |
-| `/admin/projects/new`       | Create project         |
-| `/admin/projects/[id]/edit` | Edit project           |
-| `/admin/seo`                | SEO list               |
-| `/admin/seo/new`            | Create SEO entry       |
-| `/admin/seo/[id]/edit`      | Edit SEO entry         |
-| `/admin/services`           | Service list           |
-| `/admin/services/new`       | Create service         |
-| `/admin/services/[id]/edit` | Edit service           |
-| `/admin/media`              | Media manager          |
-| `/admin/ai`                 | AI assistant UI        |
-| `/admin/settings`           | Settings (shell)       |
+| Route                       | Purpose                                           |
+| --------------------------- | ------------------------------------------------- |
+| `/admin`                    | Dashboard shell home (lead stats + activity feed) |
+| `/admin/login`              | Email/password sign-in                            |
+| `/admin/leads`              | Lead CRM (list/search/status/delete)              |
+| `/admin/content/hero`       | Hero content editor                               |
+| `/admin/content/about`      | About content editor                              |
+| `/admin/projects`           | Project list                                      |
+| `/admin/projects/new`       | Create project                                    |
+| `/admin/projects/[id]/edit` | Edit project                                      |
+| `/admin/seo`                | SEO list                                          |
+| `/admin/seo/new`            | Create SEO entry                                  |
+| `/admin/seo/[id]/edit`      | Edit SEO entry                                    |
+| `/admin/services`           | Service list                                      |
+| `/admin/services/new`       | Create service                                    |
+| `/admin/services/[id]/edit` | Edit service                                      |
+| `/admin/media`              | Media manager                                     |
+| `/admin/ai`                 | AI assistant UI                                   |
+| `/admin/settings`           | Settings (shell)                                  |
 
 ## 12. Coding Standards
 
@@ -613,15 +657,15 @@ accessibility pass, media architecture docs).
 
 ## 18. Project Health
 
-| Dimension            | Assessment                                                                                                                                                       |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture         | Strong — layered (pages → actions → repositories → DB), module-scoped, no cross-module coupling beyond shared media/validation                                   |
-| Scalability          | Good — media resolver does N+1 per gallery (small N); no pagination issues on public reads; DB-level filtering                                                   |
-| Security             | Good — RLS everywhere, auth on every action, security headers + CSP, no secrets in app code; **flagged:** real keys in `.env.example`, placeholders in analytics |
-| Maintainability      | Good — consistent module pattern, typed everywhere, docs (media-architecture, handoff), dead code removed in 8C                                                  |
-| Performance          | Good — next/image + AVIF/WebP, lazy loading, fill/sizes, no layout shift, static pages where possible                                                            |
-| Developer Experience | Good — strict TS, zero lint noise, clear boundaries, fast Turbopack builds                                                                                       |
-| Production Readiness | **Ready** — production live (2026-07-31), all routes 200, latest build deployed from `main` (e04f8a2), DB reconciled, env vars configured                        |
+| Dimension            | Assessment                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Architecture         | Strong — layered (pages → actions → repositories → DB), module-scoped, no cross-module coupling beyond shared media/validation                                                       |
+| Scalability          | Good — media resolver does N+1 per gallery (small N); no pagination issues on public reads; DB-level filtering                                                                       |
+| Security             | Good — RLS everywhere, auth on every action, security headers + CSP, no secrets in app code; **flagged:** real keys in `.env.example`, placeholders in analytics                     |
+| Maintainability      | Good — consistent module pattern, typed everywhere, docs (media-architecture, handoff), dead code removed in 8C                                                                      |
+| Performance          | Good — next/image + AVIF/WebP, lazy loading, fill/sizes, no layout shift, static pages where possible                                                                                |
+| Developer Experience | Good — strict TS, zero lint noise, clear boundaries, fast Turbopack builds                                                                                                           |
+| Production Readiness | **Ready** — production live (2026-07-31), all routes 200, latest build deployed from `main` (aa2bfe9), DB reconciled (migrations 00001–00013 applied), seeded content, lead CRM live |
 
 ---
 
@@ -754,17 +798,20 @@ migrations 00004–00007, fixed the hero/about first-save code bug.
 
 ---
 
-- **Last Updated:** 2026-07-31 (Phase 8C complete)
+- **Last Updated:** 2026-07-31 (Lead CRM + seeds + migration reconciliation)
 - **Current Build Status:** ✅ `npm run build` succeeds — 31/31 routes
-- **Current Route Count:** 31 (27 app pages incl. `/admin/*` + `/_not-found` +
-  `robots.txt` + `sitemap.xml` + `/api/chat`)
+- **Current Route Count:** 31 (28 app pages incl. `/admin/*` + `/_not-found` +
+  `robots.txt` + `sitemap.xml` + `/api/chat` + `/api/admin/chat`)
 - **TypeScript Status:** ✅ strict, 0 errors
 - **Lint Status:** ✅ 0 errors, 0 warnings
-- **Pending Migrations:** NONE — all 00001–00008 applied to hosted Supabase
-  (2026-07-31). Remote `projects` reconciled via 00007 (`thumbnail`, `images`,
-  `client`, `demo_url`, `keywords`, `order` added). `site_settings` created via
-  00008 (seed row present, verified via REST). Legacy `thumbnail_url`/
-  `gallery_urls` columns still present but unused by code.
+- **Pending Migrations:** NONE — all 00001–00013 applied to hosted Supabase
+  (2026-07-31). Remote `projects` reconciled via 00007/00011/00013
+  (`thumbnail`, `images`, `client`, `demo_url`, `keywords`, `order` added;
+  status constraint now accepts `active`; anon policy filters `active`).
+  Seeded 5 projects + 6 services (00012). `site_settings` created via
+  00008 (seed row present, verified via REST). `leads` created via 00009.
+  Legacy `thumbnail_url`/`gallery_urls` columns still present but unused by
+  code.
 - **Open TODOs:**
   1. ~~Fix Vercel production 404~~ — RESOLVED 2026-07-31 (merged to `main`
      e04f8a2, all routes 200)
@@ -772,8 +819,8 @@ migrations 00004–00007, fixed the hero/about first-save code bug.
      (file is gitignored; placeholders only now)
   3. Analytics IDs — GA4/GTM/Clarity now managed via `/admin/settings`;
      still need real IDs from the user
-  4. Manual CMS smoke test (migrations applied + hero/about save fixed
-     2026-07-31, see §19)
+  4. Browser-test media upload on production (CSP fix live since `28aed50`)
+     and verify the lead form end-to-end (public → DB → `/admin/leads`)
   5. Phase 8D: `/admin/ai` content-aware assistant + `/admin/settings`
      implemented 2026-07-31 (see §19); final polish (sitemap tuning, SEO
      audits, perf budgets) still open
@@ -796,6 +843,23 @@ Fixed after first production deploy (commit `28aed50`):
    services, 0 media, 0 content rows); the old CMS never persisted anything
    (original bug). Public site shows mock fallbacks; admin shows real rows.
    First real row: user's `Test service` published 2026-07-31, visible on
-   `/services`.
+   `/services`. Since then, mock content was seeded as real rows (00012).
 
-- **Last Updated:** 2026-07-31 (Post-deploy smoke fixes)
+### Lead CRM + Seeding Session (2026-07-31, commit `aa2bfe9`)
+
+1. **Proxy no longer redirects action POSTs** - production server-action
+   failures (RSC digest `3379654745`) traced to the middleware redirecting
+   POST requests when `getUser()` transiently failed. `src/proxy.ts` now
+   redirects GET/HEAD only; every action enforces auth itself.
+2. **Service worker `azhar-v3`** - admin/API requests bypass the cache
+   (network-only) to avoid stale admin UI; cache version bumped.
+3. **Leads table + public form + admin panel** - see §5 "Leads (Lead CRM)".
+4. **Seed migration 00012** - 5 projects + 6 services now real DB rows
+   (edit/delete/feature from admin); public `/projects` and `/services` show
+   them.
+5. **Remote schema reconciliation** - the dashboard-created `projects` table
+   used `'published'` status semantics; 00011 widens the constraint to accept
+   `'active'` and 00013 rewrites the anonymous policy to `status = 'active'`,
+   matching app queries.
+
+- **Last Updated:** 2026-07-31 (Lead CRM + seeds + migration reconciliation)
