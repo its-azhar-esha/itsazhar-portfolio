@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About | Azhar | AI Automation Systems",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
     title: "About Azhar | AI Automation Specialist from Bangladesh",
     description:
       "I build intelligent automation systems using AI agents, n8n workflows, API integrations, and business automation — helping companies eliminate repetitive work and scale faster.",
-    url: "https://azhar.dev/about",
+    url: `${SITE_URL}/about`,
     siteName: "Azhar | AI Automation Systems",
     type: "profile",
   },
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
       "@type": "Person",
       name: "Azhar Mahmud Alif",
       jobTitle: "AI Automation Specialist",
-      url: "https://azhar.dev/about",
+      url: `${SITE_URL}/about`,
       knowsAbout: [
         "AI Agents",
         "Workflow Automation",

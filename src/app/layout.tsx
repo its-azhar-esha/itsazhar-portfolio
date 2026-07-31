@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 import { getPublicSiteSettings } from "@/lib/settings";
+import { SITE_URL } from "@/lib/site";
 
 const Analytics = dynamic(() =>
   import("@/components/analytics").then((m) => ({ default: m.Analytics })),
@@ -23,7 +24,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const baseUrl = "https://azhar.dev";
+const baseUrl = SITE_URL;
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -1001,5 +1001,13 @@ using` helper → default `'{}'` → GIN index. Verified values parse + `contain
    with misleading "Unterminated regular expression literal" — rename to
    `.tsx`; lucide-react removed brand icons (`Instagram`/`Youtube` gone) —
    use `Camera`/`Video`.
+8. **Canonical URL fix** — every hardcoded `https://azhar.dev` reference
+   (layout metadataBase/OG/canonical, sitemap, robots, about layout, SEO
+   defaults, form placeholders) pointed at a parked third-party domain NOT
+   attached to this project (probes returned "Page Under Development").
+   New `src/lib/site.ts` exports `SITE_URL`, resolved from
+   `NEXT_PUBLIC_SITE_URL` (set this Vercel env var when a custom domain is
+   attached) with default `https://itsazhar-portfolio.vercel.app` (the
+   project's verified production domain).
 
-- **Last Updated:** 2026-07-31 (Phase 8F — project edit fix 00017, settings expansion 00018, blog CMS 00019, Instagram-style mobile nav, AI live context + chat lead capture)
+- **Last Updated:** 2026-07-31 (Phase 8F — project edit fix 00017, settings expansion 00018, blog CMS 00019, Instagram-style mobile nav, AI live context + chat lead capture, SITE_URL canonical fix)

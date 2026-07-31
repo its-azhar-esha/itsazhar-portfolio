@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 import { getProjectSlugs } from "@/lib/projects-data";
 import { getPublicBlogPostsAction } from "@/lib/blog/actions";
+import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://azhar.dev";
+  const baseUrl = SITE_URL;
 
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 1.0 },

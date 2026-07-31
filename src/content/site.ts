@@ -1,7 +1,7 @@
 export const site = {
   name: "Azhar",
   title: "AI Automation Specialist",
-  domain: "https://azhar.dev",
+  domain: "https://itsazhar-portfolio.vercel.app",
   description:
     "I build intelligent AI automation systems using AI agents, n8n workflows, and API integrations that eliminate repetitive work, streamline operations, and help businesses scale faster.",
 

@@ -288,7 +288,7 @@ export function SeoForm({ entry }: SeoFormProps) {
               id="canonical_url"
               value={fields.canonical_url}
               onChange={(e) => handleChange({ canonical_url: e.target.value })}
-              placeholder="https://azhar.dev/about"
+              placeholder="https://itsazhar-portfolio.vercel.app/about"
             />
             <p className="text-muted-foreground text-xs">The preferred URL for this page.</p>
             {errors.canonical_url && (

@@ -1,4 +1,5 @@
-export const SITE_URL = "https://azhar.dev";
+import { SITE_URL } from "@/lib/site";
+export { SITE_URL };
 export const SITE_NAME = "Azhar Mahmud";
 
 export interface DefaultSeo {
