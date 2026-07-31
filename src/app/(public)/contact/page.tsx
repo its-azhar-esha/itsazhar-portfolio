@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ArrowRight, Check, Sparkles, Clock, MapPin, Mail, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, Sparkles, Clock, MapPin, Mail, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialLinks } from "@/components/social-links";
+import { LeadForm } from "@/components/lead-form";
 import { getPageMetadata } from "@/lib/seo";
 import { getPublicSiteSettings } from "@/lib/settings";
 
@@ -69,11 +69,8 @@ export default async function ContactPage() {
                       </li>
                     ))}
                   </ul>
-                  <div className="flex flex-col gap-3 pt-4 sm:flex-row">
-                    <Button size="lg" className="gap-2">
-                      Book Free 15-Min Audit
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
+                  <div className="pt-4">
+                    <LeadForm />
                   </div>
                 </CardContent>
               </Card>

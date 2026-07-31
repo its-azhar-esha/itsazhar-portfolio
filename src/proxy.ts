@@ -26,7 +26,15 @@ export async function proxy(request: NextRequest) {
 
   if (!isAuthenticated && pathname !== ADMIN_LOGIN) {
     const loginUrl = new URL(ADMIN_LOGIN, request.url);
-    return NextResponse.redirect(loginUrl);
+    // Only redirect navigations. Server actions (POST) must never be
+    // redirected: every mutation action enforces auth via getUser(), and
+    // redirecting an action response breaks it with an RSC error in the
+    // browser (especially on transient getUser() failures).
+    const isNavigation = request.method === "GET" || request.method === "HEAD";
+    if (isNavigation) {
+      return NextResponse.redirect(loginUrl);
+    }
+    return response;
   }
 
   if (isAuthenticated && pathname === ADMIN_LOGIN) {

@@ -12,12 +12,14 @@ import {
   FileText,
   Search,
   Settings,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Leads", href: "/admin/leads", icon: Users },
   { label: "Projects", href: "/admin/projects", icon: FolderKanban },
   { label: "Services", href: "/admin/services", icon: Briefcase },
   { label: "Media", href: "/admin/media", icon: ImageIcon },

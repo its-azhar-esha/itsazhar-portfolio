@@ -1,21 +1,33 @@
-import { ArrowRight, FolderKanban, ImageIcon, Sparkles, FileText, Settings } from "lucide-react";
+import {
+  ArrowRight,
+  FolderKanban,
+  ImageIcon,
+  Sparkles,
+  FileText,
+  Settings,
+  Users,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { getProjects } from "@/lib/projects";
 import { getServices } from "@/lib/services";
+import { getLeadStats } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const [projectsResult, servicesResult] = await Promise.all([
+  const [projectsResult, servicesResult, leadsResult] = await Promise.all([
     getProjects({ page: 1, pageSize: 1 }),
     getServices(),
+    getLeadStats(),
   ]);
 
   const projectCount = projectsResult.success ? projectsResult.data.pagination.total : 0;
   const serviceCount = servicesResult.success ? servicesResult.data.length : 0;
+  const leadStats = leadsResult.success ? leadsResult.data : null;
   const projectError = projectsResult.success ? null : projectsResult.error;
   const serviceError = servicesResult.success ? null : servicesResult.error;
+  const leadError = leadsResult.success ? null : leadsResult.error;
 
   const stats = [
     {
@@ -28,11 +40,21 @@ export default async function AdminDashboard() {
       value: String(serviceCount),
       change: serviceError ? `Error: ${serviceError}` : "All statuses",
     },
+    {
+      label: "New Leads",
+      value: leadStats ? String(leadStats.new) : "0",
+      change: leadError ? `Error: ${leadError}` : `${leadStats?.total ?? 0} total captured`,
+    },
     { label: "AI Conversations", value: "—", change: "Waiting for data" },
-    { label: "Portfolio Views", value: "—", change: "Waiting for analytics" },
   ];
 
   const quickActions = [
+    {
+      label: "View Leads",
+      href: "/admin/leads",
+      icon: Users,
+      desc: "Review audit requests from visitors",
+    },
     {
       label: "Manage Projects",
       href: "/admin/projects",
@@ -62,19 +84,21 @@ export default async function AdminDashboard() {
 
   const recentActivity = [
     {
-      action: "Migration 00007 applied",
-      detail: "Hosted DB reconciled — projects CMS unblocked",
+      action: leadStats
+        ? `${leadStats.total} lead${leadStats.total === 1 ? "" : "s"} captured`
+        : "Leads module ready",
+      detail: "Book a Free Audit submissions land here",
+      time: "live",
+    },
+    {
+      action: "Projects and services seeded",
+      detail: "5 projects + 6 services now editable in the CMS",
       time: "2026-07-31",
     },
     {
-      action: "Media + Services + SEO unblocked",
-      detail: "Migrations 00004–00006 applied to production DB",
+      action: "CMS fully operational",
+      detail: "Projects, services, SEO, media, content, settings",
       time: "2026-07-31",
-    },
-    {
-      action: "Deployment",
-      detail: "Site deployed to production",
-      time: "ongoing",
     },
   ];
 
@@ -86,7 +110,7 @@ export default async function AdminDashboard() {
             <CardHeader>
               <CardTitle>Welcome back</CardTitle>
               <p className="text-muted-foreground mt-1 text-sm">
-                Manage your portfolio, projects, and site content from one place.
+                Manage your portfolio, leads, projects, and site content from one place.
               </p>
             </CardHeader>
           </Card>

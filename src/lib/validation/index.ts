@@ -24,3 +24,5 @@ export {
 } from "./schemas/media";
 
 export { siteSettingsSchema } from "./schemas/settings";
+
+export { submitLeadSchema, updateLeadStatusSchema } from "./schemas/lead";

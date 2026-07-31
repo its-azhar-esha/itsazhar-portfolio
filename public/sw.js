@@ -1,4 +1,4 @@
-const CACHE = "azhar-v2"
+const CACHE = "azhar-v3"
 
 const PRECACHE_URLS = [
   "/",
@@ -25,6 +25,11 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return
+
+  const url = new URL(event.request.url)
+  // Never cache admin pages or API routes: they are session-specific and
+  // must always come from the network.
+  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api")) return
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
