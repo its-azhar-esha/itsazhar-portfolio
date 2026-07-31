@@ -7,9 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AlertCircle, CheckCircle2, FileText, ImageIcon, Layout, Search, Send } from "lucide-react";
 import type { DbProject } from "@/types/project";
-import { createProjectAction, updateProjectAction, deleteProjectAction } from "@/lib/projects";
+import {
+  createProjectAction,
+  updateProjectAction,
+  deleteProjectAction,
+} from "@/lib/projects/actions";
 import { createProjectSchema } from "@/lib/validation";
 import { generateSlug } from "@/lib/slug";
+import { PROJECT_INDUSTRIES, PROJECT_CATEGORIES, DB_PROJECT_STATUSES } from "@/constants/projects";
 import { ProjectGeneral } from "./project-general";
 import { ProjectContent } from "./project-content";
 import { ProjectMedia } from "./project-media";
@@ -42,21 +47,31 @@ export interface FormFields {
   keywords: string;
 }
 
+const VALID_INDUSTRIES = PROJECT_INDUSTRIES as readonly string[];
+const VALID_CATEGORIES = PROJECT_CATEGORIES as readonly string[];
+const VALID_STATUSES = DB_PROJECT_STATUSES as readonly string[];
+
 function defaultFields(project?: DbProject): FormFields {
   return {
     title: project?.title ?? "",
     slug: project?.slug ?? "",
     short_description: project?.short_description ?? "",
     description: project?.description ?? "",
-    industry: project?.industry ?? [],
+    industry: (project?.industry ?? []).filter((i): i is string => VALID_INDUSTRIES.includes(i)),
     technologies: project?.technologies?.join(", ") ?? "",
-    category: project?.category ?? "Logistics",
+    category:
+      project?.category && VALID_CATEGORIES.includes(project.category)
+        ? project.category
+        : "Logistics",
     client: project?.client ?? "",
     demo_url: project?.demo_url ?? "",
     github_url: project?.github_url ?? "",
     featured: project?.featured ?? false,
-    status: project?.status ?? "draft",
-    order: project?.order ?? 0,
+    status:
+      project?.status && VALID_STATUSES.includes(project.status)
+        ? (project.status as FormFields["status"])
+        : "draft",
+    order: Number.isFinite(project?.order) ? (project?.order ?? 0) : 0,
     thumbnail: project?.thumbnail ?? "",
     images: project?.images?.join("\n") ?? "",
     video_url: project?.video_url ?? "",
@@ -110,7 +125,7 @@ interface ProjectFormProps {
 export function ProjectForm({ project }: ProjectFormProps) {
   const router = useRouter();
   const mode = project ? "edit" : "create";
-  const initial = React.useMemo(() => defaultFields(project), [project]);
+  const [initial, setInitial] = React.useState<FormFields>(() => defaultFields(project));
   const [fields, setFields] = React.useState<FormFields>(initial);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormFields, string>>>({});
   const [saving, setSaving] = React.useState(false);
@@ -196,6 +211,10 @@ export function ProjectForm({ project }: ProjectFormProps) {
           showMessage("error", result.error);
           return;
         }
+        const fresh = defaultFields(result.data);
+        setInitial(fresh);
+        setFields(fresh);
+        router.refresh();
         showMessage("success", "Draft saved.");
       }
     } finally {
@@ -223,6 +242,10 @@ export function ProjectForm({ project }: ProjectFormProps) {
           showMessage("error", result.error);
           return;
         }
+        const fresh = defaultFields(result.data);
+        setInitial(fresh);
+        setFields(fresh);
+        router.refresh();
         showMessage("success", "Project updated and published.");
       }
     } finally {
@@ -348,13 +371,13 @@ export function ProjectForm({ project }: ProjectFormProps) {
               <ProjectContent fields={fields} errors={errors} onChange={handleChange} />
             </TabsContent>
             <TabsContent value="media" className="mt-0">
-              <ProjectMedia fields={fields} onChange={handleChange} />
+              <ProjectMedia fields={fields} errors={errors} onChange={handleChange} />
             </TabsContent>
             <TabsContent value="seo" className="mt-0">
-              <ProjectSeo fields={fields} onChange={handleChange} />
+              <ProjectSeo fields={fields} errors={errors} onChange={handleChange} />
             </TabsContent>
             <TabsContent value="publishing" className="mt-0">
-              <ProjectPublishing fields={fields} onChange={handleChange} />
+              <ProjectPublishing fields={fields} errors={errors} onChange={handleChange} />
             </TabsContent>
           </Tabs>
         </CardContent>

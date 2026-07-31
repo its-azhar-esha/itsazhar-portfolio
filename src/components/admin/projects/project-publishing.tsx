@@ -7,6 +7,7 @@ import type { FormFields } from "./project-form";
 
 interface PublishingSectionProps {
   fields: FormFields;
+  errors?: Partial<Record<keyof FormFields, string>>;
   onChange: (fields: Partial<FormFields>) => void;
 }
 
@@ -16,7 +17,7 @@ const statusDescriptions: Record<string, string> = {
   archived: "Hidden from the public site but kept in the database.",
 };
 
-export function ProjectPublishing({ fields, onChange }: PublishingSectionProps) {
+export function ProjectPublishing({ fields, errors, onChange }: PublishingSectionProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -66,6 +67,8 @@ export function ProjectPublishing({ fields, onChange }: PublishingSectionProps) 
         </div>
       </div>
 
+      {errors?.status && <p className="text-xs text-red-500">{errors.status}</p>}
+
       <div className="border-border/40 bg-muted/30 rounded-lg border p-4">
         <p className="text-muted-foreground text-xs">
           <span className="text-foreground font-medium">Scheduled publishing</span> — Coming in a
@@ -73,6 +76,9 @@ export function ProjectPublishing({ fields, onChange }: PublishingSectionProps) 
           ready.
         </p>
       </div>
+
+      {errors?.featured && <p className="text-xs text-red-500">{errors.featured}</p>}
+      {errors?.order && <p className="text-xs text-red-500">{errors.order}</p>}
     </div>
   );
 }

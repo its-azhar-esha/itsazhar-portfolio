@@ -7,10 +7,11 @@ import type { FormFields } from "./project-form";
 
 interface SeoSectionProps {
   fields: FormFields;
+  errors?: Partial<Record<keyof FormFields, string>>;
   onChange: (fields: Partial<FormFields>) => void;
 }
 
-export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
+export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 sm:grid-cols-2">
@@ -26,6 +27,7 @@ export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
             <p className="text-muted-foreground text-xs">Recommended: 50–70 characters</p>
             <p className="text-muted-foreground text-xs">{fields.seo_title.length}/70</p>
           </div>
+          {errors?.seo_title && <p className="text-xs text-red-500">{errors.seo_title}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="canonical_url">Canonical URL</Label>
@@ -35,6 +37,7 @@ export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
             onChange={(e) => onChange({ canonical_url: e.target.value })}
             placeholder="https://example.com/projects/my-project"
           />
+          {errors?.canonical_url && <p className="text-xs text-red-500">{errors.canonical_url}</p>}
         </div>
       </div>
 
@@ -52,6 +55,9 @@ export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
           <p className="text-muted-foreground text-xs">Recommended: 150–160 characters</p>
           <p className="text-muted-foreground text-xs">{fields.seo_description.length}/160</p>
         </div>
+        {errors?.seo_description && (
+          <p className="text-xs text-red-500">{errors.seo_description}</p>
+        )}
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
@@ -63,6 +69,7 @@ export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
             onChange={(value) => onChange({ og_image: value ?? "" })}
             previewClassName="aspect-video w-full max-w-xs"
           />
+          {errors?.og_image && <p className="text-xs text-red-500">{errors.og_image}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="keywords">Keywords</Label>
@@ -73,6 +80,7 @@ export function ProjectSeo({ fields, onChange }: SeoSectionProps) {
             placeholder="AI, automation, fleet management"
           />
           <p className="text-muted-foreground text-xs">Comma-separated keywords.</p>
+          {errors?.keywords && <p className="text-xs text-red-500">{errors.keywords}</p>}
         </div>
       </div>
     </div>

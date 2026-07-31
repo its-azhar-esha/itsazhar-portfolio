@@ -3,7 +3,13 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { MediaFile } from "@/types/media";
-import { formatBytes, formatDimensions, getMediaKind } from "@/lib/media/utils";
+import {
+  formatBytes,
+  formatDate,
+  formatDimensions,
+  getMediaKind,
+  kindLabel,
+} from "@/lib/media/utils";
 import { MediaImage } from "./media-image";
 
 interface MediaCardProps {
@@ -55,11 +61,13 @@ export function MediaCard({ media, onSelect, selected, actions, className }: Med
         <p className="truncate text-xs font-medium" title={media.original_name}>
           {media.original_name}
         </p>
-        <p className="text-muted-foreground mt-0.5 text-[10px]">
-          {kind !== "image" ? media.extension.toUpperCase() : null}
-          {kind !== "image" ? " · " : ""}
-          {formatBytes(media.size_bytes)}
+        <p className="text-muted-foreground mt-0.5 truncate text-[10px]">
+          {kindLabel(kind)}
           {media.width && media.height ? ` · ${formatDimensions(media.width, media.height)}` : ""}
+          {" · "}
+          {formatBytes(media.size_bytes)}
+          {" · "}
+          {formatDate(media.created_at)}
         </p>
       </div>
       {actions && (

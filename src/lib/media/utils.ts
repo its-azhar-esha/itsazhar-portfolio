@@ -26,3 +26,26 @@ export function formatDimensions(width: number | null, height: number | null): s
   if (!width || !height) return "—";
   return `${width} × ${height}`;
 }
+
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const KIND_LABELS: Record<MediaKind, string> = {
+  image: "Image",
+  video: "Video",
+  audio: "Audio",
+  document: "Document",
+  other: "File",
+};
+
+export function kindLabel(kind: MediaKind): string {
+  return KIND_LABELS[kind];
+}

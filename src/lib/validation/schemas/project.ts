@@ -19,12 +19,22 @@ export const createProjectSchema = z.object({
   images: z.array(z.string()).default([]),
   video_url: z.string().nullable().default(null),
   industry: z
-    .array(z.enum(PROJECT_INDUSTRIES as unknown as [string, ...string[]]))
+    .array(
+      z.enum(PROJECT_INDUSTRIES as unknown as [string, ...string[]], {
+        error: "One or more selected industries are no longer valid options.",
+      }),
+    )
     .min(1, "At least one industry is required"),
   technologies: z.array(z.string()).default([]),
-  category: z.enum(PROJECT_CATEGORIES as unknown as [string, ...string[]]),
+  category: z.enum(PROJECT_CATEGORIES as unknown as [string, ...string[]], {
+    error: "Category is not a valid option.",
+  }),
   featured: z.boolean().default(false),
-  status: z.enum(DB_PROJECT_STATUSES as unknown as [string, ...string[]]).default("draft"),
+  status: z
+    .enum(DB_PROJECT_STATUSES as unknown as [string, ...string[]], {
+      error: "Status is not a valid option.",
+    })
+    .default("draft"),
   order: z.number().int().nonnegative().default(0),
   client: z.string().nullable().default(null),
   demo_url: z.string().url("Must be a valid URL").nullable().default(null).or(z.literal("")),

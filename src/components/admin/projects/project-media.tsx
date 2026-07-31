@@ -5,16 +5,17 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Link2, Plus, Video, X } from "lucide-react";
 import { MediaField } from "@/components/media/media-field";
 import { MediaPicker } from "@/components/media/media-picker";
 import { resolveMediaUrlAction } from "@/lib/media/actions";
-import { toMediaReference } from "@/lib/media/reference";
+import { isMediaReference, toMediaReference } from "@/lib/media/reference";
 import type { MediaFile } from "@/types/media";
 import type { FormFields } from "./project-form";
 
 interface MediaSectionProps {
   fields: FormFields;
+  errors?: Partial<Record<keyof FormFields, string>>;
   onChange: (fields: Partial<FormFields>) => void;
 }
 
@@ -46,8 +47,58 @@ function ResolvedImage({
   );
 }
 
-export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
+function ResolvedVideo({ value, onCleared }: { value: string; onCleared: () => void }) {
+  const [url, setUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    resolveMediaUrlAction(value || null).then((resolved) => {
+      if (!active) return;
+      setUrl(resolved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+
+  if (!value) return null;
+
+  if (!url) {
+    return (
+      <div className="border-border/40 bg-muted/40 flex w-full max-w-xs flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-4 text-center">
+        <Video className="text-muted-foreground h-5 w-5" />
+        <p className="text-muted-foreground text-xs">
+          {isMediaReference(value)
+            ? "This media reference no longer exists."
+            : "No preview available for this URL."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full max-w-xs">
+      <video
+        src={url}
+        controls
+        preload="metadata"
+        className="border-border/40 bg-muted aspect-video w-full rounded-lg border"
+      />
+      <button
+        type="button"
+        onClick={onCleared}
+        className="bg-background/80 text-muted-foreground absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-sm backdrop-blur-sm transition-colors hover:text-red-500"
+        aria-label="Remove intro video"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+export function ProjectMedia({ fields, errors, onChange }: MediaSectionProps) {
   const [galleryPickerOpen, setGalleryPickerOpen] = React.useState(false);
+  const [videoPickerOpen, setVideoPickerOpen] = React.useState(false);
 
   const galleryUrls = React.useMemo(
     () => fields.images.split("\n").filter(Boolean),
@@ -73,6 +124,7 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
         onChange={(value) => onChange({ thumbnail: value ?? "" })}
         previewClassName="aspect-video w-full max-w-xs"
       />
+      {errors?.thumbnail && <p className="text-xs text-red-500">{errors.thumbnail}</p>}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -129,15 +181,59 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
           />
         )}
       </div>
+      {errors?.images && <p className="text-xs text-red-500">{errors.images}</p>}
 
       <div className="space-y-2">
-        <Label htmlFor="video_url">Intro Video URL</Label>
-        <Input
-          id="video_url"
-          value={fields.video_url}
-          onChange={(e) => onChange({ video_url: e.target.value })}
-          placeholder="https://youtube.com/watch?v=..."
-        />
+        <Label htmlFor="video_url">Intro Video</Label>
+        <p className="text-muted-foreground -mt-1 text-xs">
+          Select a video from the media library or use an external URL.
+        </p>
+        <ResolvedVideo value={fields.video_url} onCleared={() => onChange({ video_url: "" })} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setVideoPickerOpen(true)}
+            className="gap-1.5"
+          >
+            <Video className="h-3.5 w-3.5" />
+            Choose from Library
+          </Button>
+          {isMediaReference(fields.video_url) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ video_url: "" })}
+              className="gap-1.5"
+            >
+              <Link2 className="h-3.5 w-3.5" />
+              Use External URL
+            </Button>
+          )}
+          {fields.video_url && !isMediaReference(fields.video_url) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ video_url: "" })}
+              className="gap-1.5 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+            >
+              <X className="h-3.5 w-3.5" />
+              Remove
+            </Button>
+          )}
+        </div>
+        {!isMediaReference(fields.video_url) && (
+          <Input
+            id="video_url"
+            value={fields.video_url}
+            onChange={(e) => onChange({ video_url: e.target.value })}
+            placeholder="https://youtube.com/watch?v=..."
+          />
+        )}
+        {errors?.video_url && <p className="text-xs text-red-500">{errors.video_url}</p>}
       </div>
 
       <MediaPicker
@@ -146,6 +242,16 @@ export function ProjectMedia({ fields, onChange }: MediaSectionProps) {
         onSelect={(media: MediaFile) => {
           addToGallery(toMediaReference(media.id));
           setGalleryPickerOpen(false);
+        }}
+      />
+
+      <MediaPicker
+        open={videoPickerOpen}
+        onClose={() => setVideoPickerOpen(false)}
+        typeFilter="video"
+        onSelect={(media: MediaFile) => {
+          onChange({ video_url: toMediaReference(media.id) });
+          setVideoPickerOpen(false);
         }}
       />
     </div>

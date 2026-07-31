@@ -6,18 +6,30 @@ import { ImageIcon, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { searchMediaAction } from "@/lib/media/actions";
-import type { MediaFile } from "@/types/media";
+import type { MediaFile, MediaKind } from "@/types/media";
 import { formatBytes, formatDimensions } from "@/lib/media/utils";
 import { MediaCard } from "./media-card";
 import { MediaImage } from "./media-image";
+import { cn } from "@/lib/utils";
 
 interface MediaPickerProps {
   open: boolean;
   onClose: () => void;
   onSelect: (media: MediaFile) => void;
+  /** Restricts the picker to one media kind (e.g. "video" for intro videos). */
+  typeFilter?: MediaKind;
 }
 
-export function MediaPicker({ open, onClose, onSelect }: MediaPickerProps) {
+const KIND_TABS = [
+  { value: "all", label: "All" },
+  { value: "image", label: "Images" },
+  { value: "video", label: "Videos" },
+  { value: "document", label: "Documents" },
+] as const;
+
+type KindTab = (typeof KIND_TABS)[number]["value"];
+
+export function MediaPicker({ open, onClose, onSelect, typeFilter }: MediaPickerProps) {
   function handleSelect(media: MediaFile) {
     onSelect(media);
     onClose();
@@ -25,7 +37,14 @@ export function MediaPicker({ open, onClose, onSelect }: MediaPickerProps) {
 
   return (
     <AnimatePresence>
-      {open && <PickerDialog key="picker" onClose={onClose} onSelect={handleSelect} />}
+      {open && (
+        <PickerDialog
+          key="picker"
+          onClose={onClose}
+          onSelect={handleSelect}
+          typeFilter={typeFilter}
+        />
+      )}
     </AnimatePresence>
   );
 }
@@ -42,11 +61,18 @@ function useDebouncedValue<T>(value: T, delay: number): T {
 function PickerDialog({
   onClose,
   onSelect,
+  typeFilter,
 }: {
   onClose: () => void;
   onSelect: (media: MediaFile) => void;
+  typeFilter?: MediaKind;
 }) {
   const [search, setSearch] = React.useState("");
+  const [kind, setKind] = React.useState<KindTab>(() =>
+    typeFilter === "image" || typeFilter === "video" || typeFilter === "document"
+      ? typeFilter
+      : "all",
+  );
   const [items, setItems] = React.useState<MediaFile[]>([]);
   const [selected, setSelected] = React.useState<MediaFile | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -64,7 +90,11 @@ function PickerDialog({
   React.useEffect(() => {
     let active = true;
     (async () => {
-      const result = await searchMediaAction(debouncedSearch, 24);
+      const result = await searchMediaAction(
+        debouncedSearch,
+        24,
+        kind === "all" ? undefined : kind,
+      );
       if (!active) return;
       if (result.success) {
         setItems(result.data);
@@ -77,7 +107,7 @@ function PickerDialog({
     return () => {
       active = false;
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, kind]);
 
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -131,6 +161,35 @@ function PickerDialog({
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        {!typeFilter && (
+          <div
+            role="tablist"
+            aria-label="Filter by media type"
+            className="border-border/40 flex items-center gap-1 border-b px-5 py-2"
+          >
+            {KIND_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                role="tab"
+                aria-selected={kind === tab.value}
+                onClick={() => {
+                  setKind(tab.value);
+                  setLoading(true);
+                  setError(null);
+                }}
+                className={cn(
+                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  kind === tab.value
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-5">
           {loading ? (

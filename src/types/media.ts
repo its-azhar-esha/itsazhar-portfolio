@@ -20,9 +20,24 @@ export interface MediaFile {
 export type CreateMediaInput = Omit<MediaFile, "id" | "uploaded_by" | "created_at" | "updated_at">;
 
 export interface UpdateMediaInput {
+  original_name?: string;
   alt_text?: string | null;
   caption?: string | null;
 }
+
+/** File metadata for replacing the underlying file of an existing media record. */
+export type ReplaceMediaInput = Pick<
+  MediaFile,
+  | "filename"
+  | "original_name"
+  | "storage_path"
+  | "public_url"
+  | "mime_type"
+  | "extension"
+  | "size_bytes"
+  | "width"
+  | "height"
+>;
 
 /**
  * Broad media kind derived from mime_type.
@@ -38,4 +53,12 @@ export interface MediaPage {
   page: number;
   pageSize: number;
   pageCount: number;
+}
+
+/** A single place where a media reference is used, grouped per record. */
+export interface MediaUsageItem {
+  kind: "hero" | "about" | "project" | "seo" | "content";
+  id: string;
+  title: string;
+  fields: string[];
 }

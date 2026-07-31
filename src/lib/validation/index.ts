@@ -17,6 +17,7 @@ export { serviceContentSchema, createServiceSchema, updateServiceSchema } from "
 
 export {
   createMediaRecordSchema,
+  replaceMediaRecordSchema,
   updateMediaMetadataSchema,
   mediaReferenceSchema,
   mediaUrlOrReferenceSchema,

@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validation";
-import type { Database } from "@/database.types";
 import type { DbProject, Project } from "@/types/project";
 import {
   toProject,
@@ -14,43 +13,10 @@ import {
   getMockRelated,
 } from "./public";
 import type { Result } from "@/lib/result";
-import { ok, fail } from "@/lib/result";
+import { fail } from "@/lib/result";
 import { resolveMediaValue, resolveMediaValues } from "@/lib/media/repository";
-
-const TABLE = "projects" as const;
-
-function rowToDbProject(row: Database["public"]["Tables"]["projects"]["Row"]): DbProject {
-  return {
-    id: row.id,
-    title: row.title,
-    slug: row.slug,
-    short_description: row.short_description,
-    description: row.description,
-    industry: (row.industry as string[]) ?? [],
-    category: row.category,
-    technologies: (row.technologies as string[]) ?? [],
-    thumbnail: row.thumbnail,
-    images: (row.images as string[]) ?? [],
-    video_url: row.video_url,
-    client: row.client,
-    demo_url: row.demo_url,
-    github_url: row.github_url,
-    featured: row.featured,
-    status: row.status as DbProject["status"],
-    order: row.order,
-    seo_title: row.seo_title,
-    seo_description: row.seo_description,
-    keywords: (row.keywords as string[]) ?? [],
-    og_image: row.og_image,
-    canonical_url: row.canonical_url,
-    challenge: row.challenge ?? null,
-    solution: row.solution ?? null,
-    workflow: (row.workflow as string[]) ?? [],
-    impact: row.impact ?? null,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  };
-}
+import { createProject, updateProject, deleteProject } from "./repository";
+import { rowToDbProject } from "./mappers";
 
 export async function createProjectAction(
   input: Record<string, unknown>,
@@ -69,25 +35,9 @@ export async function createProjectAction(
       return fail(messages);
     }
 
-    const { slug } = parsed.data;
-    const { data: existing } = await supabase
-      .from(TABLE)
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (existing) return fail(`A project with slug "${slug}" already exists.`);
-
-    const { data, error } = await supabase
-      .from(TABLE)
-      .insert(parsed.data as never)
-      .select()
-      .single();
-
-    if (error) return fail(error.message);
-    if (!data) return fail("Failed to create project — no data returned.");
-
-    revalidatePath("/admin/projects");
-    return ok(rowToDbProject(data));
+    const result = await createProject(parsed.data as never);
+    if (result.success) revalidatePath("/admin/projects");
+    return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to create project");
   }
@@ -111,34 +61,9 @@ export async function updateProjectAction(
       return fail(messages);
     }
 
-    const { slug } = parsed.data;
-    if (slug) {
-      const { data: existing } = await supabase
-        .from(TABLE)
-        .select("id")
-        .eq("slug", slug)
-        .neq("id", id)
-        .maybeSingle();
-      if (existing) return fail(`Another project already uses slug "${slug}".`);
-    }
-
-    const updatePayload = {
-      ...parsed.data,
-      updated_at: new Date().toISOString(),
-    } as never;
-
-    const { data, error } = await supabase
-      .from(TABLE)
-      .update(updatePayload)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) return fail(error.message);
-    if (!data) return fail(`Project with id "${id}" not found.`);
-
-    revalidatePath("/admin/projects");
-    return ok(rowToDbProject(data));
+    const result = await updateProject(id, parsed.data as never);
+    if (result.success) revalidatePath("/admin/projects");
+    return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to update project");
   }
@@ -153,12 +78,9 @@ export async function deleteProjectAction(id: string): Promise<Result<void>> {
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
 
-    const { error } = await supabase.from(TABLE).delete().eq("id", id);
-
-    if (error) return fail(error.message);
-
-    revalidatePath("/admin/projects");
-    return ok(undefined);
+    const result = await deleteProject(id);
+    if (result.success) revalidatePath("/admin/projects");
+    return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete project");
   }
@@ -186,7 +108,7 @@ export async function getPublicProjectsAction(): Promise<Project[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
-      .from(TABLE)
+      .from("projects")
       .select("*")
       .in("status", ["active"])
       .order("order", { ascending: true });
@@ -201,7 +123,7 @@ export async function getPublicProjectAction(slug: string): Promise<Project | nu
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
-      .from(TABLE)
+      .from("projects")
       .select("*")
       .in("status", ["active"])
       .eq("slug", slug)
@@ -216,7 +138,7 @@ export async function getPublicProjectAction(slug: string): Promise<Project | nu
 export async function getPublicSlugsAction(): Promise<string[]> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.from(TABLE).select("slug").in("status", ["active"]);
+    const { data, error } = await supabase.from("projects").select("slug").in("status", ["active"]);
     if (error || !data || data.length === 0) return getMockSlugs();
     return data.map((r: { slug: string }) => r.slug);
   } catch {
