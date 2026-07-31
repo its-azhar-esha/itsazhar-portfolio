@@ -862,4 +862,31 @@ Fixed after first production deploy (commit `28aed50`):
    `'active'` and 00013 rewrites the anonymous policy to `status = 'active'`,
    matching app queries.
 
-- **Last Updated:** 2026-07-31 (Lead CRM + seeds + migration reconciliation)
+### Media Module Fix (2026-07-31, commit `44c70aa`)
+
+1. **Root cause of ALL four user-reported admin failures** (media upload RSC
+   digest, project-edit "Dashboard failed to load", About editor empty,
+   SEO/content editors erroring): `src/lib/media/actions.ts` ended with
+   `export type { MediaSort }`. Turbopack compiled that type-only re-export
+   into the server-entry export list of the media actions module
+   (`ensureServerEntryExports([..., MediaSort])` + a
+   `registerServerReference(MediaSort, ...)` call), producing
+   `ReferenceError: MediaSort is not defined` at module evaluation. Every
+   server action in the module (storeMediaAction, getMediaPageAction, ...)
+   then failed with a masked RSC digest, and any client bundle importing the
+   media uploader crashed on hydration.
+2. **Fix**: deleted the `export type { MediaSort };` line (the type is
+   re-exported from `@/types`). Verified: local `npm run build` chunk no
+   longer references `MediaSort`; `storeMediaAction` replay via `Next-Action`
+   POST now returns 200 and inserts the row on both local prod build and
+   production (previously: 500 + digest `3973621642`).
+3. **Deployment note**: GitHub webhook did not pick up the push — the fix
+   deployment was triggered manually via the Vercel API
+   (`POST /v13/deployments` with `gitSource {type: github, repoId: 1317280660,
+ref: main}`).
+4. **Lesson**: never put `export type { X }` re-exports inside modules that
+   also export server actions — Next 16/Turbopack lists all exports in
+   `ensureServerEntryExports`. Test media upload end-to-end after any future
+   edit of `src/lib/media/actions.ts` (or any action module).
+
+- **Last Updated:** 2026-07-31 (media module fix `44c70aa` — upload/edit/about errors resolved; pending browser retest + About prefill + SEO tag chips)
