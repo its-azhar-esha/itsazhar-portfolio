@@ -16,6 +16,7 @@ import {
   Settings,
   Users,
   LogOut,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
@@ -56,6 +57,12 @@ function buildNavItems(settings: SiteSettings): NavItem[] {
       href: "/admin/testimonials",
       icon: MessageSquareQuote,
       enabled: settings.show_testimonials,
+    },
+    {
+      label: "Blog",
+      href: "/admin/blog",
+      icon: Newspaper,
+      enabled: settings.show_blog,
     },
     { label: "Media", href: "/admin/media", icon: ImageIcon },
     {

@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Globe, Mail, ExternalLink } from "lucide-react";
+import { ArrowRight, Globe, Mail, ExternalLink, Camera, Video } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { spring } from "@/lib/motion";
@@ -16,7 +17,13 @@ const quickLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
-export function Footer({ settings }: { settings: SiteSettings }) {
+interface FooterProps {
+  settings: SiteSettings;
+  logoUrl?: string | null;
+}
+
+export function Footer({ settings, logoUrl }: FooterProps) {
+  const bookHref = settings.booking_url || "/contact";
   const socialLinks = [
     settings.social_linkedin && {
       label: "LinkedIn",
@@ -28,12 +35,23 @@ export function Footer({ settings }: { settings: SiteSettings }) {
       href: settings.social_fiverr,
       icon: ExternalLink,
     },
+    settings.social_instagram && {
+      label: "Instagram",
+      href: settings.social_instagram,
+      icon: Camera,
+    },
+    settings.social_youtube && {
+      label: "YouTube",
+      href: settings.social_youtube,
+      icon: Video,
+    },
     settings.contact_email && {
       label: "Email",
       href: `mailto:${settings.contact_email}`,
       icon: Mail,
     },
   ].filter((link): link is { label: string; href: string; icon: typeof Globe } => Boolean(link));
+  const links = settings.show_blog ? [...quickLinks, { label: "Blog", href: "/blog" }] : quickLinks;
 
   return (
     <footer className="border-border/40 border-t">
@@ -41,10 +59,20 @@ export function Footer({ settings }: { settings: SiteSettings }) {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link href="/" aria-label="Home" className="flex items-center gap-2">
-              <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-                <span className="text-primary-foreground text-sm font-bold">
-                  {settings.site_name.charAt(0)}
-                </span>
+              <div className="bg-primary flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg">
+                {logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-primary-foreground text-sm font-bold">
+                    {settings.site_name.charAt(0)}
+                  </span>
+                )}
               </div>
               <span className="text-lg font-semibold tracking-tight">{settings.site_name}</span>
             </Link>
@@ -80,7 +108,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
           <nav aria-label="Quick links">
             <h3 className="text-sm font-semibold">Quick Links</h3>
             <ul className="mt-4 space-y-3">
-              {quickLinks.map((link) => (
+              {links.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
@@ -105,7 +133,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
                 whileTap={{ scale: 0.98 }}
                 transition={spring}
               >
-                <Link href="/contact">
+                <Link href={bookHref}>
                   <Button size="sm" className="group gap-1.5">
                     Book Free Audit
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />

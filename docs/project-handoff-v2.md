@@ -935,3 +935,71 @@ ref: main}`).
    new toggles.
 
 - **Last Updated:** 2026-07-31 (Phase 8E 8a73bfc — case studies/testimonials modules, section toggles, admin shell UX, leads popup; pending user retest of project edit after hard refresh + About prefill + SEO tag chips)
+
+### Phase 8F — Project Edit Fix, Settings Expansion, Mobile Nav, Blog CMS, AI Context (2026-07-31)
+
+1. **Project edit crash fixed (root cause + defense)** — hosted `projects.industry`
+   was legacy `text` holding PG array literal strings (`{"Logistics", ...}`);
+   `project-form.tsx` `.filter()` on it crashed the admin error boundary.
+   - Migration 00017 (applied): drop default → `alter column industry type text[]
+using` helper → default `'{}'` → GIN index. Verified values parse + `contains`
+     filter works.
+   - `src/lib/projects/mappers.ts`: added `normalizeStringArray` (parses JSON
+     arrays, PG literals, or single values) applied to
+     industry/technologies/images/keywords/workflow — belt-and-suspenders
+     against legacy shapes.
+2. **Settings expansion** (migration 00018, applied):
+   `site_title`, `site_description` (backfilled from site_name/site_tagline —
+   legacy columns kept), `logo`, `booking_url`, `social_instagram`,
+   `social_youtube`, `show_blog` (DEFAULT true). Settings form gains
+   MediaField logo upload + new fields; root layout `generateMetadata()` is
+   now settings-driven (site_title/site_description); navbar/footer accept
+   `logoUrl`/`bookingUrl`/`showBlog`; public layout resolves the logo media
+   reference at render time; footer renders Instagram/YouTube links + Blog
+   link when enabled.
+3. **Mobile bottom nav** (`src/components/mobile-nav.tsx`) rewritten
+   Instagram-style: fixed tabs Home/Services/Projects/About/More; More opens
+   a bottom sheet (Contact, Case Studies, Testimonials, Blog, AI Assistant,
+   Theme toggle, Book-audit CTA) with body scroll lock, backdrop close and
+   per-link close on click. Removed the pathname setState-in-effect (lint
+   `react-hooks/set-state-in-effect`) — links close the sheet themselves.
+4. **Blog CMS** (migration 00019, applied): `blog_posts` table (title, slug
+   unique, excerpt, content markdown, cover_image, categories/tags text[],
+   author, status draft/published, featured, published_at, seo fields,
+   keywords) + RLS (anon: published only; authenticated: full CRUD).
+   - Module: `src/constants/blog.ts`, `src/types/blog.ts`,
+     `src/lib/blog/{repository,mock-data,actions,index,markdown.tsx}`,
+     `src/lib/validation/schemas/blog.ts`. `published_at` auto-set on publish
+     transitions, preserved on edits.
+   - Admin: `/admin/blog` (list: search/status filter/featured badge),
+     `/admin/blog/new`, `/admin/blog/[id]/edit` (auto-slug, markdown editor +
+     live preview via custom renderer, TagInput categories/tags/keywords,
+     MediaField cover/OG, featured toggle, SEO fields, publish/draft).
+   - Public: `/blog` (category chips, featured card, grid) + `/blog/[slug]`
+     (generateMetadata, reading time, cover, CTA block) — reads fall back to
+     MOCK_BLOG_POSTS (module pattern). Sitemap includes posts.
+   - Markdown renderer is custom + XSS-safe (React elements, no
+     `dangerouslySetInnerHTML`); `<img>` stays plain in
+     `markdown.tsx` (intentional — dynamic external URLs; one lint warning).
+5. **AI assistant context + lead capture**:
+   - `src/lib/ai/cms-context.ts` (new): `buildCmsKnowledge(message)` injects
+     LIVE CMS data (published services, active projects, recent blog posts,
+     60s module cache, graceful empty fallback) into the public chat system
+     prompt alongside the static knowledge files;
+     `captureChatLead(messages, intent)` captures a lead (source `chat`,
+     10-min per-email dedupe) when booking/contact/pricing intent + a
+     visitor email are detected — non-fatal.
+   - `src/lib/ai/router.ts`: system prompt rule #8 — assistant asks for
+     name/email on booking intent; website captures automatically.
+   - `/api/admin/chat` context extended with blog posts (incl. drafts) +
+     recent leads so the CMS assistant can summarize both.
+6. **Lint/build**: `npx tsc --noEmit` 0 errors; `npm run lint` 0 errors
+   (1 intentional warning: `<img>` in markdown.tsx); `npm run build` green
+   (route count now 40: +/admin/blog, /admin/blog/new, /admin/blog/[id]/edit,
+   /blog, /blog/[slug], +sitemap entries).
+7. **TypeScript gotchas this phase**: JSX inside a `.ts` lib file fails tsc
+   with misleading "Unterminated regular expression literal" — rename to
+   `.tsx`; lucide-react removed brand icons (`Instagram`/`Youtube` gone) —
+   use `Camera`/`Video`.
+
+- **Last Updated:** 2026-07-31 (Phase 8F — project edit fix 00017, settings expansion 00018, blog CMS 00019, Instagram-style mobile nav, AI live context + chat lead capture)

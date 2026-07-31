@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -18,9 +19,17 @@ const navLinks = [
   { label: "Contact", href: "/#contact" },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  logoUrl?: string | null;
+  bookingUrl?: string | null;
+  showBlog?: boolean;
+}
+
+export function Navbar({ logoUrl, bookingUrl, showBlog }: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const pathname = usePathname();
+  const bookHref = bookingUrl || "/contact";
+  const links = showBlog ? [...navLinks, { label: "Blog", href: "/blog" }] : navLinks;
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -41,15 +50,25 @@ export function Navbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={spring}
-            className="bg-primary group-hover:shadow-primary/20 flex h-8 w-8 items-center justify-center rounded-lg transition-shadow duration-200 group-hover:shadow-md"
+            className="bg-primary group-hover:shadow-primary/20 flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg transition-shadow duration-200 group-hover:shadow-md"
           >
-            <span className="text-primary-foreground text-sm font-bold">A</span>
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt=""
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-primary-foreground text-sm font-bold">A</span>
+            )}
           </motion.div>
           <span className="text-lg font-semibold tracking-tight">Azhar</span>
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => {
+          {links.map((link) => {
             const isActive =
               link.href === "/"
                 ? pathname === "/"
@@ -93,7 +112,7 @@ export function Navbar() {
             whileTap={{ scale: 0.98 }}
             transition={spring}
           >
-            <Link href="/contact">
+            <Link href={bookHref}>
               <Button
                 size="sm"
                 className="group gap-1.5 shadow-sm transition-shadow duration-200 hover:shadow-md"

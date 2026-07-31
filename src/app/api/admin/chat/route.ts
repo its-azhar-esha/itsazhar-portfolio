@@ -6,6 +6,8 @@ import { getServices } from "@/lib/services";
 import { getAllSeo } from "@/lib/seo";
 import { getAdminHeroContent } from "@/lib/hero";
 import { getAdminAboutContent } from "@/lib/about";
+import { getBlogPosts } from "@/lib/blog/repository";
+import { getLeads } from "@/lib/leads/repository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +16,7 @@ function buildAdminSystemPrompt(context: string): string {
   return `You are the CMS assistant for Azhar's portfolio website (admin panel). You help the site owner manage and improve their content.
 
 ## YOUR ROLE
-- You have full knowledge of the site's current CMS content, provided below (projects, services, SEO metadata, hero and about sections).
+- You have full knowledge of the site's current CMS content, provided below (projects, services, SEO metadata, hero and about sections, blog posts, recent leads).
 - Help the owner: summarize content, draft or rewrite copy, generate SEO metadata (title ≤ 60 chars, description ≤ 160 chars, keywords), suggest content improvements, and answer questions about the site's content.
 
 ## HOW YOU ANSWER
@@ -37,13 +39,16 @@ ${context}`;
 async function buildCmsContext(): Promise<string> {
   const sections: string[] = [];
 
-  const [projectsResult, servicesResult, seoResult, hero, about] = await Promise.all([
-    getProjects({ page: 1, pageSize: 50 }),
-    getServices(),
-    getAllSeo(),
-    getAdminHeroContent(),
-    getAdminAboutContent(),
-  ]);
+  const [projectsResult, servicesResult, seoResult, hero, about, postsResult, leadsResult] =
+    await Promise.all([
+      getProjects({ page: 1, pageSize: 50 }),
+      getServices(),
+      getAllSeo(),
+      getAdminHeroContent(),
+      getAdminAboutContent(),
+      getBlogPosts({}),
+      getLeads({ page: 1, pageSize: 10 }),
+    ]);
 
   if (projectsResult.success) {
     const items = projectsResult.data.items;
@@ -92,6 +97,32 @@ async function buildCmsContext(): Promise<string> {
     sections.push(
       `## ABOUT SECTION\n- Name: ${about.basic?.name || "n/a"}\n- Title: ${about.basic?.title || "n/a"}\n- Summary: ${paragraphs || "(no summary)"}`,
     );
+  }
+
+  if (postsResult.success) {
+    const items = postsResult.data;
+    const lines = items.length
+      ? items.map(
+          (p) =>
+            `- ${p.title} (status: ${p.status}, featured: ${p.featured}, published: ${p.published_at ?? "no"}) — ${p.excerpt || "no excerpt"}`,
+        )
+      : ["- (no blog posts yet)"];
+    sections.push(`## BLOG POSTS (${items.length})\n${lines.join("\n")}`);
+  } else {
+    sections.push("## BLOG POSTS\n(unavailable — could not load)");
+  }
+
+  if (leadsResult.success) {
+    const items = leadsResult.data.items;
+    const lines = items.length
+      ? items.map(
+          (l) =>
+            `- ${l.name} <${l.email}> (${l.status}) via ${l.source} on ${l.created_at} — ${l.message ? l.message.slice(0, 120) : "no message"}`,
+        )
+      : ["- (no leads yet)"];
+    sections.push(`## RECENT LEADS (${leadsResult.data.count})\n${lines.join("\n")}`);
+  } else {
+    sections.push("## RECENT LEADS\n(unavailable — could not load)");
   }
 
   return sections.join("\n\n");

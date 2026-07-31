@@ -31,58 +31,66 @@ export const viewport: Viewport = {
   themeColor: "#09090b",
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
-  title: {
-    default: "Azhar | Automate Anything — AI Automation Specialist",
-    template: "%s | Azhar | AI Automation Systems",
-  },
-  description:
-    "AI Automation Specialist. I build intelligent AI automation systems using AI agents, n8n workflows, and API integrations that eliminate repetitive work, streamline operations, and help businesses scale faster.",
-  keywords: [
-    "AI automation specialist",
-    "workflow automation",
-    "n8n developer",
-    "AI agents",
-    "business automation",
-    "process automation",
-    "API integration",
-    "Supabase",
-    "automation consultant",
-    "Bangladesh automation developer",
-  ],
-  authors: [{ name: "Azhar Mahmud Alif" }],
-  creator: "Azhar Mahmud Alif",
-  publisher: "Azhar Mahmud Alif",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+const FALLBACK_TITLE = "Azhar | Automate Anything — AI Automation Specialist";
+const FALLBACK_DESCRIPTION =
+  "AI Automation Specialist. I build intelligent AI automation systems using AI agents, n8n workflows, and API integrations that eliminate repetitive work, streamline operations, and help businesses scale faster.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPublicSiteSettings();
+  const siteTitle = settings.site_title || FALLBACK_TITLE;
+  const siteDescription = settings.site_description || FALLBACK_DESCRIPTION;
+  const siteName = settings.site_name || "Azhar";
+
+  return {
+    metadataBase: new URL(baseUrl),
+    title: {
+      default: siteTitle,
+      template: `%s | ${siteName} | AI Automation Systems`,
+    },
+    description: siteDescription,
+    keywords: [
+      "AI automation specialist",
+      "workflow automation",
+      "n8n developer",
+      "AI agents",
+      "business automation",
+      "process automation",
+      "API integration",
+      "Supabase",
+      "automation consultant",
+      "Bangladesh automation developer",
+    ],
+    authors: [{ name: "Azhar Mahmud Alif" }],
+    creator: "Azhar Mahmud Alif",
+    publisher: "Azhar Mahmud Alif",
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Azhar | AI Automation Systems",
-    title: "Azhar | Automate Anything — AI Automation Specialist",
-    description:
-      "I build intelligent AI automation systems that eliminate repetitive work, streamline operations, and help businesses scale faster using AI agents, n8n, and modern integrations.",
-    url: baseUrl,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Azhar | Automate Anything — AI Automation Specialist",
-    description:
-      "I build intelligent AI automation systems using AI agents, n8n workflows, and API integrations.",
-    creator: "@azhar_m_alif",
-  },
-  alternates: { canonical: baseUrl },
-};
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      siteName: `${siteName} | AI Automation Systems`,
+      title: siteTitle,
+      description: siteDescription,
+      url: baseUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: siteTitle,
+      description: siteDescription,
+      creator: "@azhar_m_alif",
+    },
+    alternates: { canonical: baseUrl },
+  };
+}
 
 export default async function RootLayout({
   children,

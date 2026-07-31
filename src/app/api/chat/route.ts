@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { routeToAI, buildSystemPrompt } from "@/lib/ai/router";
 import { findRelevantKnowledge, detectIntent } from "@/lib/ai/knowledge";
+import { buildCmsKnowledge, captureChatLead } from "@/lib/ai/cms-context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,13 +47,14 @@ function pickSuggestions(intent: string, used: string[]): string[] {
   return [...available, ...remaining].slice(0, 2);
 }
 
-function buildKnowledgeResponse(message: string): {
+async function buildKnowledgeResponse(message: string): Promise<{
   content: string;
   intent: string;
   suggestions: string[];
-} {
+}> {
   const intent = detectIntent(message);
-  const knowledge = findRelevantKnowledge(message);
+  const [cms, staticKnowledge] = [await buildCmsKnowledge(message), findRelevantKnowledge(message)];
+  const knowledge = [cms, staticKnowledge].filter(Boolean).join("\n\n---\n\n");
   const suggestions = pickSuggestions(intent, []);
   return { content: knowledge, intent, suggestions };
 }
@@ -72,7 +74,12 @@ export async function POST(req: NextRequest) {
     const usedSuggestions = allUserMessages.slice(0, -1);
 
     const intent = detectIntent(userMessage);
-    const knowledge = findRelevantKnowledge(userMessage);
+    const cmsKnowledge = await buildCmsKnowledge(userMessage);
+    const knowledge = [cmsKnowledge, findRelevantKnowledge(userMessage)]
+      .filter(Boolean)
+      .join("\n\n---\n\n");
+
+    await captureChatLead(messages, intent);
 
     const systemPrompt = buildSystemPrompt(knowledge);
 
@@ -133,7 +140,7 @@ export async function POST(req: NextRequest) {
             }
           } catch {
             if (!fullResponse) {
-              const fallback = buildKnowledgeResponse(userMessage);
+              const fallback = await buildKnowledgeResponse(userMessage);
               controller.enqueue(encoder.encode(fallback.content));
             }
           } finally {

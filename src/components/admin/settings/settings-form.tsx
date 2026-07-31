@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { saveSiteSettingsAction } from "@/lib/settings/actions";
 import { siteSettingsSchema } from "@/lib/validation";
 import { useToast } from "@/components/ui/toast";
+import { MediaField } from "@/components/media/media-field";
 import { Loader2, Save } from "lucide-react";
 import type { SiteSettings } from "@/types/settings";
 
@@ -20,14 +21,20 @@ interface SettingsFormProps {
 function toFormValues(settings: SiteSettings) {
   return {
     site_name: settings.site_name,
+    site_title: settings.site_title,
+    site_description: settings.site_description,
     tagline: settings.tagline,
+    logo: settings.logo ?? "",
     location: settings.location,
     contact_email: settings.contact_email,
     contact_phone: settings.contact_phone ?? "",
+    booking_url: settings.booking_url ?? "",
     social_github: settings.social_github ?? "",
     social_linkedin: settings.social_linkedin ?? "",
     social_twitter: settings.social_twitter ?? "",
     social_fiverr: settings.social_fiverr ?? "",
+    social_instagram: settings.social_instagram ?? "",
+    social_youtube: settings.social_youtube ?? "",
     footer_text: settings.footer_text,
     maintenance_mode: settings.maintenance_mode,
     show_ai_chat: settings.show_ai_chat,
@@ -38,6 +45,7 @@ function toFormValues(settings: SiteSettings) {
     show_about: settings.show_about,
     show_testimonials: settings.show_testimonials,
     show_contact: settings.show_contact,
+    show_blog: settings.show_blog,
     featured_projects_enabled: settings.featured_projects_enabled,
     featured_services_enabled: settings.featured_services_enabled,
     ga4_measurement_id: settings.ga4_measurement_id ?? "",
@@ -144,27 +152,57 @@ export function SettingsForm({ initial }: SettingsFormProps) {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Site Identity" description="Name and tagline used across the site.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Site Name">
-            <Input
-              value={fields.site_name}
-              onChange={(e) => handleChange({ site_name: e.target.value })}
-              placeholder="Azhar"
+      <SectionCard
+        title="Site Identity"
+        description="Name, logo and default SEO values used across the site."
+      >
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Site Title" hint="Browser tab title and default SEO title.">
+              <Input
+                value={fields.site_title}
+                onChange={(e) => handleChange({ site_title: e.target.value })}
+                placeholder="Azhar — AI Automation Specialist"
+              />
+            </Field>
+            <Field label="Site Name">
+              <Input
+                value={fields.site_name}
+                onChange={(e) => handleChange({ site_name: e.target.value })}
+                placeholder="Azhar"
+              />
+            </Field>
+            <Field label="Tagline">
+              <Input
+                value={fields.tagline}
+                onChange={(e) => handleChange({ tagline: e.target.value })}
+                placeholder="AI Automation Specialist"
+              />
+            </Field>
+            <Field label="Location">
+              <Input
+                value={fields.location}
+                onChange={(e) => handleChange({ location: e.target.value })}
+                placeholder="Remote, Worldwide"
+              />
+            </Field>
+          </div>
+          <Field
+            label="Logo"
+            hint="Shown in the navbar and footer. Upload to the media library or paste a URL."
+          >
+            <MediaField
+              value={fields.logo}
+              onChange={(value) => handleChange({ logo: value ?? "" })}
+              previewClassName="h-12 w-12 rounded-lg"
             />
           </Field>
-          <Field label="Tagline">
-            <Input
-              value={fields.tagline}
-              onChange={(e) => handleChange({ tagline: e.target.value })}
-              placeholder="AI Automation Specialist"
-            />
-          </Field>
-          <Field label="Location">
-            <Input
-              value={fields.location}
-              onChange={(e) => handleChange({ location: e.target.value })}
-              placeholder="Remote, Worldwide"
+          <Field label="Default Meta Description" hint="Used when a page has no SEO description.">
+            <Textarea
+              value={fields.site_description}
+              onChange={(e) => handleChange({ site_description: e.target.value })}
+              className="min-h-[60px]"
+              placeholder="AI Automation Specialist building intelligent agents, workflows and integrations."
             />
           </Field>
         </div>
@@ -185,6 +223,16 @@ export function SettingsForm({ initial }: SettingsFormProps) {
               value={fields.contact_phone}
               onChange={(e) => handleChange({ contact_phone: e.target.value })}
               placeholder="+880 1234 567890"
+            />
+          </Field>
+          <Field
+            label="Booking URL"
+            hint="Used by the 'Book a Free Audit' buttons. Leave blank to link to the contact page."
+          >
+            <Input
+              value={fields.booking_url}
+              onChange={(e) => handleChange({ booking_url: e.target.value })}
+              placeholder="https://calendly.com/..."
             />
           </Field>
         </div>
@@ -223,6 +271,20 @@ export function SettingsForm({ initial }: SettingsFormProps) {
               placeholder="https://fiverr.com/..."
             />
           </Field>
+          <Field label="Instagram">
+            <Input
+              value={fields.social_instagram}
+              onChange={(e) => handleChange({ social_instagram: e.target.value })}
+              placeholder="https://instagram.com/..."
+            />
+          </Field>
+          <Field label="YouTube">
+            <Input
+              value={fields.social_youtube}
+              onChange={(e) => handleChange({ social_youtube: e.target.value })}
+              placeholder="https://youtube.com/@..."
+            />
+          </Field>
         </div>
       </SectionCard>
 
@@ -237,7 +299,7 @@ export function SettingsForm({ initial }: SettingsFormProps) {
         </Field>
       </SectionCard>
 
-      <SectionCard title="Toggles" description="Global site behavior switches.">
+      <SectionCard title="Global Settings" description="Global site behavior switches.">
         <div className="divide-border/40 divide-y">
           <ToggleRow
             label="Maintenance Mode"
@@ -300,6 +362,12 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             description="Contact form and details."
             checked={fields.show_contact}
             onCheckedChange={(v) => handleChange({ show_contact: v })}
+          />
+          <ToggleRow
+            label="Blog"
+            description="Show the blog in navigation and enable the blog module."
+            checked={fields.show_blog}
+            onCheckedChange={(v) => handleChange({ show_blog: v })}
           />
         </div>
       </SectionCard>
