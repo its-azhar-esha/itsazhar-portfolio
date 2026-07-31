@@ -237,5 +237,3 @@ export async function resolveMediaUrlAction(value: string | null): Promise<strin
     return value;
   }
 }
-
-export type { MediaSort };
