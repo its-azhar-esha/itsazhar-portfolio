@@ -6,25 +6,29 @@ import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
 import { AdminMobileMenu } from "./mobile-menu";
 
-const pageTitles: Record<string, string> = {
-  "/admin": "Dashboard",
-  "/admin/projects": "Projects",
-  "/admin/media": "Media",
-  "/admin/ai": "AI",
-  "/admin/content": "Content",
-  "/admin/settings": "Settings",
-};
+function getPageTitle(pathname: string): string {
+  if (pathname === "/admin") return "Dashboard";
+  if (pathname.startsWith("/admin/projects/new")) return "New Project";
+  if (pathname.match(/^\/admin\/projects\/[\w-]+\/edit$/)) return "Edit Project";
+  if (pathname.startsWith("/admin/projects")) return "Projects";
+  if (pathname.startsWith("/admin/services/new")) return "New Service";
+  if (pathname.match(/^\/admin\/services\/[\w-]+\/edit$/)) return "Edit Service";
+  if (pathname.startsWith("/admin/services")) return "Services";
+  if (pathname.startsWith("/admin/media")) return "Media";
+  if (pathname.startsWith("/admin/ai")) return "AI";
+  if (pathname.startsWith("/admin/seo")) return "SEO";
+  if (pathname.startsWith("/admin/content/about")) return "About Page";
+  if (pathname.startsWith("/admin/content/hero")) return "Hero Section";
+  if (pathname.startsWith("/admin/content")) return "Content";
+  if (pathname.startsWith("/admin/settings")) return "Settings";
+  return "Dashboard";
+}
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  let currentTitle = "Dashboard";
-  for (const [path, label] of Object.entries(pageTitles)) {
-    if (pathname.startsWith(path) && path.length > 0) {
-      currentTitle = label;
-    }
-  }
+  const currentTitle = getPageTitle(pathname);
 
   return (
     <div className="flex min-h-screen">

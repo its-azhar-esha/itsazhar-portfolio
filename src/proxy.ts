@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createMiddlewareClient } from "@/lib/supabase/middleware";
 
 const ADMIN_LOGIN = "/admin/login";
@@ -7,18 +7,22 @@ const ADMIN = "/admin";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isAdminPath = pathname === ADMIN || pathname.startsWith("/admin/");
-  if (!isAdminPath) {
-    return NextResponse.next();
+  const { supabase, response } = createMiddlewareClient(request);
+
+  if (!supabase) {
+    return response;
   }
 
-  const response = NextResponse.next();
-  const supabase = createMiddlewareClient(request, response);
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  let isAuthenticated = false;
 
-  const isAuthenticated = !!session;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    isAuthenticated = !!user;
+  } catch {
+    // getUser() failed (network, timeout, etc.) — treat as unauthenticated
+  }
 
   if (!isAuthenticated && pathname !== ADMIN_LOGIN) {
     const loginUrl = new URL(ADMIN_LOGIN, request.url);
