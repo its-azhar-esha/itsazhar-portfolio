@@ -37,15 +37,12 @@ export async function list(): Promise<Result<ContentEntry[]>> {
   }
 }
 
-export async function findByKey(key: string): Promise<Result<ContentEntry>> {
+export async function findByKey(key: string): Promise<Result<ContentEntry | null>> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from(TABLE).select("*").eq("key", key).maybeSingle();
-    if (error || !data) {
-      const mock = MOCK_CONTENT.find((c) => c.key === key);
-      if (mock) return ok(mock);
-      return fail(`Content with key "${key}" not found`);
-    }
+    if (error) return fail(error.message);
+    if (!data) return ok(null);
     return ok(rowToContentEntry(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to find content");

@@ -27,8 +27,9 @@ export async function saveHeroContentAction(
     }
 
     const existing = await findByKey(HERO_KEY);
+    if (!existing.success) return existing;
 
-    if (existing.success) {
+    if (existing.data) {
       const result = await update(existing.data.id, {
         content: parsed.data as unknown as Record<string, unknown>,
       });

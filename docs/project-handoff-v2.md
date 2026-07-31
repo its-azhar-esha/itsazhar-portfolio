@@ -622,7 +622,113 @@ accessibility pass, media architecture docs).
 
 ---
 
-## Final Summary
+## 19. CMS Investigation Report (2026-07-31)
+
+Initial session: investigation-only, no code changed. Remote state verified
+with read-only REST probes against the hosted project
+(`quekecvmdbzpxqglztsa.supabase.co`). Follow-up fix session same day: applied
+migrations 00004–00007, fixed the hero/about first-save code bug.
+
+### Current Position
+
+- Phase: Phase 8C complete (build/lint green locally). Investigation of live
+  CMS failures completed 2026-07-31 — findings below are confirmed, not
+  guessed.
+- The hosted database diverges from `supabase/migrations/` and is missing
+  migrations 00004–00006 entirely.
+
+### Database Status (verified remotely)
+
+| Object            | Status                                                                                                                                                                           |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projects`        | EXISTS, empty, RLS active (anon insert → 42501). Schema DIVERGED: has `thumbnail_url` + `gallery_urls`; MISSING `thumbnail`, `images`, `client`, `demo_url`, `keywords`, `order` |
+| `content_entries` | EXISTS, empty, RLS active. Columns `id, key, title, content, status` all present                                                                                                 |
+| `seo_metadata`    | MISSING → PostgREST `PGRST205`                                                                                                                                                   |
+| `services`        | MISSING → PostgREST `PGRST205`                                                                                                                                                   |
+| `media_files`     | MISSING → PostgREST `PGRST205`                                                                                                                                                   |
+| Storage buckets   | only `project-media` (public, 50 MB, image/_+video/_, created 2026-07-30). Code bucket `media` MISSING                                                                           |
+| Auth              | 1 confirmed user (email verified, signs in) — auth works                                                                                                                         |
+
+### Issues Found (confirmed)
+
+1. **Project CMS — save/update broken.** Code writes `thumbnail`, `images`,
+   `client`, `demo_url`, `keywords`, `order`; remote table lacks all six →
+   PostgREST `PGRST204` (column not found) on every insert/update. Table is
+   also empty, so there is nothing to edit yet.
+2. **Media upload broken.** `media` bucket does not exist (only
+   `project-media`) → XHR POST to `/storage/v1/object/media/{path}` fails;
+   `media_files` table missing → `storeMediaAction` fails with `PGRST205`.
+3. **Media selection/reference broken.** `MediaPicker`/`MediaManager`/
+   `resolveMediaValue` all query `media_files` → `PGRST205` →
+   `fail()` message surfaced in the picker/manager; references resolve to
+   `null`.
+4. **Services CMS — "Could not find the table 'public.services' in the
+   schema cache".** Table `services` does not exist remotely (00005 not
+   applied). Reproduced the exact error via REST.
+5. **SEO CMS — same error for `seo_metadata`.** Table does not exist
+   remotely (00004 not applied). Reproduced exactly.
+6. **Content CMS (hero/about) — save always fails on first save (code bug).**
+   `content/repository.findByKey` falls back to `MOCK_CONTENT` when the DB
+   row is missing (`id: "c1"/"c2"` — not real UUIDs). `saveHeroContentAction`
+   / `saveAboutContentAction` treat the mock as an existing row and call
+   `update("c1"…)` → 0 rows matched → `fail("Content with id … not found")`.
+   The `create` branch is unreachable while the table is empty (mock masks
+   the missing row).
+7. **AI admin page blank — unfinished feature, not a bug.**
+   `/admin/ai/page.tsx` is a static stub (heading + one line); no
+   `components/admin/ai/*` exist. Public-site AI chat is implemented
+   separately (`/api/chat`, `src/components/ai/*`).
+8. **Settings page empty — unfinished feature, not a bug.**
+   `/admin/settings/page.tsx` is a static stub ("shell only", already
+   documented as postponed).
+
+### Root Causes (verified)
+
+- **RC-A (database drift):** migrations 00001–00003 partially applied to the
+  hosted project (with an older `projects` variant: `thumbnail_url`/
+  `gallery_urls` instead of `thumbnail`/`images`); 00004–00006 never applied.
+  This single cause explains issues 1–5.
+- **RC-B (code bug):** mock-fallback in `content/repository.findByKey`
+  short-circuits hero/about creation (issue 6). Independent of DB state —
+  first save fails even on a healthy, empty DB.
+- **RC-C (stub pages):** AI and Settings pages are intentionally unimplemented
+  (issues 7–8). No broken code.
+
+### Files Changed (fix session)
+
+- `supabase/migrations/00007_reconcile_remote_projects.sql` (new) — adds the
+  six missing `projects` columns to the hosted schema in place
+- `src/lib/content/repository.ts` — `findByKey` no longer falls back to mock
+  rows; returns `ok(null)` when the row is missing, `fail` on DB error
+- `src/lib/hero/actions.ts` + `src/lib/about/actions.ts` — save flow now
+  creates when the DB row is missing (never `update`s a mock id); surfaces
+  DB errors instead of masking them
+
+### Fix Status (verified 2026-07-31)
+
+- Migrations 00001–00003 marked applied remotely (`supabase migration repair`)
+  — tables already existed from manual application
+- `supabase db push` applied 00004 (seo_metadata + seeds), 00005 (services),
+  00006 (media_files + `media` bucket), 00007 (projects reconcile)
+- REST probes confirm: `services`/`seo_metadata`/`media_files` → 200;
+  `projects` accepts `thumbnail,images,client,demo_url,keywords,order`;
+  storage buckets `media` (10 MB, all mime types) + legacy `project-media`
+  both exist
+- `npm run lint` clean, `npm run build` green (31/31 routes)
+- Remaining: manual CMS smoke test (create service, SEO entry, upload image,
+  attach to hero, save hero, create project) — not yet performed
+
+### Next Step (exact action)
+
+1. Manual CMS smoke test in the browser: login → create service → create SEO
+   entry → upload image in Media → attach to hero → save hero → create project
+   with thumbnail → publish → verify public pages.
+2. Rotate leaked keys in `.env.example` (open §14 issue; note: publishable/
+   secret API keys exist in the dashboard — new-style `sb_publishable_*` /
+   `sb_secret_*` were shared 2026-07-31; old anon/service-role keys in
+   `.env.local` still work).
+
+---
 
 - **Last Updated:** 2026-07-31 (Phase 8C complete)
 - **Current Build Status:** ✅ `npm run build` succeeds — 31/31 routes
@@ -630,11 +736,15 @@ accessibility pass, media architecture docs).
   `robots.txt` + `sitemap.xml` + `/api/chat`)
 - **TypeScript Status:** ✅ strict, 0 errors
 - **Lint Status:** ✅ 0 errors, 0 warnings
-- **Pending Migrations:** 00001–00006 exist in repo; must be applied to hosted
-  Supabase (`supabase db push`) — application state not verifiable from repo
+- **Pending Migrations:** NONE — all 00001–00007 applied to hosted Supabase
+  (2026-07-31). Remote `projects` reconciled via 00007 (`thumbnail`, `images`,
+  `client`, `demo_url`, `keywords`, `order` added). Legacy `thumbnail_url`/
+  `gallery_urls` columns still present but unused by code.
 - **Open TODOs:**
   1. Fix Vercel production 404 (deployment config, see §14)
   2. Rotate leaked keys in `.env.example` (real values present)
   3. Bump `sw.js` cache version / unregister stale service worker
   4. Configure real analytics IDs
-  5. Apply migrations to hosted Supabase if not already applied
+  5. Manual CMS smoke test (migrations applied + hero/about save fixed
+     2026-07-31, see §19)
+  6. Implement `/admin/ai` + `/admin/settings` (documented stub pages)

@@ -27,8 +27,9 @@ export async function saveAboutContentAction(
     }
 
     const existing = await findByKey(ABOUT_KEY);
+    if (!existing.success) return existing;
 
-    if (existing.success) {
+    if (existing.data) {
       const result = await update(existing.data.id, {
         content: parsed.data as unknown as Record<string, unknown>,
       });
