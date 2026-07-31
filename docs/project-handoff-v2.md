@@ -777,3 +777,25 @@ migrations 00004–00007, fixed the hero/about first-save code bug.
   5. Phase 8D: `/admin/ai` content-aware assistant + `/admin/settings`
      implemented 2026-07-31 (see §19); final polish (sitemap tuning, SEO
      audits, perf budgets) still open
+
+---
+
+### Post-Deploy Smoke Fixes (2026-07-31)
+
+Fixed after first production deploy (commit `28aed50`):
+
+1. **CSP blocked Supabase (upload broken)** - `connect-src`/`img-src` did not
+   include the Supabase host, so the browser blocked the storage XHR with
+   "Network error during upload". Fixed in `next.config.ts` by appending the
+   Supabase origin to both directives (also fixes storage-hosted images).
+2. **New services defaulted to `draft`** - created items never appeared on
+   the public site (RLS shows `published` only). `service-form.tsx` now
+   defaults new services to `published`; project form keeps its explicit
+   Save Draft / Publish buttons.
+3. **"Existing data" gone** - confirmed the DB was empty (0 projects, 0
+   services, 0 media, 0 content rows); the old CMS never persisted anything
+   (original bug). Public site shows mock fallbacks; admin shows real rows.
+   First real row: user's `Test service` published 2026-07-31, visible on
+   `/services`.
+
+- **Last Updated:** 2026-07-31 (Post-deploy smoke fixes)
