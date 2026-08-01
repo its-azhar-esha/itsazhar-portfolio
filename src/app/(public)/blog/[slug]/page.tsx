@@ -6,11 +6,13 @@ import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyLinkButton } from "@/components/blog/copy-link-button";
+import { PostCard } from "@/components/blog/post-card";
 import { renderMarkdown } from "@/lib/markdown";
-import { getPublicBlogPostAction } from "@/lib/blog/actions";
+import { getPublicBlogPostAction, getPublicBlogPostsAction } from "@/lib/blog/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site";
+import type { PublicBlogPost } from "@/types/blog";
 
 function humanizeCategory(slug: string): string {
   return slug
@@ -74,11 +76,29 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
+function rankRelated(current: PublicBlogPost, all: PublicBlogPost[]): PublicBlogPost[] {
+  return all
+    .filter((p) => p.slug !== current.slug)
+    .map((p) => ({
+      post: p,
+      score:
+        p.categories.filter((c) => current.categories.includes(c)).length * 2 +
+        p.tags.filter((t) => current.tags.includes(t)).length,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((r) => r.post)
+    .slice(0, 3);
+}
+
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await getPublicBlogPostAction(slug);
+  const [post, allPosts] = await Promise.all([
+    getPublicBlogPostAction(slug),
+    getPublicBlogPostsAction(),
+  ]);
   if (!post) notFound();
 
+  const related = rankRelated(post, allPosts);
   const readTime = estimateReadTime(post.content);
   const postUrl = `${SITE_URL}/blog/${post.slug}`;
   const shareText = encodeURIComponent(`${post.title} — by ${post.author}`);
@@ -209,6 +229,18 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             </Button>
           </Link>
         </div>
+
+        {related.length > 0 && (
+          <div className="border-border/40 mt-14 border-t pt-12">
+            <h2 className="text-2xl font-bold tracking-tight">Keep reading</h2>
+            <p className="text-muted-foreground mt-2 text-sm">More articles on the same topics.</p>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((p) => (
+                <PostCard key={p.slug} post={p} />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="border-border/40 border-t py-14 md:py-20">
           <div className="flex flex-col items-center text-center">

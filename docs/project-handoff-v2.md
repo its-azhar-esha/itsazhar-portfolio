@@ -1148,4 +1148,33 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    invalid in server components — the copy button must be a client
    component.
 
-- **Last Updated:** 2026-08-01 (Phase 9C — ToastProvider fix, hub marketplace, blog polish)
+### Phase 9D — Blog sync, carousel, related posts (2026-08-01)
+
+1. **Blog sync bug** — `blog_posts` was EMPTY in the DB while the public
+   blog rendered `MOCK_BLOG_POSTS` (the action falls back to mocks on
+   empty results), so nothing was manageable from `/admin/blog`. Fix:
+   migration `00024_seed_blog_posts.sql` seeds the two existing mock
+   posts + two new ones (idempotent `on conflict (slug) do nothing`,
+   dollar-quoted `$q$` content, verbatim markdown parity with
+   `src/lib/blog/mock-data.ts`). Rule: any mock post added for fallback
+   parity must ALSO be seeded via migration, and vice versa.
+2. **Featured carousel** — new `src/components/blog/post-carousel.tsx`
+   (client, framer-motion `AnimatePresence` with direction-aware
+   slide/fade, 6s autoplay paused on hover, prev/next + dot controls +
+   counter, `Image` covers with dark gradient overlays, white-on-dark
+   slide copy). Mounted on `/blog` with the 4 latest published posts;
+   the remaining posts render as cards under "More articles".
+3. **Related posts** — `rankRelated()` in `/blog/[slug]` scores every
+   published post by shared categories (x2) + tags, excludes the current
+   slug, returns top 3, rendered as a "Keep reading" grid before the CTA.
+4. **Component extraction** — `PostCard` + shared helpers
+   (`humanizeCategory`, `formatDate`, `readingTime`, `initials`,
+   `CategoryPills`, `MetaRow`, `AuthorRow`) moved to
+   `src/components/blog/post-card.tsx` (server-safe, also importable by
+   client components); `/blog` and `/blog/[slug]` both consume it.
+5. **Gotcha** — power outage corrupted the working copy of
+   `/blog/[slug]/page.tsx` (file became all NUL bytes, git showed it as
+   "Bin"). Restore via `git checkout -- <file>` and re-apply edits; no
+   data loss.
+
+- **Last Updated:** 2026-08-01 (Phase 9D — blog DB sync, carousel, related posts)
