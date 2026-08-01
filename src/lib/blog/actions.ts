@@ -42,7 +42,7 @@ export async function createBlogPostAction(
       return fail(messages);
     }
 
-    const result = await createBlogPost(parsed.data as CreateBlogPostInput);
+    const result = await createBlogPost(parsed.data as CreateBlogPostInput, user.id);
     if (result.success) revalidateBlogPaths(parsed.data.slug);
     return result;
   } catch (err) {
@@ -70,7 +70,7 @@ export async function updateBlogPostAction(
       return fail(messages);
     }
 
-    const result = await updateBlogPost(id, parsed.data as UpdateBlogPostInput);
+    const result = await updateBlogPost(id, parsed.data as UpdateBlogPostInput, user.id);
     if (result.success) revalidateBlogPaths(parsed.data.slug);
     return result;
   } catch (err) {
@@ -90,7 +90,7 @@ export async function deleteBlogPostAction(id: string): Promise<Result<void>> {
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
 
-    const result = await deleteBlogPost(id);
+    const result = await deleteBlogPost(id, user.id);
     if (result.success) revalidateBlogPaths();
     return result;
   } catch (err) {

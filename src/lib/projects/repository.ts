@@ -1,11 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/database.types";
 import type { DbProject, CreateProjectInput, UpdateProjectInput } from "@/types/project";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
 import type { ProjectFilter, ProjectListResult } from "./types";
 import { rowToDbProject } from "./mappers";
+import { captureContentVersion, clearContentVersions } from "@/lib/versions";
 
 const TABLE = "projects" as const;
+
+type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
 /** Sanitizes free-text search input so it is safe inside PostgREST `.or()` filters. */
 function sanitizeSearch(value: string): string {
@@ -97,7 +101,10 @@ export async function getProject(id: string): Promise<Result<DbProject>> {
   }
 }
 
-export async function createProject(input: CreateProjectInput): Promise<Result<DbProject>> {
+export async function createProject(
+  input: CreateProjectInput,
+  actorId?: string,
+): Promise<Result<DbProject>> {
   try {
     const supabase = await createClient();
 
@@ -115,6 +122,8 @@ export async function createProject(input: CreateProjectInput): Promise<Result<D
       .single();
     if (error) return fail(error.message);
     if (!data) return fail("Failed to create project — no data returned.");
+    const row = data as unknown as ProjectRow;
+    await captureContentVersion("projects", row.id, row, actorId);
     return ok(rowToDbProject(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to create project");
@@ -124,6 +133,7 @@ export async function createProject(input: CreateProjectInput): Promise<Result<D
 export async function updateProject(
   id: string,
   input: UpdateProjectInput,
+  actorId?: string,
 ): Promise<Result<DbProject>> {
   try {
     const supabase = await createClient();
@@ -146,17 +156,21 @@ export async function updateProject(
       .maybeSingle();
     if (error) return fail(error.message);
     if (!data) return fail(`Project with id "${id}" not found.`);
+    const row = data as unknown as ProjectRow;
+    await captureContentVersion("projects", row.id, row, actorId);
     return ok(rowToDbProject(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to update project");
   }
 }
 
-export async function deleteProject(id: string): Promise<Result<void>> {
+export async function deleteProject(id: string, actorId?: string): Promise<Result<void>> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.from(TABLE).delete().eq("id", id);
     if (error) return fail(error.message);
+    void actorId;
+    await clearContentVersions("projects", id);
     return ok(undefined);
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete project");

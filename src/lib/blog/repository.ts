@@ -4,8 +4,11 @@ import type { DbBlogPost, CreateBlogPostInput, UpdateBlogPostInput } from "@/typ
 import type { BlogPostStatus } from "@/constants/blog";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
+import { captureContentVersion, clearContentVersions } from "@/lib/versions";
 
 const TABLE = "blog_posts" as const;
+
+type BlogRow = Database["public"]["Tables"]["blog_posts"]["Row"];
 
 export function rowToDbBlogPost(
   row: Database["public"]["Tables"]["blog_posts"]["Row"],
@@ -88,7 +91,10 @@ export async function getBlogPostBySlug(slug: string): Promise<Result<DbBlogPost
   }
 }
 
-export async function createBlogPost(input: CreateBlogPostInput): Promise<Result<DbBlogPost>> {
+export async function createBlogPost(
+  input: CreateBlogPostInput,
+  actorId?: string,
+): Promise<Result<DbBlogPost>> {
   try {
     const supabase = await createClient();
 
@@ -106,6 +112,8 @@ export async function createBlogPost(input: CreateBlogPostInput): Promise<Result
       .single();
     if (error) return fail(error.message);
     if (!data) return fail("Failed to create blog post — no data returned.");
+    const row = data as unknown as BlogRow;
+    await captureContentVersion("blog_posts", row.id, row, actorId);
     return ok(rowToDbBlogPost(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to create blog post");
@@ -115,6 +123,7 @@ export async function createBlogPost(input: CreateBlogPostInput): Promise<Result
 export async function updateBlogPost(
   id: string,
   input: UpdateBlogPostInput,
+  actorId?: string,
 ): Promise<Result<DbBlogPost>> {
   try {
     const supabase = await createClient();
@@ -137,17 +146,21 @@ export async function updateBlogPost(
       .single();
     if (error) return fail(error.message);
     if (!data) return fail(`Blog post with id "${id}" not found.`);
+    const row = data as unknown as BlogRow;
+    await captureContentVersion("blog_posts", row.id, row, actorId);
     return ok(rowToDbBlogPost(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to update blog post");
   }
 }
 
-export async function deleteBlogPost(id: string): Promise<Result<void>> {
+export async function deleteBlogPost(id: string, actorId?: string): Promise<Result<void>> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.from(TABLE).delete().eq("id", id);
     if (error) return fail(error.message);
+    void actorId;
+    await clearContentVersions("blog_posts", id);
     return ok(undefined);
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete blog post");

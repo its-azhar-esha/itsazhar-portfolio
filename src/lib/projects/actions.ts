@@ -35,7 +35,7 @@ export async function createProjectAction(
       return fail(messages);
     }
 
-    const result = await createProject(parsed.data as never);
+    const result = await createProject(parsed.data as never, user.id);
     if (result.success) revalidatePath("/admin/projects");
     return result;
   } catch (err) {
@@ -61,7 +61,7 @@ export async function updateProjectAction(
       return fail(messages);
     }
 
-    const result = await updateProject(id, parsed.data as never);
+    const result = await updateProject(id, parsed.data as never, user.id);
     if (result.success) revalidatePath("/admin/projects");
     return result;
   } catch (err) {
@@ -78,7 +78,7 @@ export async function deleteProjectAction(id: string): Promise<Result<void>> {
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
 
-    const result = await deleteProject(id);
+    const result = await deleteProject(id, user.id);
     if (result.success) revalidatePath("/admin/projects");
     return result;
   } catch (err) {

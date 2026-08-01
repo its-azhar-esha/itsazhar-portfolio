@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VersionHistory } from "@/components/admin/versions/version-history";
 import { Badge } from "@/components/ui/badge";
 import { TagInput } from "@/components/ui/tag-input";
 import { MediaField } from "@/components/media/media-field";
@@ -486,6 +487,14 @@ export function BlogForm({ post }: BlogFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      {mode === "edit" && post && (
+        <Card className="border-border/50">
+          <CardContent className="pt-6">
+            <VersionHistory entity="blog_posts" entityId={post.id} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="border-border/40 bg-card flex items-center justify-between rounded-lg border px-5 py-4">
         <Button

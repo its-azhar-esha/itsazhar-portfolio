@@ -3,8 +3,11 @@ import type { Database } from "@/database.types";
 import type { DbService, CreateServiceInput, UpdateServiceInput } from "@/types/service";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
+import { captureContentVersion, clearContentVersions } from "@/lib/versions";
 
 const TABLE = "services" as const;
+
+type ServiceRow = Database["public"]["Tables"]["services"]["Row"];
 
 function rowToDbService(row: Database["public"]["Tables"]["services"]["Row"]): DbService {
   return {
@@ -65,7 +68,10 @@ export async function getServiceBySlug(slug: string): Promise<Result<DbService>>
   }
 }
 
-export async function createService(input: CreateServiceInput): Promise<Result<DbService>> {
+export async function createService(
+  input: CreateServiceInput,
+  actorId?: string,
+): Promise<Result<DbService>> {
   try {
     const supabase = await createClient();
 
@@ -83,6 +89,8 @@ export async function createService(input: CreateServiceInput): Promise<Result<D
       .single();
     if (error) return fail(error.message);
     if (!data) return fail("Failed to create service — no data returned.");
+    const row = data as unknown as ServiceRow;
+    await captureContentVersion("services", row.id, row, actorId);
     return ok(rowToDbService(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to create service");
@@ -92,6 +100,7 @@ export async function createService(input: CreateServiceInput): Promise<Result<D
 export async function updateService(
   id: string,
   input: UpdateServiceInput,
+  actorId?: string,
 ): Promise<Result<DbService>> {
   try {
     const supabase = await createClient();
@@ -114,17 +123,21 @@ export async function updateService(
       .single();
     if (error) return fail(error.message);
     if (!data) return fail(`Service with id "${id}" not found.`);
+    const row = data as unknown as ServiceRow;
+    await captureContentVersion("services", row.id, row, actorId);
     return ok(rowToDbService(data));
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to update service");
   }
 }
 
-export async function deleteService(id: string): Promise<Result<void>> {
+export async function deleteService(id: string, actorId?: string): Promise<Result<void>> {
   try {
     const supabase = await createClient();
     const { error } = await supabase.from(TABLE).delete().eq("id", id);
     if (error) return fail(error.message);
+    void actorId;
+    await clearContentVersions("services", id);
     return ok(undefined);
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete service");

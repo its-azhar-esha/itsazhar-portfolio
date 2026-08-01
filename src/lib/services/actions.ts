@@ -84,7 +84,7 @@ export async function createServiceAction(
       return fail(messages);
     }
 
-    const result = await createService(parsed.data as CreateServiceInput);
+    const result = await createService(parsed.data as CreateServiceInput, user.id);
     if (result.success) revalidateServicePaths(parsed.data.slug);
     return result;
   } catch (err) {
@@ -112,7 +112,7 @@ export async function updateServiceAction(
       return fail(messages);
     }
 
-    const result = await updateService(id, parsed.data as UpdateServiceInput);
+    const result = await updateService(id, parsed.data as UpdateServiceInput, user.id);
     if (result.success) revalidateServicePaths(parsed.data.slug);
     return result;
   } catch (err) {
@@ -132,7 +132,7 @@ export async function deleteServiceAction(id: string): Promise<Result<void>> {
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
 
-    const result = await deleteService(id);
+    const result = await deleteService(id, user.id);
     if (result.success) revalidateServicePaths();
     return result;
   } catch (err) {

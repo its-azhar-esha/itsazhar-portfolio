@@ -22,6 +22,7 @@ import { ProjectSeo } from "./project-seo";
 import { ProjectPublishing } from "./project-publishing";
 import { ProjectFormActions } from "./project-form-actions";
 import { ConfirmDialog } from "./confirm-dialog";
+import { VersionHistory } from "@/components/admin/versions/version-history";
 
 export interface FormFields {
   title: string;
@@ -401,6 +402,14 @@ export function ProjectForm({ project }: ProjectFormProps) {
           </Tabs>
         </CardContent>
       </Card>
+
+      {mode === "edit" && project && (
+        <Card className="border-border/50">
+          <CardContent className="pt-6">
+            <VersionHistory entity="projects" entityId={project.id} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="border-border/40 bg-card flex items-center justify-between rounded-lg border px-5 py-4">
         <ProjectFormActions
