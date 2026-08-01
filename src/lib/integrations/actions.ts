@@ -11,6 +11,7 @@ import {
   type IntegrationId,
   type IntegrationInfo,
 } from "./repository";
+import { isIntegrationId } from "./catalog";
 
 export async function getIntegrationsAction(): Promise<Result<IntegrationInfo[]>> {
   try {
@@ -39,7 +40,7 @@ export async function saveIntegrationKeyAction(
 
     const trimmed = secret.trim();
     if (trimmed.length < 8) return fail("API key looks too short to be valid.");
-    if (!["groq", "openrouter"].includes(id)) return fail("Unknown integration.");
+    if (!isIntegrationId(id)) return fail("Unknown integration.");
 
     const result = await upsertIntegrationSecret(id, trimmed, expiresAt);
     if (result.success) {
@@ -64,7 +65,7 @@ export async function clearIntegrationKeyAction(id: IntegrationId): Promise<Resu
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
-    if (!["groq", "openrouter"].includes(id)) return fail("Unknown integration.");
+    if (!isIntegrationId(id)) return fail("Unknown integration.");
 
     const result = await clearIntegrationSecret(id);
     if (result.success) {

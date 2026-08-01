@@ -1,7 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Circle, Eye, EyeOff, KeyRound, RefreshCcw, Trash2 } from "lucide-react";
+import {
+  Bot,
+  CheckCircle2,
+  Circle,
+  Cpu,
+  ExternalLink,
+  Globe,
+  RefreshCcw,
+  Trash2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +22,22 @@ import type { IntegrationInfo, IntegrationId } from "@/lib/integrations/reposito
 
 interface IntegrationManagerProps {
   initial: IntegrationInfo[];
+}
+
+/* Icon registry is keyed by the catalog `icon` value; unknown ids fall
+   back to a generic icon so new integrations never break the UI. */
+const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  groq: Cpu,
+  openrouter: Globe,
+};
+
+function IntegrationIcon({ name }: { name: string }) {
+  const Icon = ICONS[name] ?? Bot;
+  return (
+    <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+      <Icon className="h-3.5 w-3.5" />
+    </span>
+  );
 }
 
 function formatDate(value: string | null): string {
@@ -27,7 +52,6 @@ function formatDate(value: string | null): string {
 export function IntegrationManager({ initial }: IntegrationManagerProps) {
   const [integrations, setIntegrations] = React.useState<IntegrationInfo[]>(initial);
   const [secret, setSecret] = React.useState<Record<string, string>>({});
-  const [show, setShow] = React.useState<Record<string, boolean>>({});
   const [expires, setExpires] = React.useState<Record<string, string>>({});
   const [saving, setSaving] = React.useState<string | null>(null);
   const [clearing, setClearing] = React.useState<IntegrationInfo | null>(null);
@@ -52,7 +76,13 @@ export function IntegrationManager({ initial }: IntegrationManagerProps) {
       setIntegrations((prev) =>
         prev.map((i) =>
           i.id === id
-            ? { ...i, hasStoredKey: true, rotatedAt: new Date().toISOString(), expiresAt }
+            ? {
+                ...i,
+                hasStoredKey: true,
+                maskedKey: `${value.slice(0, 4)}••••••••••${value.slice(-4)}`,
+                rotatedAt: new Date().toISOString(),
+                expiresAt,
+              }
             : i,
         ),
       );
@@ -70,7 +100,9 @@ export function IntegrationManager({ initial }: IntegrationManagerProps) {
     const result = await clearIntegrationKeyAction(target.id);
     if (result.success) {
       setIntegrations((prev) =>
-        prev.map((i) => (i.id === target.id ? { ...i, hasStoredKey: false, expiresAt: null } : i)),
+        prev.map((i) =>
+          i.id === target.id ? { ...i, hasStoredKey: false, maskedKey: null, expiresAt: null } : i,
+        ),
       );
       setMessage({ type: "success", text: `${target.label} stored key removed.` });
     } else {
@@ -105,9 +137,7 @@ export function IntegrationManager({ initial }: IntegrationManagerProps) {
           <Card key={integration.id} className="border-border/50">
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-4 pt-4">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
-                  <KeyRound className="h-3.5 w-3.5" />
-                </span>
+                <IntegrationIcon name={integration.icon} />
                 {integration.label}
               </CardTitle>
               <Badge
@@ -127,43 +157,43 @@ export function IntegrationManager({ initial }: IntegrationManagerProps) {
             <CardContent className="space-y-4 px-4 pt-1 pb-4">
               <p className="text-muted-foreground text-xs">{integration.description}</p>
 
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground text-xs">Key:</span>
+                <code className="bg-accent/50 text-foreground rounded-md px-2.5 py-1 font-mono text-xs">
+                  {integration.maskedKey ?? "—"}
+                </code>
+                {integration.docsUrl && (
+                  <a
+                    href={integration.docsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-xs"
+                  >
+                    Get a key
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor={`key-${integration.id}`}>
-                    {integration.keyLabel}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id={`key-${integration.id}`}
-                      type={show[integration.id] ? "text" : "password"}
-                      placeholder={
-                        integration.hasStoredKey
-                          ? "Stored key is hidden — enter a new one to rotate"
-                          : integration.envConfigured
-                            ? "Leave blank to keep using the env fallback"
-                            : `Paste ${integration.label} API key`
-                      }
-                      value={secret[integration.id] ?? ""}
-                      onChange={(e) =>
-                        setSecret((prev) => ({ ...prev, [integration.id]: e.target.value }))
-                      }
-                      autoComplete="off"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShow((prev) => ({ ...prev, [integration.id]: !prev[integration.id] }))
-                      }
-                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-                      aria-label="Toggle key visibility"
-                    >
-                      {show[integration.id] ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
+                  <Label htmlFor={`key-${integration.id}`}>{integration.keyLabel}</Label>
+                  <Input
+                    id={`key-${integration.id}`}
+                    type="password"
+                    autoComplete="off"
+                    placeholder={
+                      integration.hasStoredKey
+                        ? "Stored key is masked — enter a new one to rotate"
+                        : integration.envConfigured
+                          ? "Leave blank to keep using the env fallback"
+                          : `Paste ${integration.label} API key`
+                    }
+                    value={secret[integration.id] ?? ""}
+                    onChange={(e) =>
+                      setSecret((prev) => ({ ...prev, [integration.id]: e.target.value }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`expires-${integration.id}`}>Optional expiry date</Label>
@@ -182,9 +212,7 @@ export function IntegrationManager({ initial }: IntegrationManagerProps) {
                 <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
                   <span>
                     Used{" "}
-                    <span className="text-foreground font-semibold">
-                      {integration.usageCount}
-                    </span>{" "}
+                    <span className="text-foreground font-semibold">{integration.usageCount}</span>{" "}
                     times
                   </span>
                   <span>Last used: {formatDate(integration.lastUsedAt)}</span>

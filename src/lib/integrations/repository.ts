@@ -6,28 +6,37 @@
  * and resolved here at runtime — never in client bundles, never in logs.
  *
  * Resolution order for an API key: stored secret (admin-managed, preferred)
- * -> existing env var (GROQ_API_KEY / OPENROUTER_API_KEY) as fallback.
+ * -> env var (see catalog entry) as fallback.
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptSecret, decryptSecret } from "@/lib/crypto";
 import { ok, fail, type Result } from "@/lib/result";
-import { env } from "@/lib/env";
 import type { Database } from "@/database.types";
+import {
+  INTEGRATION_CATALOG,
+  getCatalogEntry,
+  getEnvKey,
+  maskKey,
+  type IntegrationId,
+} from "./catalog";
 
-export const INTEGRATION_IDS = ["groq", "openrouter"] as const;
-export type IntegrationId = (typeof INTEGRATION_IDS)[number];
+export type { IntegrationId } from "./catalog";
 
 export interface IntegrationCatalogEntry {
   id: IntegrationId;
   label: string;
   description: string;
   keyLabel: string;
+  icon: string;
   envConfigured: boolean;
+  docsUrl?: string;
 }
 
 export interface IntegrationInfo extends IntegrationCatalogEntry {
   hasStoredKey: boolean;
+  /** Partial key (first/last chars) for identification — never the full secret. */
+  maskedKey: string | null;
   usageCount: number;
   lastUsedAt: string | null;
   rotatedAt: string | null;
@@ -35,29 +44,19 @@ export interface IntegrationInfo extends IntegrationCatalogEntry {
   updatedAt: string | null;
 }
 
-const CATALOG: Record<IntegrationId, Omit<IntegrationCatalogEntry, "envConfigured">> = {
-  groq: {
-    id: "groq",
-    label: "Groq",
-    description: "Fast LLM inference powering the AI chat.",
-    keyLabel: "GROQ_API_KEY",
-  },
-  openrouter: {
-    id: "openrouter",
-    label: "OpenRouter",
-    description: "Multi-model fallback for the AI chat.",
-    keyLabel: "OPENROUTER_API_KEY",
-  },
-};
-
 function isConfiguredViaEnv(id: IntegrationId): boolean {
-  return id === "groq" ? env.hasGroq : env.hasOpenRouter;
+  return getEnvKey(id) !== null;
 }
 
 export function getIntegrationCatalog(): IntegrationCatalogEntry[] {
-  return INTEGRATION_IDS.map((id) => ({
-    ...CATALOG[id],
-    envConfigured: isConfiguredViaEnv(id),
+  return INTEGRATION_CATALOG.map((entry) => ({
+    id: entry.id,
+    label: entry.label,
+    description: entry.description,
+    keyLabel: entry.keyLabel,
+    icon: entry.icon,
+    docsUrl: entry.docsUrl,
+    envConfigured: isConfiguredViaEnv(entry.id),
   }));
 }
 
@@ -76,7 +75,10 @@ export async function getStoredSecret(id: IntegrationId): Promise<string | null>
     if (typeof raw !== "string" || raw === "") return null;
     return decryptSecret(raw);
   } catch (err) {
-    console.error("[integrations] getStoredSecret failed:", err instanceof Error ? err.message : err);
+    console.error(
+      "[integrations] getStoredSecret failed:",
+      err instanceof Error ? err.message : err,
+    );
     return null;
   }
 }
@@ -89,13 +91,33 @@ export async function getIntegrationList(): Promise<Result<IntegrationInfo[]>> {
 
     type IntegrationRow = Database["public"]["Tables"]["integration_settings"]["Row"];
     const rows = new Map(((data ?? []) as IntegrationRow[]).map((row) => [row.id, row]));
-    const list: IntegrationInfo[] = INTEGRATION_IDS.map((id) => {
+    const list: IntegrationInfo[] = INTEGRATION_CATALOG.map((entry) => {
+      const id = entry.id as IntegrationId;
       const row = rows.get(id);
       const config = (row?.config ?? {}) as { secret?: unknown };
+      const hasStoredKey = typeof config.secret === "string" && config.secret !== "";
+      let maskedKey: string | null = null;
+      if (hasStoredKey) {
+        try {
+          const decrypted = decryptSecret(config.secret as string);
+          if (typeof decrypted === "string") maskedKey = maskKey(decrypted);
+        } catch {
+          maskedKey = null;
+        }
+      } else if (isConfiguredViaEnv(id)) {
+        const envKey = getEnvKey(id);
+        if (envKey) maskedKey = maskKey(envKey);
+      }
       return {
-        ...CATALOG[id],
+        id,
+        label: entry.label,
+        description: entry.description,
+        keyLabel: entry.keyLabel,
+        icon: entry.icon,
+        docsUrl: entry.docsUrl,
         envConfigured: isConfiguredViaEnv(id),
-        hasStoredKey: typeof config.secret === "string" && config.secret !== "",
+        hasStoredKey,
+        maskedKey,
         usageCount: row?.usage_count ?? 0,
         lastUsedAt: row?.last_used_at ?? null,
         rotatedAt: row?.rotated_at ?? null,
@@ -105,7 +127,10 @@ export async function getIntegrationList(): Promise<Result<IntegrationInfo[]>> {
     });
     return ok(list);
   } catch (err) {
-    console.error("[integrations] getIntegrationList failed:", err instanceof Error ? err.message : err);
+    console.error(
+      "[integrations] getIntegrationList failed:",
+      err instanceof Error ? err.message : err,
+    );
     return fail(err instanceof Error ? err.message : "Failed to load integrations");
   }
 }
@@ -116,13 +141,15 @@ export async function upsertIntegrationSecret(
   expiresAt?: string | null,
 ): Promise<Result<void>> {
   try {
+    const entry = getCatalogEntry(id);
+    if (!entry) return fail("Unknown integration.");
     const admin = createAdminClient();
     const encrypted = encryptSecret(secret);
     const now = new Date().toISOString();
     const { error } = await admin.from("integration_settings").upsert(
       {
         id,
-        label: CATALOG[id].label,
+        label: entry.label,
         status: "configured",
         config: { secret: encrypted },
         expires_at: expiresAt || null,
@@ -134,7 +161,10 @@ export async function upsertIntegrationSecret(
     if (error) return fail(error.message);
     return ok(undefined);
   } catch (err) {
-    console.error("[integrations] upsertIntegrationSecret failed:", err instanceof Error ? err.message : err);
+    console.error(
+      "[integrations] upsertIntegrationSecret failed:",
+      err instanceof Error ? err.message : err,
+    );
     return fail(err instanceof Error ? err.message : "Failed to save integration key");
   }
 }
@@ -146,7 +176,10 @@ export async function clearIntegrationSecret(id: IntegrationId): Promise<Result<
     if (error) return fail(error.message);
     return ok(undefined);
   } catch (err) {
-    console.error("[integrations] clearIntegrationSecret failed:", err instanceof Error ? err.message : err);
+    console.error(
+      "[integrations] clearIntegrationSecret failed:",
+      err instanceof Error ? err.message : err,
+    );
     return fail(err instanceof Error ? err.message : "Failed to remove integration key");
   }
 }
@@ -160,7 +193,10 @@ async function touchUsage(id: IntegrationId): Promise<void> {
       .eq("id", id)
       .maybeSingle();
     if (!data) return;
-    type UsageRow = Pick<Database["public"]["Tables"]["integration_settings"]["Row"], "usage_count">;
+    type UsageRow = Pick<
+      Database["public"]["Tables"]["integration_settings"]["Row"],
+      "usage_count"
+    >;
     const usage = (data as UsageRow).usage_count;
     await admin
       .from("integration_settings")
@@ -185,7 +221,7 @@ export async function resolveApiKey(id: IntegrationId): Promise<string | null> {
     await touchUsage(id);
     return stored;
   }
-  const envKey = id === "groq" ? env.groqApiKey : env.openrouterApiKey;
+  const envKey = getEnvKey(id);
   if (envKey) {
     await touchUsage(id);
     return envKey;

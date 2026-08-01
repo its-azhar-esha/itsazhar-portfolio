@@ -18,10 +18,15 @@ export default async function IntegrationsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Integrations</h1>
           <p className="text-muted-foreground mt-1 max-w-xl text-sm">
             API keys for external services used by the site. Keys you save here are encrypted
-            (AES-256-GCM) before being stored and are never shown again after saving.
+            (AES-256-GCM) before being stored and are only ever shown as a masked preview — the full
+            value is never displayed again.
           </p>
         </div>
-        <HelpButton helpId="integrations-page" label="Help about the Integrations page" align="left" />
+        <HelpButton
+          helpId="integrations-page"
+          label="Help about the Integrations page"
+          align="left"
+        />
       </div>
 
       {result.success ? (
