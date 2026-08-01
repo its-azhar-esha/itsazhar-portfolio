@@ -4,14 +4,15 @@ const TIMEOUT_MS = 30000;
 const MAX_RETRIES = 1;
 
 import { fetchWithRetry, combineAbortSignals } from "./shared";
+import { resolveApiKey } from "@/lib/integrations/repository";
 
 export async function streamGroq(
   messages: { role: string; content: string }[],
   signal?: AbortSignal,
 ): Promise<Response> {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = await resolveApiKey("groq");
   if (!apiKey) {
-    console.error("[Groq] GROQ_API_KEY is empty or not set");
+    console.error("[Groq] No API key (stored secret or GROQ_API_KEY)");
     throw new Error("Groq API key is not configured");
   }
 
