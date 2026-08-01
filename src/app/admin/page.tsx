@@ -64,7 +64,7 @@ const STATUS_META: Record<
 };
 
 function StatusBadge({ status }: { status: MetricStatus }) {
-  const meta = STATUS_META[status];
+  const meta = getStatusMeta(status);
   return (
     <Badge className={`${meta.badge} text-[10px]`}>
       <span className="mr-1">{meta.emoji}</span>
@@ -131,7 +131,7 @@ function HealthChips({ checks }: { checks: MetricState[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {checks.map((check) => {
-        const meta = STATUS_META[check.status];
+        const meta = getStatusMeta(check.status);
         return (
           <span
             key={check.label}
@@ -182,6 +182,14 @@ const SEVERITY_META: Record<RecommendationSeverity, { label: string; dot: string
 
 const SEVERITY_ORDER: RecommendationSeverity[] = ["high", "medium", "low", "info"];
 
+function getStatusMeta(status: MetricStatus) {
+  return STATUS_META[status] ?? STATUS_META.info;
+}
+
+function getSeverityMeta(severity: RecommendationSeverity) {
+  return SEVERITY_META[severity] ?? SEVERITY_META.info;
+}
+
 function RecommendationsCard({ recommendations }: { recommendations: Recommendation[] }) {
   const sorted = [...recommendations].sort(
     (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
@@ -201,15 +209,18 @@ function RecommendationsCard({ recommendations }: { recommendations: Recommendat
         </CardTitle>
         {recommendations.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
-            {SEVERITY_ORDER.filter((s) => bySeverity(s) > 0).map((s) => (
-              <span
-                key={s}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${SEVERITY_META[s].badge}`}
-              >
-                <span className={`${SEVERITY_META[s].dot} h-1.5 w-1.5 rounded-full`} />
-                {bySeverity(s)} {SEVERITY_META[s].label.toLowerCase()}
-              </span>
-            ))}
+            {SEVERITY_ORDER.filter((s) => bySeverity(s) > 0).map((s) => {
+              const sm = getSeverityMeta(s);
+              return (
+                <span
+                  key={s}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${sm.badge}`}
+                >
+                  <span className={`${sm.dot} h-1.5 w-1.5 rounded-full`} />
+                  {bySeverity(s)} {sm.label.toLowerCase()}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <Badge className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-600">
@@ -229,7 +240,7 @@ function RecommendationsCard({ recommendations }: { recommendations: Recommendat
         ) : (
           <div className="space-y-2">
             {sorted.map((rec) => {
-              const meta = SEVERITY_META[rec.severity];
+              const meta = getSeverityMeta(rec.severity);
               return (
                 <Link
                   key={rec.id}
@@ -537,7 +548,7 @@ export default async function AdminDashboard() {
         </CardHeader>
         <CardContent className="grid gap-2 px-4 pt-0 pb-4 sm:grid-cols-2">
           {d.system.checks.map((check) => {
-            const meta = STATUS_META[check.status];
+            const meta = getStatusMeta(check.status);
             return (
               <div
                 key={check.label}

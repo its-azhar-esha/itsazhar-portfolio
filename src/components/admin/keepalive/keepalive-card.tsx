@@ -40,6 +40,10 @@ function fmt(iso: string | null | undefined): string {
   });
 }
 
+function getStatusMeta(status: KeepAliveStatus) {
+  return STATUS_META[status] ?? STATUS_META.info;
+}
+
 function Row({
   label,
   value,
@@ -66,7 +70,7 @@ function Row({
 
 export function KeepAliveCard({ component }: { component: KeepAliveComponent }) {
   const [open, setOpen] = React.useState(false);
-  const meta = STATUS_META[component.status];
+  const meta = getStatusMeta(component.status);
   const hasDetails = Boolean(
     component.whatHappened ||
     component.lastError ||
