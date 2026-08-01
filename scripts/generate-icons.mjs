@@ -93,7 +93,7 @@ function distRoundedRect(px, py, half, radius) {
 }
 
 /** Returns coverage in [0,1] of the "A" monogram at (x, y) (normalized, centered). */
-function letterACoverage(x, y) {
+function letterACoverage(x, y, feather) {
   const w = 0.46; // overall letter width
   const h = 0.5; // overall letter height
   const t = 0.115; // stroke thickness
@@ -112,7 +112,7 @@ function letterACoverage(x, y) {
     distSeg(x, y, topX, topY, right, botY),
     distSeg(x, y, crossX1, crossY, crossX2, crossY),
   );
-  return Math.min(1, Math.max(0, 0.5 + (half - d)));
+  return clamp01(0.5 + (half - d) / feather);
 }
 
 function draw(size, maskable) {
@@ -120,6 +120,7 @@ function draw(size, maskable) {
   const tileHalf = size * 0.42; // tile fills 84% of the canvas
   const tileRadius = size * 0.11;
   const letterScale = 0.78; // 1 letter unit = 78% of the canvas
+  const letterFeather = 1 / (letterScale * size); // ~1px anti-alias feather
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -145,13 +146,13 @@ function draw(size, maskable) {
         r = mix(BG[0], TILE[0], tileCover);
         g = mix(BG[1], TILE[1], tileCover);
         b = mix(BG[2], TILE[2], tileCover);
-        a = Math.round(clamp01(0.5 - dist) * 255);
+        a = Math.round(tileCover * 255);
       }
 
-      // Letter "A" on the tile (only where the tile surface is present).
-      const ink = clamp01(
-        letterACoverage(px / letterScale, py / letterScale) - (maskable ? 0 : dist / size),
-      );
+      // Letter "A" on the tile, faded at the tile edge (fades with it).
+      const ink =
+        letterACoverage(px / letterScale, py / letterScale, letterFeather) *
+        (maskable ? 1 : tileCover);
       if (ink > 0.01) {
         r = mix(r, INK[0], ink);
         g = mix(g, INK[1], ink);
