@@ -70,13 +70,15 @@ export function getMockRelated(slug: string, limit = 3): Project[] {
   const current = all.find((p) => p.slug === slug);
   if (!current) return [];
   const industry = Array.isArray(current.industry) ? current.industry : [current.industry];
-  return all
-    .filter(
-      (p) =>
-        p.slug !== slug &&
-        (Array.isArray(p.industry)
-          ? p.industry.some((i) => industry.includes(i))
-          : industry.includes(p.industry as string)),
-    )
-    .slice(0, limit);
+  const related = all.filter(
+    (p) =>
+      p.slug !== slug &&
+      (Array.isArray(p.industry)
+        ? p.industry.some((i) => industry.includes(i))
+        : industry.includes(p.industry as string)),
+  );
+  if (related.length >= limit) return related.slice(0, limit);
+  const others = all.filter((p) => p.slug !== slug).sort(() => Math.random() - 0.5);
+  const byIndustry = new Set(related.map((p) => p.slug));
+  return [...related, ...others.filter((p) => !byIndustry.has(p.slug))].slice(0, limit);
 }

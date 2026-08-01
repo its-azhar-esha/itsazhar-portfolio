@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Play, ExternalLink, ArrowRight, FolderKanban } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,24 @@ interface ProjectModalProps {
   project: Project | null;
   projects: Project[];
   onClose: () => void;
+}
+
+/* Deterministic, seed-based shuffle so recommendations are stable for a
+   given project (React purity: no Math.random during render). */
+function seededPick<T>(items: T[], seed: string, count: number): T[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    const j = h % (i + 1);
+    const tmp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = tmp;
+  }
+  return shuffled.slice(0, count);
 }
 
 function WorkflowTimeline({ steps }: { steps: string[] }) {
@@ -51,10 +70,29 @@ function WorkflowTimeline({ steps }: { steps: string[] }) {
 }
 
 export function ProjectModal({ project, projects, onClose }: ProjectModalProps) {
+  const router = useRouter();
   const related = React.useMemo(() => {
     if (!project) return [];
-    return projects.filter((p) => p.slug !== project.slug).slice(0, 3);
+    const others = projects.filter((p) => p.slug !== project.slug);
+    const industry = Array.isArray(project.industry) ? project.industry : [project.industry];
+    const byIndustry = others.filter((p) => {
+      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
+      return inds.some((i) => industry.includes(i));
+    });
+    if (byIndustry.length >= 3) return byIndustry.slice(0, 3);
+    const chosen = new Set(byIndustry.map((p) => p.slug));
+    const rest = seededPick(
+      others.filter((p) => !chosen.has(p.slug)),
+      project.slug,
+      3 - byIndustry.length,
+    );
+    return [...byIndustry, ...rest];
   }, [project, projects]);
+
+  const openProject = (slug: string) => {
+    onClose();
+    router.push(`/projects/${slug}`);
+  };
 
   React.useEffect(() => {
     if (!project) return;
@@ -299,7 +337,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                         key={r.slug}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onClose();
+                          openProject(r.slug);
                         }}
                         className="group text-left"
                       >

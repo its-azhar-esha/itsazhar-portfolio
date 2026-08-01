@@ -194,15 +194,19 @@ export async function getPublicRelatedAction(slug: string, limit = 3): Promise<P
     const current = projects.find((p) => p.slug === slug);
     if (!current) return getMockRelated(slug, limit);
     const industry = Array.isArray(current.industry) ? current.industry : [current.industry];
-    return projects
-      .filter(
-        (p) =>
-          p.slug !== slug &&
-          (Array.isArray(p.industry)
-            ? p.industry.some((i) => industry.includes(i))
-            : industry.includes(p.industry as string)),
-      )
-      .slice(0, limit);
+    const related = projects.filter(
+      (p) =>
+        p.slug !== slug &&
+        (Array.isArray(p.industry)
+          ? p.industry.some((i) => industry.includes(i))
+          : industry.includes(p.industry as string)),
+    );
+    if (related.length >= limit) return related.slice(0, limit);
+    // No (or few) industry matches — fill the slots with random projects so
+    // recommendations always render and are clickable.
+    const others = projects.filter((p) => p.slug !== slug).sort(() => Math.random() - 0.5);
+    const byIndustry = new Set(related.map((p) => p.slug));
+    return [...related, ...others.filter((p) => !byIndustry.has(p.slug))].slice(0, limit);
   } catch {
     return getMockRelated(slug, limit);
   }
