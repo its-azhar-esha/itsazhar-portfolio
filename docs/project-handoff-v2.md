@@ -1510,4 +1510,60 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
   yet because the tables are new and site-login recording begins from this
   release onward.
 
-- **Last Updated:** 2026-08-01 (Phase 9I — media folders/tags/bulk, audit + login history, encrypted integrations, scheduled publishing, version history)
+## 23. Phase 9J - Masked integration keys + data-driven catalog + monitoring dashboard (2026-08-01, commits `ded34fd` + `5a12ad6`)
+
+### 23.1 Integration Center: masked keys, never shown in full
+
+- `src/lib/integrations/catalog.ts` — data-driven registry: adding a new
+  provider is one entry (id, label, description, keyLabel, envVarName,
+  category, icon, docsUrl, keyHint). Repository, actions and UI all derive
+  from it; `isIntegrationId`/`getCatalogEntry`/`getEnvKey`/`maskKey`
+  helpers; unknown icon keys fall back to a generic icon so new entries
+  never break the UI.
+- `maskKey` keeps first 4 + last 4 characters (`gsk_••••••••••ChN5`).
+  `getIntegrationList` returns `maskedKey` for the active source (stored
+  secret preferred, env var fallback) — decryption happens server-side
+  only. After saving/rotating, the client shows the same masking; the eye
+  reveal toggle was removed and the input is always `type="password"`.
+  Full values never leave the server (and never appear in HTML/RSC
+  payloads — verified in production output).
+- UI: masked key chip (monospace) + "Get a key" external link per card
+  (from catalog `docsUrl`); repository no longer hardcodes provider
+  branches — `resolveApiKey` resolves via the catalog env var name.
+- Actions validate ids against the catalog instead of a hardcoded list.
+
+### 23.2 Monitoring dashboard (`/admin`, rewritten)
+
+- `src/lib/dashboard/actions.ts` — `getDashboardOverviewAction` returns a
+  typed `DashboardOverview`, every metric computed defensively (a failing
+  source degrades to a visible error/unavailable state, never fails the
+  page). `src/lib/dashboard/format.ts` holds pure `formatBytes`/`formatCount`
+  (a "use server" module cannot export sync functions).
+- Migration `00029_db_usage_dashboard.sql` (applied remotely): new
+  `get_db_usage()` RPC (security definer, service-role/authenticated only)
+  returning db size bytes, approximate total rows and per-table
+  size/rows (largest first).
+- Widgets: system status banner (All systems operational / Attention
+  needed) with health chips for Database, Storage, Uptime, Backups,
+  Migrations; usage meters with progress bars for Storage (vs 1 GB Free
+  tier) and Database (vs 500 MB Free tier); Request volume (tracked
+  events, page views, admin actions, leads, 30d window); Bandwidth proxy
+  (downloads + hosted media — exact egress needs Vercel Pro, clearly
+  labeled); API usage per integration (masked key chips, call counts);
+  Rate limit status (measured tracked traffic/min vs Supabase per-minute
+  limits, labeled as an estimate); largest tables with size bars; service
+  health detail list.
+- Deployment widget reads the Vercel API best-effort (`VERCEL_TOKEN` +
+  `VERCEL_PROJECT_ID`); when the token is absent in the deployed env the
+  card says so instead of failing.
+
+### 23.3 Verification
+
+- tsc clean, lint 0 errors (1 pre-existing img warning), build green.
+- Production-verified with an authenticated session: `/admin` 200 with
+  all widget sections + real values (storage 526 KB used / 0.1%,
+  DB size, quotas), no login redirect; `/admin/integrations` 200 with
+  masked chips (`gsk_••••••••••ChN5` confirmed via UTF-8 codepoint in the
+  RSC payload — full key never present in HTML).
+
+- **Last Updated:** 2026-08-01 (Phase 9J — masked integration keys, data-driven catalog, monitoring dashboard)
