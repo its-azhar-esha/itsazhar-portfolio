@@ -1302,4 +1302,65 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    object identities during drags — toggle creates a new object
    (fine outside a drag).
 
-- **Last Updated:** 2026-08-01 (Phase 9F — nav management, analytics/DX expansion, automated backups)
+## 20. Phase 9G - Original brand assets, secrets hygiene, safe hardening (2026-08-01, commit `abdc0a8` + `f8d544a`)
+
+1. **All default Next.js/Vercel brand assets removed** — deleted
+   `public/file.svg`, `globe.svg`, `next.svg`, `vercel.svg`,
+   `window.svg` and `src/app/favicon.ico` (none were referenced in
+   `src/`). New 100% original branding, matching the navbar monogram
+   (near-white rounded tile + dark "A" on `#09090b`):
+   - `src/app/icon.svg` — original SVG favicon (served by Next at
+     `/icon.svg`, auto-linked; `/favicon.ico` now 404s — expected).
+   - `public/icons/icon-{192,512}.png` + `icon-{192,512}-maskable.png`
+     (maskable = full-bleed dark bg, content inside safe zone) — the
+     manifest already referenced exactly these paths (they had never
+     existed before, so PWA icons were broken 404s until now).
+   - `scripts/generate-icons.mjs` — regenerates all icons with a
+     dependency-free PNG encoder (zlib + hand-rolled CRC32) and
+     distance-field rasterizer. Run `node scripts/generate-icons.mjs`
+     to regenerate. VERIFY pixel stats after regenerating: tile ≈60%,
+     ink ≈9%, transparent ≈30%, center pixel `250,250,250,255` (a
+     `0.5+(half-d)` feather must be divided by a ~1px feather width,
+     otherwise the letter feathers over the whole tile).
+2. **Secrets hygiene (verified)** — `git log --all -p` contains NO
+   `.env*` files and no JWT/service-role strings; `.env*` is gitignored.
+   Added `.env.example` (placeholders only; `.gitignore` now has
+   `!.env.example`). Secret access is server-only: `src/lib/env.ts`
+   reads static `process.env.X` (service-role key and AI keys are NOT
+   `NEXT_PUBLIC_*` so bundlers can never inline them into client
+   bundles). `/admin` is guarded by `src/proxy.ts` (redirects
+   navigations, lets POST server actions through — actions enforce
+   `auth.getUser()` themselves); `robots.txt` now disallows `/api/`
+   AND `/admin/`; security headers (CSP, X-Frame-Options DENY,
+   nosniff, Referrer-Policy, Permissions-Policy) already in
+   `next.config.ts`.
+3. **Domain-switch runbook (itsazhar.com)** — no code changes needed:
+   the site is fully `SITE_URL`-driven (`src/lib/site.ts` resolves
+   `NEXT_PUBLIC_SITE_URL` first, falling back to the Vercel domain;
+   `sitemap.ts`, `robots.ts`, `metadataBase` in `src/app/layout.tsx`
+   all consume it). To switch: attach `itsazhar.com` in Vercel
+   (Domains → add), set the `NEXT_PUBLIC_SITE_URL` env var in Vercel
+   to `https://itsazhar.com`, redeploy. Nothing else changes. Do NOT
+   hardcode `itsazhar.com` anywhere until then.
+4. **Safe perf/UX hardening (no breaking changes)** —
+   - `getPublicSiteSettings()` wrapped in React `cache()` (one
+     settings fetch per request across layout/page/footer instead of
+     several).
+   - `getAnalyticsConfig()` in `src/lib/analytics/actions.ts` now has
+     a 60s TTL module cache (config is read on every tracked event);
+     `saveAnalyticsConfigAction` calls `invalidateAnalyticsConfigCache()`
+     after saving. NOTE: every export in a `"use server"` module must
+     be async — `invalidateAnalyticsConfigCache()` is `async` for that
+     reason (Turbopack fails the build otherwise).
+   - `<link rel="apple-touch-icon" href="/icons/icon-192.png">` added
+     to `src/app/layout.tsx` head.
+   - `scripts/generate-icons.mjs` requires no dependencies (runs in
+     plain Node, no npm packages).
+5. **Deploy status** — `abdc0a8` then `f8d544a` (icon rendering fix)
+   pushed; Vercel auto-deploy READY; production verified:
+   `/icon.svg`, all 4 manifest icons, `/manifest.webmanifest` → 200;
+   deleted assets → 404; deployed icon-512 byte-identical to local
+   (8880 bytes); `robots.txt` lists both disallow rules; `/admin`
+   307s to `/admin/login` with X-Frame-Options DENY present.
+
+- **Last Updated:** 2026-08-01 (Phase 9G — original brand assets, secrets hygiene, safe hardening)
