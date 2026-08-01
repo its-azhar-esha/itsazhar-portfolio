@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import {
   Activity,
+  AlertTriangle,
   ArrowDownRight,
   Download,
+  Globe,
+  ListOrdered,
+  Map,
+  Monitor,
   MousePointerClick,
+  Search,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -12,6 +18,8 @@ import { getAnalyticsSummaryAction } from "@/lib/analytics/actions";
 import { getSettings } from "@/lib/settings/repository";
 import { AnalyticsConfigCard } from "@/components/admin/analytics/config-card";
 import { CsvExportButton } from "@/components/admin/analytics/csv-export-button";
+import { SectionCard } from "@/components/admin/section-card";
+import { HelpButton } from "@/components/ui/help-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -94,11 +102,13 @@ function StatCard({
   label,
   value,
   sub,
+  help,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
   sub: string;
+  help: string;
 }) {
   return (
     <Card className="border-border/50">
@@ -108,6 +118,7 @@ function StatCard({
             <Icon className="h-3.5 w-3.5" />
           </div>
           <CardTitle className="text-muted-foreground text-sm font-medium">{label}</CardTitle>
+          <HelpButton helpId={help} label={`Help about ${label}`} className="ml-auto" />
         </div>
       </CardHeader>
       <CardContent className="px-4 pt-1 pb-4">
@@ -142,20 +153,24 @@ export default async function AnalyticsPage() {
   const funnelMax = Math.max(1, s.pageViews30d);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-muted-foreground mt-1 max-w-xl text-sm">
             Activity from the last {s.windowDays} days. Tracking starts when the page first loads —
             counters build up over time.
           </p>
         </div>
-        <CsvExportButton />
+        <div className="flex items-center gap-2">
+          <HelpButton helpId="analytics-page" label="Help about the Analytics page" align="left" />
+          <CsvExportButton />
+        </div>
       </div>
 
       {!s.trackingEnabled && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+        <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           Tracking is currently disabled in the analytics configuration below. New events are not
           being recorded.
         </div>
@@ -169,41 +184,57 @@ export default async function AnalyticsPage() {
           label="Page views"
           value={String(s.pageViews30d)}
           sub={`${s.uniqueSessions30d} unique session${s.uniqueSessions30d === 1 ? "" : "s"}`}
+          help="analytics-page"
         />
         <StatCard
           icon={Download}
           label="Downloads"
           value={String(s.downloadsTotal + s.downloadEvents30d)}
           sub={`${s.downloadsTotal} lifetime · ${s.downloadEvents30d} in ${s.windowDays}d`}
+          help="analytics-top-resources"
         />
         <StatCard
           icon={MousePointerClick}
           label="CTA clicks"
           value={String(s.ctaClicks30d)}
           sub="Bookings, Get access & calls-to-action"
+          help="analytics-cta-breakdown"
         />
         <StatCard
           icon={TrendingUp}
           label="Conversion"
           value={s.conversionRate === null ? "—" : `${s.conversionRate}%`}
           sub={`${s.leads30d} lead${s.leads30d === 1 ? "" : "s"} in ${s.windowDays}d`}
+          help="analytics-funnel"
         />
       </div>
 
       <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base">Daily page views · last {s.windowDays} days</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pt-4 pb-0">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+              <Activity className="h-3.5 w-3.5" />
+            </span>
+            Daily page views · last {s.windowDays} days
+            <HelpButton helpId="analytics-chart" label="Help about the daily views chart" />
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pt-3 pb-4">
           <DailyViewsChart data={s.dailyViews} />
         </CardContent>
       </Card>
 
       <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base">Conversion funnel</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pt-4 pb-0">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+              <TrendingUp className="h-3.5 w-3.5" />
+            </span>
+            Conversion funnel
+            <HelpButton helpId="analytics-funnel" label="Help about the conversion funnel" />
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pt-3 pb-4">
           <div className="space-y-3">
             {funnelSteps.map((step, i) => (
               <div key={step.label} className="flex items-center gap-4">
@@ -235,159 +266,113 @@ export default async function AnalyticsPage() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Most viewed projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.topProjects.length ? (
-              <BarList items={s.topProjects} valueKey="views" labelKey="title" />
-            ) : (
-              <EmptyNote text="No views yet — project views are counted on every visit." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Most viewed projects" icon={Activity} help="analytics-top-projects">
+          {s.topProjects.length ? (
+            <BarList items={s.topProjects} valueKey="views" labelKey="title" />
+          ) : (
+            <EmptyNote text="No views yet — project views are counted on every visit." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Most viewed templates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.topTemplates.length ? (
-              <BarList items={s.topTemplates} valueKey="views" labelKey="title" />
-            ) : (
-              <EmptyNote text="No template views yet." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Most viewed templates" icon={Activity} help="analytics-top-templates">
+          {s.topTemplates.length ? (
+            <BarList items={s.topTemplates} valueKey="views" labelKey="title" />
+          ) : (
+            <EmptyNote text="No template views yet." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Most read blog posts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.topBlogPosts.length ? (
-              <BarList items={s.topBlogPosts} valueKey="views" labelKey="title" />
-            ) : (
-              <EmptyNote text="Blog post views will appear here." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Most read blog posts" icon={Activity} help="analytics-top-blog">
+          {s.topBlogPosts.length ? (
+            <BarList items={s.topBlogPosts} valueKey="views" labelKey="title" />
+          ) : (
+            <EmptyNote text="Blog post views will appear here." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Top downloads</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.topResources.length ? (
-              <BarList items={s.topResources} valueKey="downloads" labelKey="title" />
-            ) : (
-              <EmptyNote text="No downloadable resources yet." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Top downloads" icon={Download} help="analytics-top-resources">
+          {s.topResources.length ? (
+            <BarList items={s.topResources} valueKey="downloads" labelKey="title" />
+          ) : (
+            <EmptyNote text="No downloadable resources yet." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Traffic sources</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.sources.length ? (
-              <BarList items={s.sources} valueKey="count" labelKey="referrer" />
-            ) : (
-              <EmptyNote text="Referrer data will appear here." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Traffic sources" icon={Globe} help="analytics-sources">
+          {s.sources.length ? (
+            <BarList items={s.sources} valueKey="count" labelKey="referrer" />
+          ) : (
+            <EmptyNote text="Referrer data will appear here." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Devices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.devices.length ? (
-              <BarList items={s.devices} valueKey="count" labelKey="device" />
-            ) : (
-              <EmptyNote text="Device data will appear here." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Devices" icon={Monitor} help="analytics-devices">
+          {s.devices.length ? (
+            <BarList items={s.devices} valueKey="count" labelKey="device" />
+          ) : (
+            <EmptyNote text="Device data will appear here." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Search keywords</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.topSearches.length ? (
-              <BarList items={s.topSearches} valueKey="count" labelKey="keyword" />
-            ) : (
-              <EmptyNote text="Hub searches will appear here." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Search keywords" icon={Search} help="analytics-keywords-top">
+          {s.topSearches.length ? (
+            <BarList items={s.topSearches} valueKey="count" labelKey="keyword" />
+          ) : (
+            <EmptyNote text="Hub searches will appear here." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Visitor flow · top pages</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.topPages.length ? (
-              <BarList items={s.topPages} valueKey="count" labelKey="path" />
-            ) : (
-              <EmptyNote text="Page views will appear here." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard title="Visitor flow · top pages" icon={Map} help="analytics-pages">
+          {s.topPages.length ? (
+            <BarList items={s.topPages} valueKey="count" labelKey="path" />
+          ) : (
+            <EmptyNote text="Page views will appear here." />
+          )}
+        </SectionCard>
 
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">CTA clicks by source</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {s.ctaBreakdown.length ? (
-              <BarList items={s.ctaBreakdown} valueKey="count" labelKey="label" />
-            ) : (
-              <EmptyNote text="CTA clicks will appear here." />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard
+          title="CTA clicks by source"
+          icon={MousePointerClick}
+          help="analytics-cta-breakdown"
+        >
+          {s.ctaBreakdown.length ? (
+            <BarList items={s.ctaBreakdown} valueKey="count" labelKey="label" />
+          ) : (
+            <EmptyNote text="CTA clicks will appear here." />
+          )}
+        </SectionCard>
       </div>
 
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base">Recent events</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {s.recentEvents.length ? (
-            <div className="space-y-2">
-              {s.recentEvents.map((e) => (
-                <div
-                  key={`${e.created_at}-${e.event}-${e.label}`}
-                  className="border-border/40 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 text-xs"
-                >
-                  <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 font-semibold">
-                    {e.event}
-                  </span>
-                  {e.label && <span className="font-medium">{e.label}</span>}
-                  {e.page_path && (
-                    <span className="text-muted-foreground truncate">{e.page_path}</span>
-                  )}
-                  <span className="text-muted-foreground ml-auto shrink-0">
-                    {new Date(e.created_at).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyNote text="No tracked events yet — visit the site to start collecting data." />
-          )}
-        </CardContent>
-      </Card>
+      <SectionCard title="Recent events" icon={ListOrdered} help="analytics-recent">
+        {s.recentEvents.length ? (
+          <div className="space-y-2">
+            {s.recentEvents.map((e) => (
+              <div
+                key={`${e.created_at}-${e.event}-${e.label}`}
+                className="border-border/40 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 text-xs"
+              >
+                <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 font-semibold">
+                  {e.event}
+                </span>
+                {e.label && <span className="font-medium">{e.label}</span>}
+                {e.page_path && (
+                  <span className="text-muted-foreground truncate">{e.page_path}</span>
+                )}
+                <span className="text-muted-foreground ml-auto shrink-0">
+                  {new Date(e.created_at).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyNote text="No tracked events yet — visit the site to start collecting data." />
+        )}
+      </SectionCard>
     </div>
   );
 }

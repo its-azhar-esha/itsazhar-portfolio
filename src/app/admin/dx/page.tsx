@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
 import {
   Activity,
+  Archive,
   CheckCircle2,
   Database,
   ExternalLink,
   FileWarning,
   Globe,
   HardDrive,
+  HeartPulse,
   Link2,
   SearchCheck,
   ShieldCheck,
   XCircle,
   AlertTriangle,
-  Archive,
-  HeartPulse,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDxReportAction } from "@/lib/dx/actions";
 import type { CheckStatus } from "@/lib/dx/actions";
 import { getSettings } from "@/lib/settings/repository";
 import { DxConfigCard } from "@/components/admin/dx/config-card";
+import { SectionCard } from "@/components/admin/section-card";
+import { HelpButton } from "@/components/ui/help-dialog";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ function StatusBadge({ status }: { status: CheckStatus }) {
   return (
     <span
       className={cn(
-        "rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase",
+        "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase",
         s.cls,
       )}
     >
@@ -47,46 +48,46 @@ function StatusBadge({ status }: { status: CheckStatus }) {
   );
 }
 
-function Section({
-  title,
-  icon: Icon,
-  children,
-  right,
+function StatTile({
+  label,
+  value,
+  help,
+  tone,
 }: {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children: React.ReactNode;
-  right?: React.ReactNode;
+  label: string;
+  value: string;
+  help: string;
+  tone?: "ok" | "bad";
 }) {
-  return (
-    <Card className="border-border/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Icon className="text-primary h-4 w-4" />
-          {title}
-        </CardTitle>
-        {right}
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
-  );
-}
-
-function StatPill({ label, value, tone }: { label: string; value: string; tone?: "ok" | "bad" }) {
   return (
     <div
       className={cn(
-        "rounded-lg border px-3 py-2 text-xs",
-        tone === "bad"
-          ? "border-red-500/30 bg-red-500/10 text-red-500"
-          : tone === "ok"
-            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
-            : "border-border/50 bg-muted text-muted-foreground",
+        "border-border/50 bg-card rounded-xl border p-4",
+        tone === "bad" && "border-red-500/30 bg-red-500/5",
       )}
     >
-      <span className="block text-sm font-bold">{value}</span>
-      {label}
+      <div className="flex items-start justify-between gap-2">
+        <span
+          className={cn(
+            "text-2xl font-bold tracking-tight",
+            tone === "bad" ? "text-red-500" : tone === "ok" ? "text-emerald-500" : undefined,
+          )}
+        >
+          {value}
+        </span>
+        <HelpButton helpId={help} label={`Help about ${label}`} />
+      </div>
+      <p className="text-muted-foreground mt-0.5 text-xs">{label}</p>
     </div>
+  );
+}
+
+function Dot({ ok, title }: { ok: boolean; title: string }) {
+  return (
+    <span
+      title={title}
+      className={cn("h-3.5 w-3.5 rounded-[3px]", ok ? "bg-emerald-500/80" : "bg-red-500/80")}
+    />
   );
 }
 
@@ -110,47 +111,54 @@ export default async function DxPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Developer Tools</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Health checks, schema drift, backups, broken references and SEO validation — everything
-          that keeps the site running.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Developer Tools</h1>
+          <p className="text-muted-foreground mt-1 max-w-xl text-sm">
+            Health checks, schema drift, backups, broken references and SEO validation — everything
+            that keeps the site running.
+          </p>
+        </div>
+        <HelpButton helpId="dx-page" label="Help about the Developer Tools page" align="left" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatPill
+        <StatTile
           label="Health checks failed"
           value={String(r.health.filter((h) => h.status !== "ok").length)}
+          help="dx-health"
           tone={r.health.every((h) => h.status === "ok") ? "ok" : "bad"}
         />
-        <StatPill
+        <StatTile
           label="Pending migrations"
           value={String(r.migrationStatus.pending.length)}
+          help="dx-migrations"
           tone={r.migrationStatus.ok ? "ok" : "bad"}
         />
-        <StatPill
-          label="Keep-alive streak (days)"
-          value={String(r.keepAlive.streakDays)}
-          tone={r.keepAlive.okToday ? "ok" : r.keepAlive.streakDays > 0 ? "ok" : "bad"}
+        <StatTile
+          label="Keep-alive streak"
+          value={`${r.keepAlive.streakDays}d`}
+          help="dx-keepalive"
+          tone={r.keepAlive.okToday || r.keepAlive.streakDays > 0 ? "ok" : "bad"}
         />
-        <StatPill
+        <StatTile
           label="Last backup"
           value={
             r.backups.latest
               ? r.backups.ageDays === 0
                 ? "today"
-                : `${r.backups.ageDays} day${r.backups.ageDays === 1 ? "" : "s"} ago`
+                : `${r.backups.ageDays}d ago`
               : "never"
           }
+          help="dx-backup"
           tone={r.backups.ok ? "ok" : backupStale || !r.backups.latest ? "bad" : undefined}
         />
       </div>
 
-      {dxConfig && <DxConfigCard initial={dxConfig} />}
+      {dxConfig ? <DxConfigCard initial={dxConfig} /> : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Health monitor" icon={Activity}>
+        <SectionCard title="Health monitor" icon={Activity} help="dx-health">
           <ul className="space-y-2">
             {r.health.map((h) => (
               <li
@@ -165,11 +173,12 @@ export default async function DxPage() {
               </li>
             ))}
           </ul>
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Keep-alive history"
           icon={HeartPulse}
+          help="dx-keepalive"
           right={<StatusBadge status={r.keepAlive.okToday ? "ok" : "warn"} />}
         >
           <p className="text-muted-foreground mb-3 text-xs">
@@ -180,13 +189,10 @@ export default async function DxPage() {
           </p>
           <div className="flex flex-wrap gap-1.5">
             {r.keepAlive.recent.map((c) => (
-              <span
+              <Dot
                 key={c.checked_on}
+                ok={c.ok}
                 title={`${c.checked_on}: ${c.ok ? "ok" : "failed"}${c.latency_ms != null ? ` (${c.latency_ms}ms)` : ""}`}
-                className={cn(
-                  "h-3.5 w-3.5 rounded-[3px]",
-                  c.ok ? "bg-emerald-500/80" : "bg-red-500/80",
-                )}
               />
             ))}
             {r.keepAlive.recent.length === 0 && (
@@ -195,11 +201,12 @@ export default async function DxPage() {
               </p>
             )}
           </div>
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Backup status"
           icon={Archive}
+          help="dx-backup"
           right={<StatusBadge status={r.backups.ok ? "ok" : backupStale ? "error" : "warn"} />}
         >
           {!r.backups.latest ? (
@@ -209,27 +216,41 @@ export default async function DxPage() {
             </p>
           ) : (
             <div className="space-y-3 text-sm">
-              <div className="flex flex-wrap gap-2">
-                <StatPill
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <StatTile
                   label={`Backup ${r.backups.latest.backup_date}`}
                   value={r.backups.ageDays === 0 ? "today" : `${r.backups.ageDays}d ago`}
+                  help="dx-backup"
                   tone={r.backups.ok ? "ok" : backupStale ? "bad" : undefined}
                 />
-                <StatPill label="Tables" value={String(r.backups.latest.table_count)} />
-                <StatPill label="Files" value={String(r.backups.latest.file_count)} />
-                <StatPill label="Size" value={humanBytes(r.backups.latest.size_bytes)} tone="ok" />
+                <StatTile
+                  label="Tables"
+                  value={String(r.backups.latest.table_count)}
+                  help="dx-backup"
+                />
+                <StatTile
+                  label="Files"
+                  value={String(r.backups.latest.file_count)}
+                  help="dx-backup"
+                />
+                <StatTile
+                  label="Size"
+                  value={humanBytes(r.backups.latest.size_bytes)}
+                  help="dx-backup"
+                />
               </div>
               {backupStale && (
-                <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600">
+                <p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   Last backup is over 3 days old. Check that the Vercel cron and the GitHub backup
                   workflow are running.
                 </p>
               )}
             </div>
           )}
-        </Section>
+        </SectionCard>
 
-        <Section title="RLS posture" icon={ShieldCheck}>
+        <SectionCard title="RLS posture" icon={ShieldCheck} help="dx-rls">
           <p className="text-muted-foreground mb-3 text-xs">
             Every public table should have RLS enabled. Service-role-only tables (health_checks,
             backups) are intentionally policy-free.
@@ -259,11 +280,12 @@ export default async function DxPage() {
               );
             })}
           </div>
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Orphan storage files"
           icon={FileWarning}
+          help="dx-orphans"
           right={<StatusBadge status={r.orphans.total === 0 ? "ok" : "warn"} />}
         >
           <p className="text-muted-foreground mb-3 text-xs">
@@ -295,9 +317,9 @@ export default async function DxPage() {
               </ul>
             </>
           )}
-        </Section>
+        </SectionCard>
 
-        <Section title="Environment checker" icon={ShieldCheck}>
+        <SectionCard title="Environment checker" icon={Globe} help="dx-env">
           <ul className="space-y-2">
             {r.environment.map((e) => (
               <li
@@ -312,19 +334,29 @@ export default async function DxPage() {
               </li>
             ))}
           </ul>
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Migration status"
           icon={Database}
+          help="dx-migrations"
           right={<StatusBadge status={r.migrationStatus.ok ? "ok" : "error"} />}
         >
           <div className="mb-3 flex flex-wrap gap-2">
-            <StatPill label="Local" value={String(r.migrationStatus.local.length)} />
-            <StatPill label="Applied remotely" value={String(r.migrationStatus.applied.length)} />
-            <StatPill
+            <StatTile
+              label="Local"
+              value={String(r.migrationStatus.local.length)}
+              help="dx-migrations"
+            />
+            <StatTile
+              label="Applied remotely"
+              value={String(r.migrationStatus.applied.length)}
+              help="dx-migrations"
+            />
+            <StatTile
               label="Pending"
               value={String(r.migrationStatus.pending.length)}
+              help="dx-migrations"
               tone={r.migrationStatus.ok ? "ok" : "bad"}
             />
           </div>
@@ -353,17 +385,22 @@ export default async function DxPage() {
               <CheckCircle2 className="h-3.5 w-3.5" /> Schema is in sync.
             </p>
           )}
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Storage status"
           icon={HardDrive}
+          help="dx-storage"
           right={<StatusBadge status={r.storage.ok ? "ok" : "warn"} />}
         >
           <div className="mb-3 flex flex-wrap gap-2">
-            <StatPill label="Buckets" value={String(r.storage.buckets.length)} />
-            <StatPill label="Objects" value={String(r.storage.totalObjects)} />
-            <StatPill label="Total size" value={humanBytes(r.storage.totalBytes)} tone="ok" />
+            <StatTile label="Buckets" value={String(r.storage.buckets.length)} help="dx-storage" />
+            <StatTile label="Objects" value={String(r.storage.totalObjects)} help="dx-storage" />
+            <StatTile
+              label="Total size"
+              value={humanBytes(r.storage.totalBytes)}
+              help="dx-storage"
+            />
           </div>
           {r.storage.buckets.length === 0 ? (
             <p className="text-muted-foreground text-sm">No buckets found.</p>
@@ -384,11 +421,12 @@ export default async function DxPage() {
               ))}
             </div>
           )}
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Database status"
           icon={Database}
+          help="dx-database"
           right={<StatusBadge status={r.database.ok ? "ok" : "error"} />}
         >
           <div className="border-border/40 divide-border/40 divide-y overflow-hidden rounded-lg border text-sm">
@@ -401,11 +439,12 @@ export default async function DxPage() {
               </div>
             ))}
           </div>
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Broken reference detector"
           icon={FileWarning}
+          help="dx-brokenrefs"
           right={<StatusBadge status={r.brokenRefs.total === 0 ? "ok" : "error"} />}
         >
           {r.brokenRefs.total === 0 ? (
@@ -439,9 +478,9 @@ export default async function DxPage() {
               </ul>
             </>
           )}
-        </Section>
+        </SectionCard>
 
-        <Section title="SEO validator" icon={SearchCheck}>
+        <SectionCard title="SEO validator" icon={SearchCheck} help="dx-seo-validator">
           {r.seo.length === 0 ? (
             <p className="text-muted-foreground text-sm">Nothing to validate yet.</p>
           ) : (
@@ -487,11 +526,12 @@ export default async function DxPage() {
               ))}
             </ul>
           )}
-        </Section>
+        </SectionCard>
 
-        <Section
+        <SectionCard
           title="Link checker"
           icon={Link2}
+          help="dx-link-checker"
           right={<StatusBadge status={r.links.broken.length === 0 ? "ok" : "error"} />}
         >
           <p className="text-muted-foreground mb-3 text-xs">
@@ -530,7 +570,7 @@ export default async function DxPage() {
               ))}
             </ul>
           )}
-        </Section>
+        </SectionCard>
       </div>
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
