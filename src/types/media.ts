@@ -12,6 +12,8 @@ export interface MediaFile {
   height: number | null;
   alt_text: string | null;
   caption: string | null;
+  folder: string;
+  tags: string[];
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;
@@ -23,6 +25,20 @@ export interface UpdateMediaInput {
   original_name?: string;
   alt_text?: string | null;
   caption?: string | null;
+  folder?: string;
+  tags?: string[];
+}
+
+/** A media folder with the number of files inside it. */
+export interface MediaFolder {
+  folder: string;
+  count: number;
+}
+
+/** A media file that is not referenced anywhere in the CMS. */
+export interface UnusedMediaItem {
+  media: MediaFile;
+  usage: MediaUsageItem[];
 }
 
 /** File metadata for replacing the underlying file of an existing media record. */

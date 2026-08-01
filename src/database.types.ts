@@ -21,6 +21,7 @@ export interface Database {
           github_url: string | null;
           featured: boolean;
           status: string;
+          scheduled_for: string | null;
           order: number;
           seo_title: string | null;
           seo_description: string | null;
@@ -52,6 +53,7 @@ export interface Database {
           github_url?: string | null;
           featured?: boolean;
           status?: string;
+          scheduled_for?: string | null;
           order?: number;
           seo_title?: string | null;
           seo_description?: string | null;
@@ -83,6 +85,7 @@ export interface Database {
           github_url?: string | null;
           featured?: boolean;
           status?: string;
+          scheduled_for?: string | null;
           order?: number;
           seo_title?: string | null;
           seo_description?: string | null;
@@ -223,6 +226,7 @@ export interface Database {
           featured: boolean;
           display_order: number;
           status: string;
+          scheduled_for: string | null;
           seo_title: string | null;
           seo_description: string | null;
           seo_keywords: string[] | null;
@@ -239,6 +243,7 @@ export interface Database {
           featured?: boolean;
           display_order?: number;
           status?: string;
+          scheduled_for?: string | null;
           seo_title?: string | null;
           seo_description?: string | null;
           seo_keywords?: string[] | null;
@@ -255,6 +260,7 @@ export interface Database {
           featured?: boolean;
           display_order?: number;
           status?: string;
+          scheduled_for?: string | null;
           seo_title?: string | null;
           seo_description?: string | null;
           seo_keywords?: string[] | null;
@@ -277,6 +283,8 @@ export interface Database {
           height: number | null;
           alt_text: string | null;
           caption: string | null;
+          folder: string;
+          tags: string[];
           uploaded_by: string | null;
           created_at: string;
           updated_at: string;
@@ -295,6 +303,8 @@ export interface Database {
           height?: number | null;
           alt_text?: string | null;
           caption?: string | null;
+          folder?: string;
+          tags?: string[];
           uploaded_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -313,6 +323,8 @@ export interface Database {
           height?: number | null;
           alt_text?: string | null;
           caption?: string | null;
+          folder?: string;
+          tags?: string[];
           uploaded_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -619,6 +631,7 @@ export interface Database {
           author: string;
           status: string;
           featured: boolean;
+          scheduled_for: string | null;
           published_at: string | null;
           seo_title: string | null;
           seo_description: string | null;
@@ -640,6 +653,7 @@ export interface Database {
           author?: string;
           status?: string;
           featured?: boolean;
+          scheduled_for?: string | null;
           published_at?: string | null;
           seo_title?: string | null;
           seo_description?: string | null;
@@ -661,6 +675,7 @@ export interface Database {
           author?: string;
           status?: string;
           featured?: boolean;
+          scheduled_for?: string | null;
           published_at?: string | null;
           seo_title?: string | null;
           seo_description?: string | null;
@@ -1071,6 +1086,128 @@ export interface Database {
           canvas?: unknown;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      audit_log: {
+        Row: {
+          id: string;
+          action: string;
+          entity: string;
+          entity_id: string;
+          detail: Json;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          action: string;
+          entity?: string;
+          entity_id?: string;
+          detail?: Json;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          action?: string;
+          entity?: string;
+          entity_id?: string;
+          detail?: Json;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      content_versions: {
+        Row: {
+          id: string;
+          entity: string;
+          entity_id: string;
+          version: number;
+          data: Json;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          entity: string;
+          entity_id: string;
+          version: number;
+          data: Json;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          entity?: string;
+          entity_id?: string;
+          version?: number;
+          data?: Json;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      integration_settings: {
+        Row: {
+          id: string;
+          label: string;
+          status: string;
+          config: Json;
+          expires_at: string | null;
+          rotated_at: string | null;
+          usage_count: number;
+          last_used_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          label: string;
+          status?: string;
+          config?: Json;
+          expires_at?: string | null;
+          rotated_at?: string | null;
+          usage_count?: number;
+          last_used_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          label?: string;
+          status?: string;
+          config?: Json;
+          expires_at?: string | null;
+          rotated_at?: string | null;
+          usage_count?: number;
+          last_used_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      login_history: {
+        Row: {
+          id: string;
+          email: string;
+          success: boolean;
+          ip: string;
+          user_agent: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          success?: boolean;
+          ip?: string;
+          user_agent?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          success?: boolean;
+          ip?: string;
+          user_agent?: string;
+          created_at?: string;
         };
       };
     };

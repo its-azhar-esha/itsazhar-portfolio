@@ -20,6 +20,8 @@ interface UploadItem {
 
 interface MediaUploaderProps {
   multiple?: boolean;
+  folder?: string;
+  tags?: string[];
   onUploaded?: (media: MediaFile[]) => void;
   onError?: (message: string) => void;
   className?: string;
@@ -27,6 +29,8 @@ interface MediaUploaderProps {
 
 export function MediaUploader({
   multiple = true,
+  folder,
+  tags,
   onUploaded,
   onError,
   className,
@@ -78,6 +82,8 @@ export function MediaUploader({
     for (const { file, id, previewUrl } of queued) {
       const result = await uploadMediaFile(file, {
         onProgress: ({ percent }) => updateItem(id, { percent }),
+        folder,
+        tags,
       });
       if (result.success) {
         updateItem(id, { status: "success", percent: 100 });

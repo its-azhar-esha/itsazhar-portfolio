@@ -20,6 +20,8 @@ export interface MediaUploadProgress {
 
 export interface UploadMediaFileOptions {
   onProgress?: (progress: MediaUploadProgress) => void;
+  folder?: string;
+  tags?: string[];
 }
 
 /** Client-side security gate: mime type + size. */
@@ -132,6 +134,8 @@ export async function uploadMediaFile(
       height,
       alt_text: null,
       caption: null,
+      folder: options.folder?.trim() ? options.folder.trim() : "media",
+      tags: options.tags ?? [],
     });
 
     if (!result.success) {

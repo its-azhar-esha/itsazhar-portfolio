@@ -21,6 +21,8 @@ export {
   updateMediaMetadataSchema,
   mediaReferenceSchema,
   mediaUrlOrReferenceSchema,
+  bulkUpdateMediaSchema,
+  bulkDeleteMediaSchema,
 } from "./schemas/media";
 
 export {

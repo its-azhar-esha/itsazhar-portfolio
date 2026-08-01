@@ -9,6 +9,7 @@ import type {
   MediaSort,
   MediaKind,
   MediaUsageItem,
+  MediaFolder,
 } from "@/types/media";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
@@ -33,6 +34,8 @@ function rowToMediaFile(row: Database["public"]["Tables"]["media_files"]["Row"])
     height: row.height,
     alt_text: row.alt_text,
     caption: row.caption,
+    folder: row.folder,
+    tags: row.tags ?? [],
     uploaded_by: row.uploaded_by,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -62,6 +65,8 @@ export interface GetMediaQuery {
   page?: number;
   pageSize?: number;
   kind?: MediaKind;
+  folder?: string;
+  tag?: string;
 }
 
 /** Builds a PostgREST filter for a media kind. */
@@ -105,6 +110,12 @@ export async function getMedia(query: GetMediaQuery = {}): Promise<Result<MediaP
     } else {
       const kind = query.kind ? kindFilter(query.kind) : null;
       if (kind) builder = builder.ilike(kind.column, kind.value);
+    }
+    if (query.folder) {
+      builder = builder.eq("folder", query.folder);
+    }
+    if (query.tag) {
+      builder = builder.contains("tags", [query.tag]);
     }
     const order = orderForSort(sort);
 
@@ -500,4 +511,206 @@ export async function resolveMediaValue(value: string | null): Promise<string | 
 /** Resolves a batch of values. Non-references pass through unchanged. */
 export async function resolveMediaValues(values: (string | null)[]): Promise<(string | null)[]> {
   return Promise.all(values.map((value) => resolveMediaValue(value)));
+}
+
+/** Lists all folders with their file counts, sorted by name. */
+export async function getMediaFolders(): Promise<Result<MediaFolder[]>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from(TABLE).select("*").limit(5000);
+    if (error) return fail(error.message);
+
+    type FolderRow = Pick<Database["public"]["Tables"]["media_files"]["Row"], "folder">;
+    const counts = new Map<string, number>();
+    for (const row of (data ?? []) as FolderRow[]) {
+      counts.set(row.folder, (counts.get(row.folder) ?? 0) + 1);
+    }
+    const folders: MediaFolder[] = Array.from(counts.entries())
+      .map(([folder, count]) => ({ folder, count }))
+      .sort((a, b) => a.folder.localeCompare(b.folder));
+    return ok(folders);
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to list media folders");
+  }
+}
+
+/** Lists every tag currently used across media files, with file counts. */
+export async function getMediaTags(): Promise<Result<{ tag: string; count: number }[]>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from(TABLE).select("*").limit(5000);
+    if (error) return fail(error.message);
+
+    type TagsRow = Pick<Database["public"]["Tables"]["media_files"]["Row"], "tags">;
+    const counts = new Map<string, number>();
+    for (const row of (data ?? []) as TagsRow[]) {
+      for (const tag of row.tags ?? []) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    const tags = Array.from(counts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+    return ok(tags);
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to list media tags");
+  }
+}
+
+/** Applies folder/tags to a batch of media files. Returns the updated count. */
+export async function bulkUpdateMedia(
+  ids: string[],
+  input: { folder?: string; tags?: string[] },
+): Promise<Result<{ updated: number }>> {
+  try {
+    const supabase = await createClient();
+    const clean: { folder?: string; tags?: string[] } = {};
+    if (input.folder !== undefined) {
+      const folder = input.folder.trim();
+      clean.folder = folder === "" ? "media" : folder;
+    }
+    if (input.tags !== undefined) {
+      clean.tags = input.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+    }
+    if (Object.keys(clean).length === 0 || ids.length === 0) return ok({ updated: 0 });
+
+    let updated = 0;
+    for (let i = 0; i < ids.length; i += 500) {
+      const chunk = ids.slice(i, i + 500);
+      const { data, error } = await supabase
+        .from(TABLE)
+        .update(clean as never)
+        .in("id", chunk)
+        .select("*");
+      if (error) return fail(error.message);
+      updated += (data ?? []).length;
+    }
+    return ok({ updated });
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to update media in bulk");
+  }
+}
+
+/** Deletes a batch of media files (storage object + database row). */
+export async function bulkDeleteMedia(ids: string[]): Promise<Result<{ deleted: number }>> {
+  try {
+    const supabase = await createClient();
+    let deleted = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const chunk = ids.slice(i, i + 100);
+      const { data: files, error: listError } = await supabase
+        .from(TABLE)
+        .select("*")
+        .in("id", chunk);
+      if (listError) return fail(listError.message);
+
+      type PathRow = Pick<
+        Database["public"]["Tables"]["media_files"]["Row"],
+        "bucket" | "storage_path"
+      >;
+      const pathsByBucket = new Map<string, string[]>();
+      for (const file of (files ?? []) as PathRow[]) {
+        const paths = pathsByBucket.get(file.bucket) ?? [];
+        paths.push(file.storage_path);
+        pathsByBucket.set(file.bucket, paths);
+      }
+      for (const [bucket, paths] of pathsByBucket) {
+        const { error: removeError } = await supabase.storage.from(bucket).remove(paths);
+        if (removeError) {
+          logWarn("bulkDeleteMedia: storage removal failed (continuing with row delete)", {
+            count: paths.length,
+            message: removeError.message,
+          });
+        }
+      }
+
+      const { data, error } = await supabase.from(TABLE).delete().in("id", chunk).select("*");
+      if (error) return fail(error.message);
+      deleted += (data ?? []).length;
+    }
+    return ok({ deleted });
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to delete media in bulk");
+  }
+}
+
+/** Collects every `media:<uuid>` reference used anywhere in the CMS. */
+async function collectUsedReferences(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<Set<string>> {
+  const used = new Set<string>();
+  const add = (value: unknown) => {
+    if (typeof value === "string" && isMediaReference(value)) used.add(value);
+  };
+
+  type ProjectMediaRow = Pick<
+    Database["public"]["Tables"]["projects"]["Row"],
+    "thumbnail" | "og_image" | "video_url" | "images"
+  >;
+  const { data: projects } = await supabase.from("projects").select("*").limit(5000);
+  for (const row of (projects ?? []) as ProjectMediaRow[]) {
+    add(row.thumbnail);
+    add(row.og_image);
+    add(row.video_url);
+    for (const image of (row.images as string[] | null) ?? []) add(image);
+  }
+
+  type ContentRow = Pick<Database["public"]["Tables"]["content_entries"]["Row"], "content">;
+  const { data: entries } = await supabase.from("content_entries").select("*").limit(5000);
+  for (const row of (entries ?? []) as ContentRow[]) {
+    const raw = JSON.stringify(row.content ?? {});
+    for (const match of raw.matchAll(/media:[0-9a-f-]{36}/g)) used.add(match[0]);
+  }
+
+  type SeoRow = Pick<Database["public"]["Tables"]["seo_metadata"]["Row"], "og_image">;
+  const { data: seo } = await supabase.from("seo_metadata").select("*").limit(5000);
+  for (const row of (seo ?? []) as SeoRow[]) add(row.og_image);
+
+  type BlogRow = Pick<Database["public"]["Tables"]["blog_posts"]["Row"], "cover_image" | "og_image">;
+  const { data: blog } = await supabase.from("blog_posts").select("*").limit(5000);
+  for (const row of (blog ?? []) as BlogRow[]) {
+    add(row.cover_image);
+    add(row.og_image);
+  }
+
+  type ResourceRow = Pick<Database["public"]["Tables"]["resources"]["Row"], "cover_image" | "og_image">;
+  const { data: resources } = await supabase.from("resources").select("*").limit(5000);
+  for (const row of (resources ?? []) as ResourceRow[]) {
+    add(row.cover_image);
+    add(row.og_image);
+  }
+
+  type TemplateRow = Pick<Database["public"]["Tables"]["workflow_templates"]["Row"], "thumbnail">;
+  const { data: templates } = await supabase.from("workflow_templates").select("*").limit(5000);
+  for (const row of (templates ?? []) as TemplateRow[]) add(row.thumbnail);
+
+  type SettingsRow = Pick<Database["public"]["Tables"]["site_settings"]["Row"], "logo">;
+  const { data: settings } = await supabase.from("site_settings").select("*").limit(50);
+  for (const row of (settings ?? []) as SettingsRow[]) add(row.logo);
+
+  return used;
+}
+
+/**
+ * Finds media files that are not referenced anywhere in the CMS
+ * (projects, content entries, SEO metadata, blog posts, resources,
+ * workflow templates, site settings). Returns them with the total
+ * file count so the UI can show "N of M files are unused".
+ */
+export async function getUnusedMedia(): Promise<Result<{ items: MediaFile[]; total: number }>> {
+  try {
+    const supabase = await createClient();
+    const used = await collectUsedReferences(supabase);
+
+    const { data, error } = await supabase.from(TABLE).select("*").limit(5000);
+    if (error) return fail(error.message);
+
+    type MediaRow = Database["public"]["Tables"]["media_files"]["Row"];
+    const items = ((data ?? []) as MediaRow[])
+      .filter((row) => !used.has(`media:${row.id}`))
+      .map(rowToMediaFile);
+    return ok({ items, total: (data ?? []).length });
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to scan unused media");
+  }
 }

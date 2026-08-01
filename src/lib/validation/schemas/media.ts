@@ -6,6 +6,20 @@ import {
   MEDIA_VALIDATION,
 } from "@/constants/media";
 
+export const mediaFolderSchema = z
+  .string()
+  .trim()
+  .max(60, "Folder must be 60 characters or fewer")
+  .regex(/^[a-z0-9][a-z0-9-_ ]*$/i, "Folders can only contain letters, numbers, dashes and spaces")
+  .or(z.literal(""));
+
+export const mediaTagSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(24, "Tags must be 24 characters or fewer")
+  .regex(/^[a-z0-9][a-z0-9-_ ]*$/, "Tags can only contain letters, numbers, dashes and spaces");
+
 export const createMediaRecordSchema = z.object({
   filename: z
     .string()
@@ -48,6 +62,8 @@ export const createMediaRecordSchema = z.object({
     .max(MEDIA_VALIDATION.CAPTION_MAX, "Caption must be 500 characters or fewer")
     .nullable()
     .default(null),
+  folder: mediaFolderSchema.default("media"),
+  tags: z.array(mediaTagSchema).max(20, "A file can have at most 20 tags").default([]),
 });
 
 export const updateMediaMetadataSchema = z.object({
@@ -71,6 +87,22 @@ export const updateMediaMetadataSchema = z.object({
     .nullable()
     .optional()
     .or(z.literal("")),
+  folder: mediaFolderSchema.optional(),
+  tags: z.array(mediaTagSchema).max(20, "A file can have at most 20 tags").optional(),
+});
+
+export const bulkUpdateMediaSchema = z
+  .object({
+    ids: z.array(z.string().uuid("Invalid media id")).min(1, "Select at least one file").max(500),
+    folder: mediaFolderSchema.optional(),
+    tags: z.array(mediaTagSchema).max(20, "At most 20 tags per file").optional(),
+  })
+  .refine((value) => value.folder !== undefined || value.tags !== undefined, {
+    message: "Choose a folder, tags, or both.",
+  });
+
+export const bulkDeleteMediaSchema = z.object({
+  ids: z.array(z.string().uuid("Invalid media id")).min(1, "Select at least one file").max(500),
 });
 
 /** File metadata submitted when replacing a media record's underlying file. */

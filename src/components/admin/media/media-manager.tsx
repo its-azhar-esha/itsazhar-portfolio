@@ -3,23 +3,34 @@
 import * as React from "react";
 import {
   Check,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Copy,
+  FolderOpen,
   ImageOff,
   LayoutGrid,
   List,
   Pencil,
   Search,
+  Tags,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getMediaPageAction } from "@/lib/media/actions";
+import {
+  bulkDeleteMediaAction,
+  bulkUpdateMediaAction,
+  getMediaFoldersAction,
+  getMediaPageAction,
+  getMediaTagsAction,
+  getUnusedMediaAction,
+} from "@/lib/media/actions";
 import { MEDIA_DEFAULT_PAGE_SIZE, MEDIA_SORT_OPTIONS } from "@/constants/media";
 import { formatBytes, formatDimensions } from "@/lib/media/utils";
-import type { MediaFile, MediaSort } from "@/types/media";
+import type { MediaFile, MediaFolder, MediaSort } from "@/types/media";
 import { MediaCard } from "@/components/media/media-card";
 import { MediaThumbnail } from "@/components/media/media-thumbnail";
 import { MediaUploader } from "@/components/media/media-uploader";
@@ -30,6 +41,11 @@ type ViewMode = "grid" | "list";
 
 interface MediaManagerProps {
   initialError?: string | null;
+}
+
+interface UnusedResult {
+  items: MediaFile[];
+  total: number;
 }
 
 export function MediaManager({ initialError }: MediaManagerProps) {
@@ -48,6 +64,35 @@ export function MediaManager({ initialError }: MediaManagerProps) {
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [searchInput, setSearchInput] = React.useState("");
 
+  const [folders, setFolders] = React.useState<MediaFolder[]>([]);
+  const [tagList, setTagList] = React.useState<{ tag: string; count: number }[]>([]);
+  const [folderFilter, setFolderFilter] = React.useState("");
+  const [tagFilter, setTagFilter] = React.useState("");
+
+  const [bulkMode, setBulkMode] = React.useState(false);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = React.useState(false);
+  const [bulkError, setBulkError] = React.useState<string | null>(null);
+  const [bulkFolder, setBulkFolder] = React.useState("");
+  const [bulkTags, setBulkTags] = React.useState("");
+  const [deleteArmed, setDeleteArmed] = React.useState(false);
+
+  const [unused, setUnused] = React.useState<UnusedResult | null>(null);
+  const [unusedLoading, setUnusedLoading] = React.useState(false);
+  const [unusedError, setUnusedError] = React.useState<string | null>(null);
+  const [unusedOpen, setUnusedOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    (async () => {
+      const [foldersResult, tagsResult] = await Promise.all([
+        getMediaFoldersAction(),
+        getMediaTagsAction(),
+      ]);
+      if (foldersResult.success) setFolders(foldersResult.data);
+      if (tagsResult.success) setTagList(tagsResult.data);
+    })();
+  }, []);
+
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim());
@@ -64,6 +109,8 @@ export function MediaManager({ initialError }: MediaManagerProps) {
       sort,
       page,
       pageSize: MEDIA_DEFAULT_PAGE_SIZE,
+      folder: folderFilter || undefined,
+      tag: tagFilter || undefined,
     });
     if (result.success) {
       setItems(result.data.items);
@@ -85,6 +132,8 @@ export function MediaManager({ initialError }: MediaManagerProps) {
         sort,
         page,
         pageSize: MEDIA_DEFAULT_PAGE_SIZE,
+        folder: folderFilter || undefined,
+        tag: tagFilter || undefined,
       });
       if (!active) return;
       if (result.success) {
@@ -99,11 +148,40 @@ export function MediaManager({ initialError }: MediaManagerProps) {
     return () => {
       active = false;
     };
-  }, [search, sort, page]);
+  }, [search, sort, page, folderFilter, tagFilter]);
+
+  function refreshMeta() {
+    getMediaFoldersAction().then((result) => {
+      if (result.success) setFolders(result.data);
+    });
+    getMediaTagsAction().then((result) => {
+      if (result.success) setTagList(result.data);
+    });
+  }
 
   function openDetail(media: MediaFile) {
     setDetailTarget(media);
     setDetailOpen(true);
+  }
+
+  function handleCardClick(media: MediaFile) {
+    if (bulkMode) {
+      toggleSelected(media.id);
+      return;
+    }
+    openDetail(media);
+  }
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }
 
   function handleCopy(media: MediaFile) {
@@ -116,8 +194,88 @@ export function MediaManager({ initialError }: MediaManagerProps) {
   function handleUploaded() {
     setShowUpload(false);
     setPage(1);
+    refreshMeta();
     fetchPage();
   }
+
+  async function handleBulkUpdate() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    setBulkError(null);
+    const input: Record<string, unknown> = { ids };
+    const folder = bulkFolder.trim();
+    if (folder !== "") input.folder = folder;
+    const tags = bulkTags
+      .split(",")
+      .map((tag) => tag.trim().toLowerCase())
+      .filter(Boolean);
+    if (tags.length > 0) input.tags = tags;
+    const result = await bulkUpdateMediaAction(input);
+    setBulkBusy(false);
+    if (result.success) {
+      setBulkFolder("");
+      setBulkTags("");
+      setSelected(new Set());
+      refreshMeta();
+      fetchPage();
+    } else {
+      setBulkError(result.error);
+    }
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    setBulkError(null);
+    const result = await bulkDeleteMediaAction({ ids });
+    setBulkBusy(false);
+    if (result.success) {
+      setDeleteArmed(false);
+      setSelected(new Set());
+      refreshMeta();
+      if (unusedOpen) scanUnused();
+      fetchPage();
+    } else {
+      setBulkError(result.error);
+    }
+  }
+
+  function exitBulkMode() {
+    setBulkMode(false);
+    setSelected(new Set());
+    setDeleteArmed(false);
+    setBulkError(null);
+  }
+
+  async function scanUnused() {
+    setUnusedLoading(true);
+    setUnusedError(null);
+    const result = await getUnusedMediaAction();
+    setUnusedLoading(false);
+    if (result.success) {
+      setUnused(result.data);
+    } else {
+      setUnusedError(result.error);
+    }
+  }
+
+  async function deleteUnused(ids: string[]) {
+    if (ids.length === 0) return;
+    setUnusedLoading(true);
+    const result = await bulkDeleteMediaAction({ ids });
+    setUnusedLoading(false);
+    if (result.success) {
+      refreshMeta();
+      scanUnused();
+      fetchPage();
+    } else {
+      setUnusedError(result.error);
+    }
+  }
+
+  const allPageSelected = items.length > 0 && items.every((m) => selected.has(m.id));
 
   const cardActions = (media: MediaFile) => (
     <>
@@ -138,17 +296,19 @@ export function MediaManager({ initialError }: MediaManagerProps) {
           )}
         </button>
       )}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          openDetail(media);
-        }}
-        className="bg-background/90 text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md shadow-sm backdrop-blur-sm transition-colors"
-        title="View details and edit metadata"
-        aria-label={`View details for ${media.original_name}`}
-      >
-        <Pencil className="h-3.5 w-3.5" />
-      </button>
+      {!bulkMode && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            openDetail(media);
+          }}
+          className="bg-background/90 text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md shadow-sm backdrop-blur-sm transition-colors"
+          title="View details and edit metadata"
+          aria-label={`View details for ${media.original_name}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+      )}
     </>
   );
 
@@ -174,7 +334,45 @@ export function MediaManager({ initialError }: MediaManagerProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={folderFilter}
+            onChange={(e) => {
+              setFolderFilter(e.target.value);
+              setPage(1);
+            }}
+            className="border-border/40 bg-background hover:bg-accent/50 h-9 rounded-md border px-3 text-sm transition-colors outline-none"
+            aria-label="Filter by folder"
+            title="Filter by folder"
+          >
+            <option value="">All folders</option>
+            {folders.map((f) => (
+              <option key={f.folder} value={f.folder}>
+                {f.folder} ({f.count})
+              </option>
+            ))}
+          </select>
+
+          {tagList.length > 0 && (
+            <select
+              value={tagFilter}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                setPage(1);
+              }}
+              className="border-border/40 bg-background hover:bg-accent/50 h-9 rounded-md border px-3 text-sm transition-colors outline-none"
+              aria-label="Filter by tag"
+              title="Filter by tag"
+            >
+              <option value="">All tags</option>
+              {tagList.map((t) => (
+                <option key={t.tag} value={t.tag}>
+                  {t.tag} ({t.count})
+                </option>
+              ))}
+            </select>
+          )}
+
           <select
             value={sort}
             onChange={(e) => {
@@ -214,6 +412,17 @@ export function MediaManager({ initialError }: MediaManagerProps) {
             </button>
           </div>
 
+          {bulkMode ? (
+            <Button size="sm" variant="outline" onClick={exitBulkMode}>
+              Done
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setBulkMode(true)}>
+              <CheckSquare className="mr-1.5 h-4 w-4" />
+              Select
+            </Button>
+          )}
+
           <Button size="sm" onClick={() => setShowUpload(!showUpload)}>
             <Upload className="mr-1.5 h-4 w-4" />
             {showUpload ? "Done" : "Upload"}
@@ -221,8 +430,86 @@ export function MediaManager({ initialError }: MediaManagerProps) {
         </div>
       </div>
 
+      {bulkMode && (
+        <div className="border-border/40 bg-accent/30 rounded-lg border px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-medium">
+              {selected.size} selected
+              {items.length > 0 && " on this page"}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setSelected(allPageSelected ? new Set() : new Set(items.map((m) => m.id)))
+              }
+            >
+              {allPageSelected ? "Clear page" : "Select page"}
+            </Button>
+            <div className="flex flex-1 flex-wrap items-center gap-2">
+              <Input
+                value={bulkFolder}
+                onChange={(e) => setBulkFolder(e.target.value)}
+                placeholder="Move to folder…"
+                className="h-8 w-40"
+                aria-label="Folder to move selected files to"
+              />
+              <Input
+                value={bulkTags}
+                onChange={(e) => setBulkTags(e.target.value)}
+                placeholder="Set tags (comma separated)…"
+                className="h-8 w-56"
+                aria-label="Tags to apply to selected files"
+              />
+              <Button
+                size="sm"
+                onClick={handleBulkUpdate}
+                disabled={bulkBusy || selected.size === 0 || (bulkFolder.trim() === "" && bulkTags.trim() === "")}
+              >
+                {bulkBusy ? "Applying…" : "Apply"}
+              </Button>
+            </div>
+            {deleteArmed ? (
+              <>
+                <span className="text-xs text-red-500">Delete {selected.size} file(s)?</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBulkDelete}
+                  disabled={bulkBusy || selected.size === 0}
+                  className="gap-1.5 border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {bulkBusy ? "Deleting…" : "Yes, delete"}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setDeleteArmed(false)}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDeleteArmed(true)}
+                disabled={selected.size === 0}
+                className="gap-1.5 border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </Button>
+            )}
+          </div>
+          {bulkError && <p className="mt-2 text-xs text-red-500">{bulkError}</p>}
+        </div>
+      )}
+
       {showUpload && (
-        <MediaUploader multiple onUploaded={handleUploaded} onError={() => undefined} />
+        <MediaUploader
+          multiple
+          folder={folderFilter || undefined}
+          onUploaded={handleUploaded}
+          onError={() => undefined}
+        />
       )}
 
       {loading ? (
@@ -251,9 +538,11 @@ export function MediaManager({ initialError }: MediaManagerProps) {
         <div className="flex flex-col items-center py-16 text-center">
           <ImageOff className="text-muted-foreground h-8 w-8" />
           <p className="text-muted-foreground mt-3 text-sm">
-            {search ? "No media matches your search." : "No media uploaded yet."}
+            {search || folderFilter || tagFilter
+              ? "No media matches the current filters."
+              : "No media uploaded yet."}
           </p>
-          {!search && (
+          {!search && !folderFilter && !tagFilter && (
             <Button size="sm" className="mt-4" onClick={() => setShowUpload(true)}>
               <Upload className="mr-1.5 h-4 w-4" />
               Upload your first image
@@ -266,7 +555,8 @@ export function MediaManager({ initialError }: MediaManagerProps) {
             <MediaCard
               key={media.id}
               media={media}
-              onSelect={() => openDetail(media)}
+              onSelect={() => handleCardClick(media)}
+              selected={bulkMode && selected.has(media.id)}
               actions={cardActions(media)}
             />
           ))}
@@ -276,8 +566,11 @@ export function MediaManager({ initialError }: MediaManagerProps) {
           {items.map((media) => (
             <div
               key={media.id}
-              onClick={() => openDetail(media)}
-              className="border-border/40 hover:bg-accent/40 flex cursor-pointer items-center gap-3 border-b p-3 transition-colors last:border-b-0"
+              onClick={() => handleCardClick(media)}
+              className={cn(
+                "border-border/40 hover:bg-accent/40 flex cursor-pointer items-center gap-3 border-b p-3 transition-colors last:border-b-0",
+                bulkMode && selected.has(media.id) && "bg-accent/60",
+              )}
             >
               <MediaThumbnail media={media} />
               <div className="min-w-0 flex-1">
@@ -288,7 +581,26 @@ export function MediaManager({ initialError }: MediaManagerProps) {
                   {media.mime_type} · {formatBytes(media.size_bytes)} ·{" "}
                   {formatDimensions(media.width, media.height)} ·{" "}
                   {new Date(media.created_at).toLocaleDateString()}
+                  {media.folder !== "media" && (
+                    <span className="text-primary ml-1 inline-flex items-center gap-0.5">
+                      <FolderOpen className="h-3 w-3" />
+                      {media.folder}
+                    </span>
+                  )}
                 </p>
+                {media.tags.length > 0 && (
+                  <p className="mt-1 flex flex-wrap gap-1">
+                    {media.tags.slice(0, 4).map((tag) => (
+                      <span
+                        key={tag}
+                        className="bg-muted text-muted-foreground inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px]"
+                      >
+                        <Tags className="h-2.5 w-2.5" />
+                        {tag}
+                      </span>
+                    ))}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 {cardActions(media)}
@@ -329,6 +641,99 @@ export function MediaManager({ initialError }: MediaManagerProps) {
         </div>
       )}
 
+      <div className="border-border/40 rounded-lg border">
+        <button
+          onClick={() => {
+            const next = !unusedOpen;
+            setUnusedOpen(next);
+            if (next && !unused && !unusedLoading) scanUnused();
+          }}
+          className="hover:bg-accent/40 flex w-full items-center justify-between px-4 py-3 text-left transition-colors"
+          aria-expanded={unusedOpen}
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <Trash2 className="text-muted-foreground h-4 w-4" />
+            Unused media
+            {unused && !unusedLoading && (
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                  unused.items.length > 0
+                    ? "bg-amber-500/10 text-amber-500"
+                    : "bg-emerald-500/10 text-emerald-500",
+                )}
+              >
+                {unused.items.length} of {unused.total}
+              </span>
+            )}
+          </span>
+          <ChevronRight
+            className={cn("text-muted-foreground h-4 w-4 transition-transform", unusedOpen && "rotate-90")}
+          />
+        </button>
+        {unusedOpen && (
+          <div className="border-border/40 border-t px-4 py-3">
+            <p className="text-muted-foreground mb-3 text-xs">
+              Files that are not referenced by any project, page, post or template. Deleting them
+              frees storage space.
+            </p>
+            {unusedLoading ? (
+              <p className="text-muted-foreground text-xs">Scanning the CMS…</p>
+            ) : unusedError ? (
+              <p className="text-xs text-red-500">{unusedError}</p>
+            ) : unused && unused.items.length === 0 ? (
+              <p className="text-muted-foreground text-xs">
+                All {unused.total} files are in use. Nothing to clean up.
+              </p>
+            ) : unused ? (
+              <div className="space-y-3">
+                <ul className="divide-border/40 divide-y">
+                  {unused.items.map((media) => (
+                    <li key={media.id} className="flex items-center gap-3 py-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <MediaThumbnail media={media} />
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-medium" title={media.original_name}>
+                            {media.original_name}
+                          </p>
+                          <p className="text-muted-foreground text-[10px]">
+                            {formatBytes(media.size_bytes)} ·{" "}
+                            {new Date(media.created_at).toLocaleDateString()}
+                            {media.folder !== "media" && ` · ${media.folder}`}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deleteUnused([media.id])}
+                        className="gap-1 border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => deleteUnused(unused.items.map((m) => m.id))}
+                  className="gap-1.5 border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete all {unused.items.length} unused
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={scanUnused}>
+                Scan for unused files
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
       <MediaDetailDialog
         open={detailOpen}
         media={detailTarget}
@@ -336,9 +741,11 @@ export function MediaManager({ initialError }: MediaManagerProps) {
         onChanged={(updated) => {
           setDetailTarget(updated);
           setItems((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+          refreshMeta();
         }}
         onDeleted={() => {
           setDetailOpen(false);
+          refreshMeta();
           fetchPage();
         }}
       />

@@ -93,6 +93,8 @@ function MediaDetailForm({
   const [name, setName] = React.useState(media.original_name);
   const [altText, setAltText] = React.useState(media.alt_text ?? "");
   const [caption, setCaption] = React.useState(media.caption ?? "");
+  const [folder, setFolder] = React.useState(media.folder);
+  const [tags, setTags] = React.useState(media.tags.join(", "));
   const [saving, setSaving] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState<"url" | "ref" | null>(null);
@@ -159,10 +161,16 @@ function MediaDetailForm({
   async function handleSaveMetadata() {
     setSaving(true);
     setSaveError(null);
+    const parsedTags = tags
+      .split(",")
+      .map((tag) => tag.trim().toLowerCase())
+      .filter(Boolean);
     const result = await updateMediaMetadataAction(media.id, {
       original_name: name,
       alt_text: altText,
       caption,
+      folder,
+      tags: parsedTags,
     });
     if (result.success) {
       onChanged(result.data);
@@ -414,6 +422,34 @@ function MediaDetailForm({
                 />
                 <p className="text-muted-foreground text-right text-[10px]">
                   {caption.length}/{MEDIA_VALIDATION.CAPTION_MAX}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="media-folder" className="text-xs font-medium">
+                  Folder
+                </Label>
+                <Input
+                  id="media-folder"
+                  value={folder}
+                  onChange={(e) => setFolder(e.target.value)}
+                  placeholder="media"
+                />
+                <p className="text-muted-foreground text-[10px]">
+                  Group related files together. Empty = &ldquo;media&rdquo; (root).
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="media-tags" className="text-xs font-medium">
+                  Tags
+                </Label>
+                <Input
+                  id="media-tags"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="portrait, hero, client-work"
+                />
+                <p className="text-muted-foreground text-[10px]">
+                  Comma-separated. Used to find files quickly.
                 </p>
               </div>
               {saveError && <p className="text-xs text-red-500">{saveError}</p>}
