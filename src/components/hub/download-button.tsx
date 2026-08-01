@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Download, Loader2 } from "lucide-react";
 import { getDownloadUrlAction } from "@/lib/hub/actions";
+import { trackEventAction } from "@/lib/analytics/actions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import type { PublicResourceFile } from "@/types/hub";
@@ -25,6 +26,10 @@ export function DownloadButton({ file, label }: DownloadButtonProps) {
         toast.error(result.error);
         return;
       }
+      void trackEventAction("download", {
+        pagePath: window.location.pathname,
+        label: file.label,
+      });
       window.open(result.data, "_blank", "noopener,noreferrer");
     } catch {
       toast.error("Something went wrong while preparing the download.");

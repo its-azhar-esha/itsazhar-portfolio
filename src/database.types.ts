@@ -31,6 +31,7 @@ export interface Database {
           solution: string | null;
           workflow: string[] | null;
           impact: string | null;
+          views: number;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +62,7 @@ export interface Database {
           solution?: string | null;
           workflow?: string[] | null;
           impact?: string | null;
+          views?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -91,6 +93,7 @@ export interface Database {
           solution?: string | null;
           workflow?: string[] | null;
           impact?: string | null;
+          views?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -505,6 +508,35 @@ export interface Database {
           status?: string;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      analytics_events: {
+        Row: {
+          id: string;
+          event: string;
+          page_path: string;
+          label: string;
+          metadata: unknown;
+          session_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event: string;
+          page_path?: string;
+          label?: string;
+          metadata?: unknown;
+          session_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event?: string;
+          page_path?: string;
+          label?: string;
+          metadata?: unknown;
+          session_id?: string | null;
+          created_at?: string;
         };
       };
       blog_posts: {

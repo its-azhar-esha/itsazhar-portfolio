@@ -140,7 +140,11 @@ export default async function BlogPage({
             <p className="text-muted-foreground text-sm">
               Want these systems working for your business?
             </p>
-            <Link href={settings.booking_url || "/contact"}>
+            <Link
+              href={settings.booking_url || "/contact"}
+              data-track="cta_click"
+              data-track-label="Blog: Book audit"
+            >
               <Button size="lg" className="mt-4 gap-2">
                 Book a Free 15-Min Audit
                 <ArrowRight className="h-4 w-4" />

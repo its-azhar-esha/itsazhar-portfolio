@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowRight, Boxes, FolderKanban, Search, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HubSearchTracker } from "@/components/analytics/trackers";
 import {
   getPublicResourcesAction,
   getPublicCategoriesAction,
@@ -260,6 +262,9 @@ export default async function HubPage({
             </div>
           </div>
         </form>
+        <Suspense fallback={null}>
+          <HubSearchTracker />
+        </Suspense>
 
         {visible.length === 0 ? (
           <div className="mx-auto max-w-7xl py-16 text-center">

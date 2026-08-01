@@ -73,7 +73,11 @@ export function CTA() {
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
-                <Link href="/contact">
+                <Link
+                  href="/contact"
+                  data-track="cta_click"
+                  data-track-label="Home CTA: Book audit"
+                >
                   <Button size="xl" className="group gap-2 text-base">
                     Book Free Audit
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px]" />

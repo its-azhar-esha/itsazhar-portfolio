@@ -223,7 +223,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               </p>
             </div>
           </div>
-          <Link href="/contact">
+          <Link href="/contact" data-track="cta_click" data-track-label="Blog author: Get in touch">
             <Button variant="outline" size="sm" className="gap-1.5">
               Get in touch <ArrowRight className="h-3.5 w-3.5" />
             </Button>
@@ -247,7 +247,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <p className="text-muted-foreground text-sm">
               Want systems like the ones I write about, built for your business?
             </p>
-            <Link href="/contact">
+            <Link href="/contact" data-track="cta_click" data-track-label="Blog: Book audit">
               <Button size="lg" className="mt-4 gap-2">
                 Book a Free 15-Min Audit
                 <ArrowRight className="h-4 w-4" />

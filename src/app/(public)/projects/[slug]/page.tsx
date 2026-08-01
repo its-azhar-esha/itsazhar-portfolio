@@ -11,6 +11,7 @@ import {
   getRelatedProjects,
 } from "@/lib/projects-data";
 import { getPageMetadata } from "@/lib/seo";
+import { incrementProjectViewsAction } from "@/lib/analytics/actions";
 import Link from "next/link";
 
 export async function generateStaticParams() {
@@ -61,6 +62,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { slug } = await params;
   const project = await getProject(slug);
   if (!project) notFound();
+  void incrementProjectViewsAction(slug);
 
   const { prev, next } = await getAdjacentProjects(slug);
   const related = await getRelatedProjects(slug);

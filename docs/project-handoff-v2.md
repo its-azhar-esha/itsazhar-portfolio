@@ -1177,4 +1177,48 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    "Bin"). Restore via `git checkout -- <file>` and re-apply edits; no
    data loss.
 
-- **Last Updated:** 2026-08-01 (Phase 9D — blog DB sync, carousel, related posts)
+### Phase 9E — Admin Analytics + Developer Tools + Supabase keep-alive (2026-08-01)
+
+1. **Analytics** (`/admin/analytics`) — new `analytics_events`
+   table (migration 00025) written ONLY through the security-definer
+   `track_event()` RPC (granted to anon + authenticated; RLS: reads
+   authenticated-only). Public tracking is fire-and-forget via
+   `src/lib/analytics/actions.ts` + `src/components/analytics/trackers.tsx`
+   (`PageViewTracker` with sessionStorage session ids, `CtaClickTracker`
+   with click delegation on `[data-track]` elements, `HubSearchTracker`
+   keyed off `?search=`). Downloads tracked in `DownloadButton`. CTAs
+   instrumented: navbar, home CTA, blog list/detail, hub Get access.
+   Dashboard shows: page views/sessions/downloads/CTA clicks/leads +
+   conversion funnel, most-viewed projects (`projects.views` +
+   `increment_project_views` RPC, called from project detail pages),
+   most-viewed templates (existing `views_count`), search keywords, top
+   pages, CTA breakdown, recent events. Views/tracking start at zero —
+   data builds up over time.
+2. **Developer Tools** (`/admin/dx`) — `getDxReportAction()` runs: env
+   checker (masked keys), health monitor (DB + storage latency),
+   migration status (local `supabase/migrations` vs
+   `list_applied_migrations()` RPC — note `schema_migrations` has NO
+   `inserted_at` column, only version/name/statements), storage status
+   (bucket object counts + bytes), database row counts (16 tables),
+   broken reference detector (scans `media:<uuid>` refs in
+   projects/blog/resources/workflow_templates against `media_files`),
+   SEO validator (blog posts + site settings), link checker (booking,
+   socials, purchase URLs, demo/repo links — HEAD→GET, 8s timeout, cap
+   25).
+3. **Supabase keep-alive (free-plan pausing)** — Free projects pause
+   after ~7 days with no API requests; a paused project is restorable
+   for 90 days, then permanently deleted (free tier has ZERO backups).
+   Mitigations now in place: (a) `/api/health` endpoint (light
+   `blog_posts` query, no-store), (b) Vercel cron in `vercel.json`
+   (daily 12:00 UTC), (c) `.github/workflows/keepalive.yml` GitHub
+   Actions daily ping (note: GH disables scheduled workflows after 60
+   days without repo activity — the Vercel cron covers that gap).
+   Recommended extra: UptimeRobot free monitor (5-min interval) on
+   `/api/health`. Any request to Supabase resets the timer.
+4. **Gotchas** — supabase-js storage `list()` returns
+   `FileObject[]` with `metadata.size`; `storage.listBuckets()` data is
+   `Bucket[] | null`; `.maybeSingle()` returns a builder (not a bare
+   Promise) — wrap in async when passing to helpers. Admin sidebar AND
+   mobile menu both need new nav entries.
+
+- **Last Updated:** 2026-08-01 (Phase 9E — analytics, developer tools, keep-alive)

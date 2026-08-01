@@ -18,6 +18,8 @@ import {
   Search,
   Settings,
   LogOut,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -67,6 +69,8 @@ function buildNavItems(settings: SiteSettings): NavItem[] {
       enabled: settings.show_hero || settings.show_about,
     },
     { label: "SEO", href: "/admin/seo", icon: Search },
+    { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { label: "Developer Tools", href: "/admin/dx", icon: Activity },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ];
 }

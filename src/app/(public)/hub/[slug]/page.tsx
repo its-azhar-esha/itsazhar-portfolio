@@ -200,6 +200,8 @@ export default async function ResourceDetailPage({
                   href={resource.pricing.purchase_url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-track="cta_click"
+                  data-track-label={`Get access: ${resource.title}`}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
                 >
                   <Download className="h-4 w-4" />

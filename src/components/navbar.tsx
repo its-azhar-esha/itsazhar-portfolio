@@ -116,7 +116,7 @@ export function Navbar({ logoUrl, bookingUrl, showBlog, showHub, showPlayground 
             whileTap={{ scale: 0.98 }}
             transition={spring}
           >
-            <Link href={bookHref}>
+            <Link href={bookHref} data-track="cta_click" data-track-label="Navbar: Book audit">
               <Button
                 size="sm"
                 className="group gap-1.5 shadow-sm transition-shadow duration-200 hover:shadow-md"

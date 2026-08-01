@@ -1,0 +1,19 @@
+name: keepalive
+
+on:
+  schedule:
+    # Daily noon UTC — keeps Supabase Free-plan project awake
+    # (projects pause after ~7 days without API requests).
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+            https://itsazhar-portfolio.vercel.app/api/health)
+          echo "health status: $STATUS"
+          if [ "$STATUS" != "200" ]; then exit 1; fi
