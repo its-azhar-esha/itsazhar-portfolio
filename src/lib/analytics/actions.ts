@@ -20,7 +20,15 @@ export interface TrackEventOptions {
   metadata?: Record<string, unknown>;
 }
 
+/* Analytics config is read on every tracked event; cache it briefly so the
+   public site never pays a settings row fetch per page view. */
+let analyticsConfigCache: { at: number; value: AnalyticsConfig } | null = null;
+
 async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+  if (analyticsConfigCache && Date.now() - analyticsConfigCache.at < 60_000) {
+    return analyticsConfigCache.value;
+  }
+  let value: AnalyticsConfig;
   try {
     const admin = createAdminClient();
     const { data } = (await admin
@@ -28,10 +36,16 @@ async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
       .select("analytics_config")
       .eq("id", SETTINGS_ROW_ID)
       .maybeSingle()) as unknown as { data: { analytics_config: unknown } | null };
-    return normalizeAnalyticsConfig(data?.analytics_config);
+    value = normalizeAnalyticsConfig(data?.analytics_config);
   } catch {
-    return normalizeAnalyticsConfig(null);
+    value = normalizeAnalyticsConfig(null);
   }
+  analyticsConfigCache = { at: Date.now(), value };
+  return value;
+}
+
+export async function invalidateAnalyticsConfigCache(): Promise<void> {
+  analyticsConfigCache = null;
 }
 
 export async function trackEventAction(
@@ -318,6 +332,7 @@ export async function saveAnalyticsConfigAction(
 
     const result = await saveSettings({ analytics_config: parsed.data });
     if (!result.success) return fail(result.error);
+    await invalidateAnalyticsConfigCache();
     revalidatePath("/admin/analytics");
     return ok(parsed.data);
   } catch (err) {

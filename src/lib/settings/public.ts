@@ -1,7 +1,8 @@
+import { cache } from "react";
 import { getSettings, settingsWithDefaults } from "./repository";
 import type { SiteSettings } from "@/types/settings";
 
-export async function getPublicSiteSettings(): Promise<SiteSettings> {
+export const getPublicSiteSettings = cache(async (): Promise<SiteSettings> => {
   try {
     const result = await getSettings();
     if (!result.success) return settingsWithDefaults(null);
@@ -9,4 +10,4 @@ export async function getPublicSiteSettings(): Promise<SiteSettings> {
   } catch {
     return settingsWithDefaults(null);
   }
-}
+});
