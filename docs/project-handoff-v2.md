@@ -1406,4 +1406,108 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    blog, media, settings…) can reuse `HelpButton` + `admin-help.ts`
    entries without new infrastructure.
 
-- **Last Updated:** 2026-08-01 (Phase 9H — DX + Analytics redesign with help system and loading states)
+## 22. Phase 9I - Media folders/tags/bulk, audit log, login history, encrypted integrations, scheduled publishing, version history (2026-08-01, commits `d37cc88` → `16f943e`)
+
+### 22.1 Media folders, tags, bulk ops, unused detection
+
+- Migration 00028 adds `media_files.folder` (text) and `media_files.tags`
+  (`text[]`, default `{}`) + GIN index.
+- Repository (`src/lib/media/repository.ts`): `listMedia` gains folder/tag
+  filters, `getMediaFolders`, `getMediaTags`, `bulkUpdateMedia`,
+  `bulkDeleteMedia`; `collectUsedReferences` scans every site-editable
+  table for the load-bearing `media:<uuid>` reference format via regex
+  `media:[0-9a-f-]{36}`; `getUnusedMedia` subtracts used references from
+  the media table.
+- Media Manager (`src/components/admin/media/media-manager.tsx`) rewritten:
+  bulk selection mode (select-all, folder/tag bulk edit, bulk delete),
+  folder/tag filter bar, and an "Unused media" accordion that lists
+  unused files with a one-click delete-all-unused action. Bulk mutations
+  and single delete/update write audit entries (`media.updated` /
+  `media.deleted`).
+- `MediaUploader` accepts optional `folder`/`tags` props; MediaField passes
+  through.
+
+### 22.2 Audit log + Activity page
+
+- `src/lib/audit.ts`: `logAudit` (best-effort, never fails the caller;
+  uses service role) + `listAuditLog`/`AuditEntry` shape.
+- Wired into every mutation action: SEO, settings, hero, about, content,
+  blog, projects, services (create/update/delete), media (update/delete/
+  bulk), versions (restore).
+- `/admin/activity` page: entity filter dropdown, action-type chips, and a
+  live list (latest first, paginated to 100) showing actor email, action,
+  entity, summary and timestamp. Client component with server-action fetch.
+
+### 22.3 Login history + Security page
+
+- `src/lib/security/repository.ts` + `actions.ts`: `recordLoginAttempt`
+  (best-effort) and `getLoginHistory`.
+- `src/lib/auth/actions.ts` `signIn` records success/failure with IP
+  (`x-forwarded-for` → `x-real-ip` fallback) and user-agent, captured via
+  async `clientMeta()`.
+- `/admin/security` page: stat cards (total / success / failed / last
+  attempt), latest-100 table with result badge, IP, user agent, timestamp.
+- Dropped active-session management: this `auth-js` version exposes no
+  `listSessions`/`deleteSession` admin API — page is login history only.
+
+### 22.4 Encrypted integration keys + Integration Center
+
+- `src/lib/crypto.ts`: AES-256-GCM with key derived from
+  `SECRET_ENCRYPTION_KEY` (SHA-256 fallback of service-role key + URL),
+  `v1:` envelope (iv + tag + ciphertext, base64).
+- `src/lib/integrations/repository.ts` + `actions.ts`: key save/rotate/
+  remove with per-integration `expires_at`, `touchUsage`, and env fallback
+  (stored key preferred, env key only when none stored). Catalog: Groq,
+  OpenRouter.
+- AI providers (`src/lib/ai/providers/groq.ts`, `openrouter.ts`) resolve
+  keys through `resolveApiKey`, so admin-set keys are used when present.
+- `/admin/integrations` page (server component) +
+  `src/components/admin/integrations/integration-manager.tsx`: card per
+  provider with configure/rotate/remove, expiry date input, show/hide key,
+  env/stored-source badge.
+
+### 22.5 Scheduled publishing (blog, projects, services)
+
+- `scheduled_for` timestamptz column on all three tables; public queries
+  filter `.or("scheduled_for.is.null,scheduled_for.lte.now")` (all public
+  pages force-dynamic, no cron needed). Admin queries never filter.
+- Forms: `scheduledFor` field with `toLocalDateTime`/`toIso` helpers,
+  error-key alias `scheduled_for` → `scheduledFor`, hidden for draft-only
+  publish modes. Project/service forms include the schedule input in
+  FormFields/defaultFields/fieldsToJson. `getPublicSlugsAction` also
+  filtered.
+
+### 22.6 Version history (blog, projects, services)
+
+- `src/lib/versions/repository.ts`: service-role full-row snapshots on
+  every create/update (`version = MAX+1` per entity, retry once on unique
+  collision 23505), list, getById, clear. Content is stored as JSONB.
+- `src/lib/versions/actions.ts`: `listContentVersionsAction`,
+  `restoreContentVersionAction` (ENTITY_TABLES map, SYSTEM_COLUMNS
+  excluded, audit `content.restored`).
+- `src/components/admin/versions/version-history.tsx`: latest-badge list,
+  expandable JSON diff view, restore with confirm; mounted as a
+  `VersionHistory` card in blog/projects/services edit forms. Capture is
+  best-effort (never breaks the write); cleared on delete.
+
+### 22.7 Schema, types, verification
+
+- `supabase/migrations/00028_media_folders_tags_audit_integrations_versions_scheduling.sql`
+  (applied remotely): new tables `audit_log`, `login_history`,
+  `integration_settings`, `content_versions` (RLS enabled, no policies —
+  service-role-only) + column additions. `src/database.types.ts`
+  hand-synced.
+- Sidebar/mobile-menu entries (Activity, Integrations, Security) + help
+  entries in `src/lib/admin-help.ts`.
+- Verified: tsc clean, lint 0 errors (1 pre-existing img warning), build
+  green, deployed to Vercel. Production verification with an
+  authenticated session (object-shaped `sb-*-auth-token` cookie, base64url
+  with `base64-` prefix): `/admin/activity` 200 (Activity title,
+  empty-state + latest-100 label), `/admin/security` 200 (Security title,
+  empty-state), `/admin/integrations` 200 (Groq + OpenRouter cards,
+  Not-configured status), `/admin/media` 200 (Media manager renders, no
+  login redirect). Empty states are correct: no audit/logins were recorded
+  yet because the tables are new and site-login recording begins from this
+  release onward.
+
+- **Last Updated:** 2026-08-01 (Phase 9I — media folders/tags/bulk, audit + login history, encrypted integrations, scheduled publishing, version history)
