@@ -30,6 +30,8 @@ export interface MetricState {
   status: MetricStatus;
   label: string;
   detail: string;
+  /** Optional, human-readable fix shown when the item is not fully healthy. */
+  recommendedAction?: string;
 }
 
 export interface UsageMeter {
@@ -54,6 +56,20 @@ export interface ApiIntegrationMetric {
   maskedKey: string | null;
   usageCount: number;
   lastUsedAt: string | null;
+}
+
+export type RecommendationSeverity = "high" | "medium" | "low" | "info";
+
+export interface Recommendation {
+  id: string;
+  severity: RecommendationSeverity;
+  category: string;
+  title: string;
+  why: string;
+  impact: string;
+  action: string;
+  /** Destination admin page (client-side nav target). */
+  href: string;
 }
 
 export interface DashboardOverview {
@@ -105,6 +121,7 @@ export interface DashboardOverview {
     deployedAt: string | null;
     siteUrl: string;
   };
+  recommendations: Recommendation[];
 }
 
 /* Free-tier capacity baselines (Supabase, informational). Exact project
@@ -168,6 +185,249 @@ async function scanStorageTotals(
     await scan(bucket.name, "", { files: 0 });
   }
   return totals;
+}
+
+/* ─── Recommendations (Action Center) ─── */
+
+const EXPIRING_WINDOW_MS = 14 * 86_400_000; // flag keys expiring within 14 days
+
+interface RecommendationInput {
+  admin: ReturnType<typeof createAdminClient>;
+  now: Date;
+  backupStatus: MetricStatus;
+  backupDetail: string;
+  migrationStatus: MetricStatus;
+  migrationDetail: string;
+  rlsAtRisk: boolean;
+  hasVercelToken: boolean;
+  integrations: {
+    label: string;
+    keyLabel: string;
+    configured: boolean;
+    expiresAt: string | null;
+  }[];
+  storagePercent: number | null;
+  databasePercent: number | null;
+  rateLimitStatus: MetricStatus;
+}
+
+async function collectRecommendations(input: RecommendationInput): Promise<Recommendation[]> {
+  const recs: Recommendation[] = [];
+  const push = (r: Omit<Recommendation, "id">) =>
+    recs.push({
+      ...r,
+      id: `${r.category.toLowerCase()}-${recs.length}-${Math.random().toString(36).slice(2, 7)}`,
+    });
+
+  /* SEO: entries missing a title or meta description */
+  try {
+    const { data } = await input.admin.from("seo_metadata").select("title,description");
+    const rows = (data ?? []) as { title: string | null; description: string | null }[];
+    const missing = rows.filter((r) => !r.title || !r.description);
+    if (missing.length > 0) {
+      push({
+        severity: "medium",
+        category: "SEO",
+        title: `${missing.length} page(s) missing title or meta description`,
+        why: "Pages without a title or meta description are poorly surfaced in search results and social previews.",
+        impact: "Lower SEO ranking and weak link/social sharing previews.",
+        action: `Add a title and description to ${missing.length} SEO entr${missing.length === 1 ? "y" : "ies"}.`,
+        href: "/admin/seo",
+      });
+    }
+  } catch {
+    // SEO scan is best-effort.
+  }
+
+  /* Content: unpublished drafts */
+  try {
+    const [projects, blog, services] = await Promise.all([
+      input.admin
+        .from("projects")
+        .select("id", { count: "exact", head: true })
+        .neq("status", "published"),
+      input.admin
+        .from("blog_posts")
+        .select("id", { count: "exact", head: true })
+        .neq("status", "published"),
+      input.admin
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .neq("status", "published"),
+    ]);
+    const drafts = (projects.count ?? 0) + (blog.count ?? 0) + (services.count ?? 0);
+    if (drafts > 0) {
+      push({
+        severity: "low",
+        category: "Content",
+        title: `${drafts} unpublished draft${drafts === 1 ? "" : "s"}`,
+        why: "Drafts are not visible to visitors, so in-progress or finished work may be going unseen.",
+        impact: "Potentially missing traffic and incomplete portfolio/site.",
+        action: "Review and publish or remove the drafts.",
+        href: "/admin/content",
+      });
+    }
+  } catch {
+    // Draft scan is best-effort.
+  }
+
+  /* Media: published projects missing a thumbnail */
+  try {
+    const { data } = await input.admin
+      .from("projects")
+      .select("thumbnail")
+      .eq("status", "published");
+    const rows = (data ?? []) as { thumbnail: string | null }[];
+    const noThumb = rows.filter((p) => !p.thumbnail);
+    if (noThumb.length > 0) {
+      push({
+        severity: "medium",
+        category: "Media",
+        title: `${noThumb.length} published project(s) missing a thumbnail`,
+        why: "Projects without a thumbnail render as blank cards and are less compelling.",
+        impact: "Lower engagement and a less polished public portfolio.",
+        action: `Upload a thumbnail for ${noThumb.length} project(s).`,
+        href: "/admin/media",
+      });
+    }
+  } catch {
+    // Thumbnail scan is best-effort.
+  }
+
+  /* AI provider keys: missing / expired / expiring */
+  for (const i of input.integrations) {
+    if (!i.configured) {
+      push({
+        severity: "medium",
+        category: "Integrations",
+        title: `${i.label} API key is not configured`,
+        why: `${i.label} powers AI features; without a key those features fall back or fail.`,
+        impact: "AI chat / features may be unavailable.",
+        action: `Add a ${i.label} key or set ${i.keyLabel}.`,
+        href: "/admin/integrations",
+      });
+      continue;
+    }
+    if (!i.expiresAt) continue;
+    const expiry = new Date(i.expiresAt).getTime();
+    if (expiry < input.now.getTime()) {
+      push({
+        severity: "high",
+        category: "Integrations",
+        title: `${i.label} API key has expired`,
+        why: "An expired key will stop working and break AI features.",
+        impact: "AI features will fail for visitors.",
+        action: `Rotate the ${i.label} key in the Integration Center.`,
+        href: "/admin/integrations",
+      });
+    } else if (expiry - input.now.getTime() < EXPIRING_WINDOW_MS) {
+      push({
+        severity: "low",
+        category: "Integrations",
+        title: `${i.label} API key expires soon (${new Date(expiry).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })})`,
+        why: "The key will stop working when it expires.",
+        impact: "Potential disruption to AI features.",
+        action: `Rotate the ${i.label} key before it expires.`,
+        href: "/admin/integrations",
+      });
+    }
+  }
+
+  /* Configuration: VERCEL_TOKEN missing */
+  if (!input.hasVercelToken) {
+    push({
+      severity: "low",
+      category: "Configuration",
+      title: "Deployment info is unavailable",
+      why: "VERCEL_TOKEN is not set, so the dashboard cannot show deployment status.",
+      impact: "You can't see when production was last deployed from the dashboard.",
+      action: "Add a Vercel token as VERCEL_TOKEN in Vercel project settings, then redeploy.",
+      href: "/admin",
+    });
+  }
+
+  /* Backups */
+  if (input.backupStatus !== "ok") {
+    push({
+      severity: input.backupStatus === "error" ? "high" : "medium",
+      category: "Backups",
+      title:
+        input.backupStatus === "error" ? "Backup status is unavailable" : "Backups need attention",
+      why: input.backupDetail,
+      impact: "Risk of data loss if the latest backup is stale or failed.",
+      action: "Check the Vercel cron and GitHub backup workflow.",
+      href: "/admin/dx",
+    });
+  }
+
+  /* Migrations */
+  if (input.migrationStatus !== "ok") {
+    push({
+      severity: input.migrationStatus === "error" ? "high" : "medium",
+      category: "Maintenance",
+      title: "Database migrations are not up to date",
+      why: input.migrationDetail,
+      impact: "Schema drift can cause runtime errors or missing features.",
+      action: "Apply pending migrations with `supabase db push`.",
+      href: "/admin/dx",
+    });
+  }
+
+  /* Security: RLS disabled */
+  if (input.rlsAtRisk) {
+    push({
+      severity: "high",
+      category: "Security",
+      title: "Row-level security is disabled on some tables",
+      why: "Tables without RLS expose their data to any client that can reach the API.",
+      impact: "Serious data-exposure risk.",
+      action: "Enable RLS on the affected tables in the Supabase dashboard.",
+      href: "/admin/security",
+    });
+  }
+
+  /* Capacity: storage / database utilization */
+  if (input.storagePercent !== null && input.storagePercent >= 70) {
+    push({
+      severity: input.storagePercent >= 95 ? "high" : "medium",
+      category: "Capacity",
+      title: `Storage is ${input.storagePercent}% full`,
+      why: "Storage is approaching (or past) the Free-tier quota.",
+      impact: "Uploads may fail once the quota is reached.",
+      action: "Review and remove unused media files.",
+      href: "/admin/media",
+    });
+  }
+  if (input.databasePercent !== null && input.databasePercent >= 70) {
+    push({
+      severity: input.databasePercent >= 95 ? "high" : "medium",
+      category: "Capacity",
+      title: `Database is ${input.databasePercent}% full`,
+      why: "Database size is approaching (or past) the quota.",
+      impact: "Writes may be blocked once the limit is reached.",
+      action: "Prune old audit/analytics or backup data.",
+      href: "/admin/dx",
+    });
+  }
+
+  /* Rate-limit posture */
+  if (input.rateLimitStatus === "warn") {
+    push({
+      severity: "medium",
+      category: "Performance",
+      title: "Traffic is high relative to API limits",
+      why: "Measured request volume is approaching Supabase per-minute limits.",
+      impact: "Rate limiting could throttle requests under spikes.",
+      action: "Consider upgrading the plan or optimizing traffic.",
+      href: "/admin/analytics",
+    });
+  }
+
+  return recs;
 }
 
 /* ─── Overview ─── */
@@ -479,6 +739,8 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
           maskedKey: i.maskedKey,
           usageCount: i.usageCount,
           lastUsedAt: i.lastUsedAt,
+          expiresAt: i.expiresAt,
+          keyLabel: i.keyLabel,
         }))
       : [];
     const api = {
@@ -486,14 +748,92 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       integrations,
     };
 
-    /* System status + latest deployment */
-    const checks: MetricState[] = [
-      health.database,
-      health.storage,
-      health.uptime,
-      health.backups,
-      health.migrations,
-    ];
+    /* Health: Supabase Auth reachability */
+    let authCheck: MetricState = {
+      status: "ok",
+      label: "Auth",
+      detail: "Auth session resolved successfully",
+    };
+    try {
+      const authStart = Date.now();
+      const authRes = await admin.auth.getUser("not-a-real-token");
+      const authMs = Date.now() - authStart;
+      if (authRes.error) {
+        authCheck = {
+          status: "warn",
+          label: "Auth",
+          detail: `Auth responded with error in ${authMs}ms: ${authRes.error.message}`,
+          recommendedAction:
+            "Check Supabase Auth configuration and confirm sessions can be issued.",
+        };
+      } else {
+        authCheck = {
+          status: "ok",
+          label: "Auth",
+          detail: `Reachable in ${authMs}ms (session validation OK)`,
+        };
+      }
+    } catch (err) {
+      authCheck = {
+        status: "error",
+        label: "Auth",
+        detail: err instanceof Error ? err.message : "Unreachable",
+        recommendedAction: "Verify Supabase URL and anon/service-role keys, then retry.",
+      };
+    }
+
+    /* Health: RLS security posture */
+    let rlsAtRisk = false;
+    let rlsCheck: MetricState = {
+      status: "info",
+      label: "Security (RLS)",
+      detail: "RLS posture not evaluated",
+    };
+    try {
+      const { data: rlsRows } = await admin.rpc("list_rls_status" as never);
+      const rows = (rlsRows ?? []) as { table_name: string; rls_enabled: boolean }[];
+      const atRisk = rows.filter((r) => !r.rls_enabled).map((r) => r.table_name);
+      if (atRisk.length === 0) {
+        rlsCheck = {
+          status: "ok",
+          label: "Security (RLS)",
+          detail: `${rows.length} table(s) protected by RLS`,
+        };
+      } else {
+        rlsAtRisk = true;
+        rlsCheck = {
+          status: "warn",
+          label: "Security (RLS)",
+          detail: `${atRisk.length} table(s) without RLS: ${atRisk.slice(0, 3).join(", ")}${
+            atRisk.length > 3 ? "…" : ""
+          }`,
+          recommendedAction:
+            "Enable row-level security on the listed tables in the Supabase dashboard.",
+        };
+      }
+    } catch (err) {
+      rlsCheck = {
+        status: "error",
+        label: "Security (RLS)",
+        detail: err instanceof Error ? err.message : "Unavailable",
+      };
+    }
+
+    /* Health: Vercel deployments (token-gated) */
+    let deployCheck: MetricState = env.hasVercelToken
+      ? {
+          status: "info",
+          label: "Deployments (Vercel)",
+          detail: "Querying Vercel…",
+        }
+      : {
+          status: "warn",
+          label: "Deployments (Vercel)",
+          detail:
+            "Deployment info unavailable — VERCEL_TOKEN is not configured in the environment.",
+          recommendedAction:
+            "Add a Vercel token (Account → Settings → Tokens, scope: project) as VERCEL_TOKEN in Vercel → Project → Settings → Environment Variables, then redeploy.",
+        };
     let deployedAt: string | null = null;
     if (env.hasVercelToken) {
       try {
@@ -504,18 +844,104 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
         if (res.ok) {
           const body = (await res.json()) as { deployments?: { createdAt?: number }[] };
           const latest = body.deployments?.[0];
-          if (latest?.createdAt) deployedAt = new Date(latest.createdAt).toISOString();
+          if (latest?.createdAt) {
+            deployedAt = new Date(latest.createdAt).toISOString();
+            deployCheck = {
+              status: "ok",
+              label: "Deployments (Vercel)",
+              detail: `Latest production deploy ${new Date(deployedAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}`,
+            };
+          }
+        } else {
+          deployCheck = {
+            status: "warn",
+            label: "Deployments (Vercel)",
+            detail: "Vercel API returned an error (token may be invalid or scoped incorrectly).",
+            recommendedAction:
+              "Verify VERCEL_TOKEN is valid and has access to this project, then retry.",
+          };
         }
       } catch {
-        // Deployment info is best-effort.
+        deployCheck = {
+          status: "warn",
+          label: "Deployments (Vercel)",
+          detail: "Vercel API could not be reached.",
+          recommendedAction: "Check network access to api.vercel.com, then retry.",
+        };
       }
     }
+
+    /* Health: AI provider integrations (configured / expired key) */
+    const integrationChecks: MetricState[] = integrations.map((i) => {
+      const expired = i.expiresAt !== null && new Date(i.expiresAt).getTime() < now.getTime();
+      if (!i.configured) {
+        return {
+          status: "warn",
+          label: `AI · ${i.label}`,
+          detail: `No API key configured — ${i.label} features may be unavailable.`,
+          recommendedAction: `Add a ${i.label} key in /admin/integrations or set ${i.keyLabel} as an environment variable.`,
+        };
+      }
+      if (expired) {
+        return {
+          status: "warn",
+          label: `AI · ${i.label}`,
+          detail: `Configured key expired ${new Date(i.expiresAt as string).toLocaleDateString(
+            "en-US",
+            {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            },
+          )}.`,
+          recommendedAction: `Rotate the ${i.label} key in /admin/integrations.`,
+        };
+      }
+      return {
+        status: "ok",
+        label: `AI · ${i.label}`,
+        detail: "Key configured and operational",
+      };
+    });
+
+    const checks: MetricState[] = [
+      health.database,
+      health.storage,
+      authCheck,
+      health.uptime,
+      health.backups,
+      health.migrations,
+      deployCheck,
+      rlsCheck,
+      ...integrationChecks,
+    ];
     const system = {
       operational: checks.every((c) => c.status === "ok"),
       checks,
       deployedAt,
       siteUrl: SITE_URL,
     };
+
+    /* Recommendations (Action Center) */
+    const recommendations = await collectRecommendations({
+      admin,
+      now,
+      backupStatus: health.backups.status,
+      backupDetail: health.backups.detail,
+      migrationStatus: health.migrations.status,
+      migrationDetail: health.migrations.detail,
+      rlsAtRisk,
+      hasVercelToken: env.hasVercelToken,
+      integrations,
+      storagePercent: storageMeter.percent,
+      databasePercent: databaseMeter.percent,
+      rateLimitStatus: rateLimit.status,
+    });
 
     return ok({
       generatedAt: now.toISOString(),
@@ -527,6 +953,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       rateLimit,
       api,
       system,
+      recommendations,
     });
   } catch (err) {
     logError("getDashboardOverviewAction failed", {

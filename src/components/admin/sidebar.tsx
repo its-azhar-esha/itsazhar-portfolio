@@ -24,6 +24,7 @@ import {
   History,
   KeyRound,
   ShieldCheck,
+  HeartPulse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
@@ -100,6 +101,7 @@ function buildNavItems(settings: SiteSettings): NavItem[] {
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
     { label: "Activity", href: "/admin/activity", icon: History },
     { label: "Integrations", href: "/admin/integrations", icon: KeyRound },
+    { label: "Keep-Alive", href: "/admin/keepalive", icon: HeartPulse },
     { label: "Security", href: "/admin/security", icon: ShieldCheck },
     { label: "Developer Tools", href: "/admin/dx", icon: Activity },
     { label: "Settings", href: "/admin/settings", icon: Settings },

@@ -1819,4 +1819,82 @@ separate About + Hero bespoke editors kept as-is.
   not follow the admin theme (html stays `dark`) - keep admin styling
   token-based.
 
-- **Last Updated:** 2026-08-01 (Phase 28 - live stats + admin theme)
+- **Last Updated:** 2026-08-01 (Phase 31 - keep-alive page + theme fix + recommendations)
+
+### Comprehensive System Status (/admin overview)
+
+- Dashboard now monitors all major platform services/components as
+  color-coded health checks: Database, Storage API, Auth, Uptime,
+  Backups, Migrations, Deployments (Vercel), Security (RLS) and each
+  AI provider integration (Groq / OpenRouter).
+- Every check carries a status (🟢 Healthy / 🟡 Needs attention / 🔴
+  Unavailable / ℹ️ Info) plus an optional `recommendedAction` that
+  explains the problem and how to fix it (e.g. `VERCEL_TOKEN` not set
+  -> shows how to add it in Vercel env; expired AI key -> rotate in
+  /admin/integrations; tables missing RLS -> enable it).
+- `MetricState` (src/lib/dashboard/actions.ts) gained a
+  `recommendedAction?: string` field; the checks array is the source
+  of truth rendered by `HealthChips` (banner) and the "Service health"
+  detail grid (src/app/admin/page.tsx).
+- When `VERCEL_TOKEN` is unset this is a visible 🟡 warning (deploy
+  info + recommendation) rather than a silent omission.
+
+### Admin Light theme consistency fix
+
+- Root cause: `<html>` always carries `dark`, so `body` computed dark
+  variables; the AdminShell wrapper applied `.admin-light` only on a
+  transparent div, so fixed chrome, portal/overlay content and page
+  backdrops fell through to dark.
+- Fix (src/components/admin/shell.tsx): (1) the wrapper now also gets
+  `bg-background`; (2) a `useEffect` syncs the active admin theme class
+  onto `document.documentElement` so every surface (dialogs, toasts,
+  fixed sidebar/header, future portals) follows the selected theme.
+  The class is removed on unmount so leaving /admin restores the
+  public dark site. Light mode now applies consistently across all
+  admin pages/components; dark mode is unchanged.
+
+### Recommendations / Action Center (/admin overview)
+
+- New `RecommendationsCard` on the dashboard (src/app/admin/page.tsx),
+  fed by `recommendations` returned from the dashboard action
+  (src/lib/dashboard/actions.ts via `collectRecommendations`).
+- Auto-detects actionable items server-side: missing SEO titles/
+  descriptions, unpublished drafts (projects/blog/services), published
+  projects without a thumbnail, missing/expired/expiring AI provider
+  keys, missing `VERCEL_TOKEN`, stale/failed backups, pending
+  migrations, tables without RLS, storage/database capacity thresholds
+  and high rate-limit posture.
+- Each recommendation is clickable and shows severity (High/Medium/
+  Low/Info), category, _Why_, _Impact_ and _Action_, plus a shortcut
+  link to the relevant admin page. Empty state shows "All clear".
+- `Recommendation` / `RecommendationSeverity` types exported from the
+  dashboard action module.
+
+### Keep-Alive monitor (/admin/keepalive)
+
+- New dedicated page (src/app/admin/keepalive/page.tsx) providing a
+  complete overview of every component involved in keeping the project
+  active: database, storage API, all representative tables (probed
+  individually), storage buckets, Supabase RPCs/functions
+  (list_applied_migrations, list_rls_status), all scheduled jobs
+  (Vercel cron for /api/health and /api/backup), keep-alive services
+  (GitHub Actions workflows as redundant fallbacks), the health-checks
+  ledger, and backups ledger.
+- Server action: src/lib/keepalive/actions.ts — `getKeepAliveReportAction`
+  returns a `KeepAliveReport` with `KeepAliveComponent[]` and summary
+  stats (healthy/warning/error/info counts, streak, okToday,
+  recordEnabled). Each component carries detailed metrics: status,
+  lastKeepAliveAt, nextScheduledAt, lastHealthCheckAt, lastSuccessAt,
+  lastError/retryStatus, failureCount/successCount/successRate, uptime,
+  responseTimeMs, relatedLogs (recent health_checks rows), plus failure
+  explanation fields (whatHappened/why/impact/autoRecovered/recommendedAction)
+  when something fails or needs attention.
+- Grouped by category (Infrastructure, Data tables, Storage buckets,
+  Functions, Scheduled jobs, Keep-alive services, Health checks, Backups)
+  with expandable cards (client component: src/components/admin/keepalive/
+  keepalive-card.tsx). Summary banner shows overall operational state
+  with severity counts and streak/checks-today stats.
+- Added to sidebar (HeartPulse icon) in src/components/admin/sidebar.tsx.
+- No pg_cron or edge functions exist — the page documents this
+  explicitly: keep-alive is handled externally by Vercel cron + GitHub
+  Actions with redundancy.

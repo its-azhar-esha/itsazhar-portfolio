@@ -4,12 +4,14 @@ import {
   Activity,
   AlertTriangle,
   ArrowLeftRight,
+  ArrowRight,
   CheckCircle2,
   Cpu,
   Database,
   Gauge,
   HardDrive,
   Info,
+  Lightbulb,
   Rocket,
   ShieldCheck,
   ShieldAlert,
@@ -21,6 +23,8 @@ import {
   type DashboardOverview,
   type MetricState,
   type MetricStatus,
+  type Recommendation,
+  type RecommendationSeverity,
   type UsageMeter,
 } from "@/lib/dashboard/actions";
 import { formatBytes, formatCount } from "@/lib/dashboard/format";
@@ -29,28 +33,44 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Dashboard | Admin" };
 
-const STATUS_META: Record<MetricStatus, { label: string; dot: string; badge: string }> = {
+const STATUS_META: Record<
+  MetricStatus,
+  { label: string; dot: string; badge: string; emoji: string }
+> = {
   ok: {
-    label: "OK",
+    label: "Healthy",
     dot: "bg-emerald-500",
     badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
+    emoji: "🟢",
   },
   warn: {
-    label: "Attention",
+    label: "Needs attention",
     dot: "bg-amber-500",
     badge: "border-amber-500/30 bg-amber-500/10 text-amber-600",
+    emoji: "🟡",
   },
   error: {
-    label: "Down",
+    label: "Unavailable",
     dot: "bg-red-500",
     badge: "border-red-500/30 bg-red-500/10 text-red-500",
+    emoji: "🔴",
   },
-  info: { label: "Info", dot: "bg-sky-500", badge: "border-sky-500/30 bg-sky-500/10 text-sky-600" },
+  info: {
+    label: "Info",
+    dot: "bg-sky-500",
+    badge: "border-sky-500/30 bg-sky-500/10 text-sky-600",
+    emoji: "ℹ️",
+  },
 };
 
 function StatusBadge({ status }: { status: MetricStatus }) {
   const meta = STATUS_META[status];
-  return <Badge className={`${meta.badge} text-[10px]`}>{meta.label}</Badge>;
+  return (
+    <Badge className={`${meta.badge} text-[10px]`}>
+      <span className="mr-1">{meta.emoji}</span>
+      {meta.label}
+    </Badge>
+  );
 }
 
 function MeterCard({
@@ -115,10 +135,10 @@ function HealthChips({ checks }: { checks: MetricState[] }) {
         return (
           <span
             key={check.label}
-            title={check.detail}
+            title={`${check.detail}${check.recommendedAction ? ` — ${check.recommendedAction}` : ""}`}
             className="border-border/40 bg-accent/40 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs"
           >
-            <span className={`${meta.dot} h-1.5 w-1.5 rounded-full`} />
+            <span>{meta.emoji}</span>
             {check.label}
           </span>
         );
@@ -133,6 +153,120 @@ function StatChip({ label, value }: { label: string; value: string }) {
       <p className="text-muted-foreground text-[10px] tracking-wide uppercase">{label}</p>
       <p className="text-sm font-semibold">{value}</p>
     </div>
+  );
+}
+
+const SEVERITY_META: Record<RecommendationSeverity, { label: string; dot: string; badge: string }> =
+  {
+    high: {
+      label: "High",
+      dot: "bg-red-500",
+      badge: "border-red-500/30 bg-red-500/10 text-red-500",
+    },
+    medium: {
+      label: "Medium",
+      dot: "bg-amber-500",
+      badge: "border-amber-500/30 bg-amber-500/10 text-amber-600",
+    },
+    low: {
+      label: "Low",
+      dot: "bg-sky-500",
+      badge: "border-sky-500/30 bg-sky-500/10 text-sky-600",
+    },
+    info: {
+      label: "Info",
+      dot: "bg-slate-400",
+      badge: "border-slate-400/30 bg-slate-400/10 text-slate-500",
+    },
+  };
+
+const SEVERITY_ORDER: RecommendationSeverity[] = ["high", "medium", "low", "info"];
+
+function RecommendationsCard({ recommendations }: { recommendations: Recommendation[] }) {
+  const sorted = [...recommendations].sort(
+    (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
+  );
+  const bySeverity = (s: RecommendationSeverity) =>
+    recommendations.filter((r) => r.severity === s).length;
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 p-4">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+            <Lightbulb className="h-3.5 w-3.5" />
+          </span>
+          Recommendations
+          <span className="text-muted-foreground text-xs font-normal">· Action Center</span>
+        </CardTitle>
+        {recommendations.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {SEVERITY_ORDER.filter((s) => bySeverity(s) > 0).map((s) => (
+              <span
+                key={s}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${SEVERITY_META[s].badge}`}
+              >
+                <span className={`${SEVERITY_META[s].dot} h-1.5 w-1.5 rounded-full`} />
+                {bySeverity(s)} {SEVERITY_META[s].label.toLowerCase()}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-600">
+            All clear
+          </Badge>
+        )}
+      </CardHeader>
+      <CardContent className="px-4 pt-0 pb-4">
+        {sorted.length === 0 ? (
+          <div className="border-border/40 bg-accent/30 rounded-lg border px-4 py-6 text-center">
+            <p className="text-sm font-medium">No recommendations right now</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Everything looks healthy. We&apos;ll surface actionable items here when there&apos;s
+              something worth reviewing.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sorted.map((rec) => {
+              const meta = SEVERITY_META[rec.severity];
+              return (
+                <Link
+                  key={rec.id}
+                  href={rec.href}
+                  className="border-border/40 bg-accent/30 hover:bg-accent/60 group flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors"
+                >
+                  <span
+                    className={`${meta.dot} mt-1.5 h-2 w-2 shrink-0 rounded-full`}
+                    title={meta.label}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{rec.title}</p>
+                      <span
+                        className={`rounded-full border px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase ${meta.badge}`}
+                      >
+                        {rec.category}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                      <span className="text-foreground font-medium">Why:</span> {rec.why}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                      <span className="text-foreground font-medium">Impact:</span> {rec.impact}
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed">
+                      <span className="text-primary font-medium">Action:</span> {rec.action}
+                    </p>
+                  </div>
+                  <ArrowRight className="text-muted-foreground group-hover:text-foreground mt-1 h-4 w-4 shrink-0 transition-colors" />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -219,6 +353,9 @@ export default async function AdminDashboard() {
           </div>
         </CardHeader>
       </Card>
+
+      {/* Recommendations / Action Center */}
+      <RecommendationsCard recommendations={d.recommendations} />
 
       {/* Usage meters */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -406,12 +543,28 @@ export default async function AdminDashboard() {
                 key={check.label}
                 className="border-border/40 bg-accent/30 flex items-start gap-3 rounded-lg border px-3 py-2.5"
               >
-                <span className={`${meta.dot} mt-1.5 h-2 w-2 shrink-0 rounded-full`} />
+                <span className="mt-0.5 text-sm leading-none">{meta.emoji}</span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">{check.label}</p>
-                  <p className="text-muted-foreground truncate text-xs" title={check.detail}>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{check.label}</p>
+                    <span
+                      className={`text-[10px] font-medium ${meta.badge} rounded-full border px-1.5 py-0.5`}
+                    >
+                      {meta.label}
+                    </span>
+                  </div>
+                  <p
+                    className="text-muted-foreground mt-0.5 text-xs leading-relaxed"
+                    title={check.detail}
+                  >
                     {check.detail}
                   </p>
+                  {check.recommendedAction && (
+                    <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-snug text-amber-600">
+                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span>{check.recommendedAction}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             );

@@ -69,6 +69,21 @@ export function AdminShell({
 
   const themeClass = adminTheme === "light" ? "admin-light" : "admin-dark";
 
+  // The public <html> (and therefore <body>) always carries `dark` so the site
+  // stays dark. Portal-rendered UI and fixed overlays mount on <body> OUTSIDE this
+  // wrapper, so they would inherit dark variables. Sync the admin theme onto
+  // <html> as well so every surface (dialogs, dropdowns, toasts, fixed sidebar /
+  // header, page backdrop) follows the selected admin theme consistently.
+  // The class is removed on unmount so leaving /admin restores the public dark site.
+  React.useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("admin-light", "admin-dark");
+    root.classList.add(themeClass);
+    return () => {
+      root.classList.remove("admin-light", "admin-dark");
+    };
+  }, [themeClass]);
+
   const showBack = pathname !== "/admin";
 
   function handleBack() {
@@ -81,7 +96,7 @@ export function AdminShell({
 
   return (
     <ToastProvider>
-      <div className={`${themeClass} flex min-h-screen`}>
+      <div className={`${themeClass} bg-background flex min-h-screen`}>
         <AdminSidebar settings={settings} />
         <AdminMobileMenu
           open={mobileOpen}
