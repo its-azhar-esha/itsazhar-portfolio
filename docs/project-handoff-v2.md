@@ -1224,4 +1224,82 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    `increment_project_views` to accept both; check status values before
    writing RPC filters.
 
-- **Last Updated:** 2026-08-01 (Phase 9E — analytics, developer tools, keep-alive)
+### Phase 9F — Navigation management, Analytics/DX expansion, automated backups (2026-08-01)
+
+1. **Blog restructure** — the hero (badge, "Building authority through
+   automation", stats) is GONE. `PostCarousel` with the latest 4 posts
+   (by `published_at` desc) is now the FIRST element on `/blog`;
+   category pills sit below it; remaining posts render in the
+   "More articles" `PostCard` grid. Nothing renders above the
+   carousel.
+2. **Navigation management (Settings)** — new `site_settings.nav_order`
+   JSONB column (migration 00027): array of `{ label, href, enabled }`
+   with default order Home, Services, Projects, About, Contact, Blog,
+   Hub, Playground. Settings page gained a drag-and-drop section
+   (framer-motion `Reorder.Group`, grip handle + per-item visibility
+   Switch + "Reset order"). `Navbar` now renders from `nav_order`
+   (AND-gated with the existing `show_blog/show_hub/show_playground`
+   toggles); `MobileNav` gates its Blog/Hub/Playground "More" items the
+   same way. Backward compatible: old rows fall back to defaults via
+   `normalizeNavOrder()`.
+3. **Analytics expansion** — `analytics_config` JSONB column
+   (enabled, retentionDays, windowDays, trackSearchKeywords) editable
+   from a Configuration card on `/admin/analytics`; tracking is
+   disabled app-wide when `enabled=false`. Page-view metadata now
+   carries `referrer` + `device` (mobile/tablet/desktop via UA).
+   Dashboard additions: daily page-view bar chart (zero-filled,
+   window from config), most-read blog posts (path match `/blog/*`
+   joined to titles), traffic sources (referrer host → "(direct)"),
+   devices, and an Export CSV button (`exportAnalyticsCsvAction`).
+4. **Developer Tools expansion** — `dx_config` JSONB column
+   (recordHealthChecks, linkCheckTimeoutMs, linkCheckMaxUrls,
+   seoTitleMax/seoDescMin/seoDescMax) editable from a Configuration
+   card on `/admin/dx`. New sections: Keep-alive history (last 30
+   daily `/api/health` checks from the `health_checks` ledger),
+   Backup status (latest `backups` ledger row + age + stale warning),
+   RLS posture (`list_rls_status()` RPC: per-table RLS + policy
+   counts; health_checks/backups are intentionally policy-free
+   "locked (service role only)" tables), Orphan storage scan
+   (recursive bucket listing vs `media_files.bucket/storage_path`,
+   capped at 3000 files, top 30 by size). SEO/link checkers now
+   honor the config targets.
+5. **Automated backups + resilience (free-tier production readiness)** —
+   (a) `/api/health` now upserts one `health_checks` row per day
+   (service role, honoring `dx_config.recordHealthChecks`);
+   (b) NEW `/api/backup` route (guarded by `x-vercel-cron: 1` or
+   `BACKUP_CRON_SECRET` + `x-backup-key`), Vercel cron 00:00 UTC in
+   `vercel.json`: exports 19 content tables to JSON under
+   `backups/<date>/tables/` in the private `backups` storage bucket,
+   writes a storage catalog (bucket/path/size/updated_at), prunes
+   `analytics_events` beyond `analytics_config.retentionDays`,
+   prunes backup folders older than 30 days, upserts the `backups`
+   ledger (feeds the DX page); (c) NEW `.github/workflows/backup.yml`
+   (03:00 UTC + manual) runs `scripts/backup-to-branch.mjs` — REST
+   table exports + full storage binary downloads committed to the
+   `backups` branch (offsite copy; retention 30). NOTE: GH scheduled
+   workflows stop after 60 days of repo inactivity — the Vercel cron
+   is the primary backup; (d) `scripts/restore-backup.mjs` restores
+   from storage (`--source=storage --date=YYYY-MM-DD`) or a local
+   checkout (`--source=local --path=...`), upserting tables by id +
+   re-uploading storage files; `--dry-run` supported. Ledger tables
+   `health_checks` + `backups` are RLS-on with NO policies (service
+   role only — intentional). `list_rls_status()` RPC added.
+6. **GitHub secrets REQUIRED for the offsite workflow** — add
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as Actions
+   repository secrets (Settings → Secrets and variables → Actions).
+   Values are in `.env.local`. Until then the workflow exits 0
+   silently and commits only `backups/README.md`.
+7. **Gotchas (Phase 9F)** — supabase-js typed `select("jsonb_column")`
+   and upserts on tables containing `unknown`-typed columns infer to
+   `never` — cast the chain (`as unknown as { data: ... }`, `as never`)
+   as done in `src/lib/analytics/actions.ts`, `src/lib/dx/actions.ts`,
+   `src/app/api/{health,backup}/route.ts`. `bucketList` from
+   `storage.listBuckets()` must be hoisted out of try-blocks to reuse
+   it later in the same report. Settings form values must include
+   `nav_order`/`analytics_config`/`dx_config` or
+   `siteSettingsSchema.safeParse` fails (all three are required keys).
+   Reorder drag-and-drop needs unique `value` per item and stable
+   object identities during drags — toggle creates a new object
+   (fine outside a drag).
+
+- **Last Updated:** 2026-08-01 (Phase 9F — nav management, analytics/DX expansion, automated backups)
