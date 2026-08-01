@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Reorder } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +12,9 @@ import { saveSiteSettingsAction } from "@/lib/settings/actions";
 import { siteSettingsSchema } from "@/lib/validation";
 import { useToast } from "@/components/ui/toast";
 import { MediaField } from "@/components/media/media-field";
-import { Loader2, Save } from "lucide-react";
-import type { SiteSettings } from "@/types/settings";
+import { GripVertical, Loader2, RotateCcw, Save } from "lucide-react";
+import type { SiteSettings, NavItemConfig } from "@/types/settings";
+import { DEFAULT_NAV_ORDER } from "@/types/settings";
 
 interface SettingsFormProps {
   initial: SiteSettings;
@@ -53,6 +55,9 @@ function toFormValues(settings: SiteSettings) {
     ga4_measurement_id: settings.ga4_measurement_id ?? "",
     gtm_id: settings.gtm_id ?? "",
     clarity_project_id: settings.clarity_project_id ?? "",
+    nav_order: settings.nav_order,
+    analytics_config: settings.analytics_config,
+    dx_config: settings.dx_config,
   };
 }
 
@@ -114,6 +119,72 @@ function ToggleRow({
         <p className="text-muted-foreground text-xs">{description}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
+}
+
+function NavigationManager({
+  value,
+  onChange,
+}: {
+  value: NavItemConfig[];
+  onChange: (items: NavItemConfig[]) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <Reorder.Group axis="y" values={value} onReorder={onChange} className="space-y-2">
+        {value.map((item) => (
+          <Reorder.Item
+            key={item.href}
+            value={item}
+            className="border-border/50 bg-muted/40 cursor-grab rounded-lg border px-3 py-2.5 active:cursor-grabbing"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <GripVertical className="text-muted-foreground h-4 w-4 shrink-0" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{item.label}</p>
+                  <p className="text-muted-foreground truncate text-xs">{item.href}</p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span
+                  className={
+                    item.enabled
+                      ? "text-xs font-medium text-emerald-600"
+                      : "text-muted-foreground text-xs"
+                  }
+                >
+                  {item.enabled ? "Visible" : "Hidden"}
+                </span>
+                <Switch
+                  checked={item.enabled}
+                  onCheckedChange={(checked) =>
+                    onChange(
+                      value.map((i) => (i.href === item.href ? { ...i, enabled: checked } : i)),
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </Reorder.Item>
+        ))}
+      </Reorder.Group>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-muted-foreground text-xs">
+          Drag to reorder. Toggle to show or hide an item.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange(DEFAULT_NAV_ORDER.map((i) => ({ ...i })))}
+          className="gap-1.5"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Reset order
+        </Button>
+      </div>
     </div>
   );
 }
@@ -316,6 +387,16 @@ export function SettingsForm({ initial }: SettingsFormProps) {
             onCheckedChange={(v) => handleChange({ show_ai_chat: v })}
           />
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Navigation"
+        description="Order and visibility of the main navigation. Section toggles below still control the Blog, Hub and Playground modules."
+      >
+        <NavigationManager
+          value={fields.nav_order}
+          onChange={(items) => handleChange({ nav_order: items })}
+        />
       </SectionCard>
 
       <SectionCard

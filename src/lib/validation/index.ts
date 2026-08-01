@@ -23,7 +23,12 @@ export {
   mediaUrlOrReferenceSchema,
 } from "./schemas/media";
 
-export { siteSettingsSchema } from "./schemas/settings";
+export {
+  siteSettingsSchema,
+  navItemSchema,
+  analyticsConfigSchema,
+  dxConfigSchema,
+} from "./schemas/settings";
 
 export { submitLeadSchema, updateLeadStatusSchema } from "./schemas/lead";
 

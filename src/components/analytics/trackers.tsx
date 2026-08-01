@@ -14,6 +14,20 @@ function getSessionId(): string {
   return id;
 }
 
+function detectDeviceType(): string {
+  const ua = navigator.userAgent;
+  if (/iPad|Tablet|Android(?!.*Mobile)/i.test(ua)) return "tablet";
+  if (/Mobi|Android|iPhone|iPod/i.test(ua)) return "mobile";
+  return "desktop";
+}
+
+function getPageMetadata(): Record<string, string> {
+  return {
+    referrer: document.referrer ? document.referrer.slice(0, 500) : "",
+    device: detectDeviceType(),
+  };
+}
+
 export function PageViewTracker() {
   const pathname = usePathname();
 
@@ -21,6 +35,7 @@ export function PageViewTracker() {
     void trackEventAction("page_view", {
       pagePath: pathname,
       sessionId: getSessionId(),
+      metadata: getPageMetadata(),
     });
   }, [pathname]);
 
@@ -41,6 +56,7 @@ export function CtaClickTracker() {
         pagePath: pathname,
         label,
         sessionId: getSessionId(),
+        metadata: getPageMetadata(),
       });
     }
     document.addEventListener("click", onClick);
@@ -61,6 +77,7 @@ export function HubSearchTracker() {
       pagePath: pathname,
       label: query.slice(0, 200),
       sessionId: getSessionId(),
+      metadata: getPageMetadata(),
     });
   }, [pathname, searchParams]);
 

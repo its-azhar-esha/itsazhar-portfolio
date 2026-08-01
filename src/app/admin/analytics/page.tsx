@@ -9,6 +9,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAnalyticsSummaryAction } from "@/lib/analytics/actions";
+import { getSettings } from "@/lib/settings/repository";
+import { AnalyticsConfigCard } from "@/components/admin/analytics/config-card";
+import { CsvExportButton } from "@/components/admin/analytics/csv-export-button";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +56,39 @@ function BarList({
   );
 }
 
+function DailyViewsChart({ data }: { data: { date: string; count: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  const labelEvery = Math.ceil(data.length / 8);
+  return (
+    <div>
+      <div className="flex h-32 items-end gap-1">
+        {data.map((d) => (
+          <div
+            key={d.date}
+            title={`${d.date}: ${d.count} view${d.count === 1 ? "" : "s"}`}
+            className="bg-primary/70 hover:bg-primary relative flex-1 rounded-t-sm transition-colors"
+            style={{ height: `${Math.max(2, (d.count / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+      <div className="text-muted-foreground mt-2 flex justify-between text-[10px]">
+        {data.map((d, i) =>
+          i % labelEvery === 0 ? (
+            <span key={d.date}>
+              {new Date(`${d.date}T00:00:00`).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          ) : (
+            <span key={d.date} />
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StatCard({
   icon: Icon,
   label,
@@ -83,7 +119,7 @@ function StatCard({
 }
 
 export default async function AnalyticsPage() {
-  const result = await getAnalyticsSummaryAction();
+  const [result, settingsResult] = await Promise.all([getAnalyticsSummaryAction(), getSettings()]);
 
   if (!result.success) {
     return (
@@ -97,6 +133,7 @@ export default async function AnalyticsPage() {
   }
 
   const s = result.data;
+  const config = settingsResult.success ? settingsResult.data?.analytics_config : undefined;
   const funnelSteps = [
     { label: "Page views", value: s.pageViews30d, icon: Activity },
     { label: "CTA clicks", value: s.ctaClicks30d, icon: MousePointerClick },
@@ -114,7 +151,17 @@ export default async function AnalyticsPage() {
             counters build up over time.
           </p>
         </div>
+        <CsvExportButton />
       </div>
+
+      {!s.trackingEnabled && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+          Tracking is currently disabled in the analytics configuration below. New events are not
+          being recorded.
+        </div>
+      )}
+
+      {config && <AnalyticsConfigCard initial={config} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -127,7 +174,7 @@ export default async function AnalyticsPage() {
           icon={Download}
           label="Downloads"
           value={String(s.downloadsTotal + s.downloadEvents30d)}
-          sub={`${s.downloadsTotal} lifetime · ${s.downloadEvents30d} in 30d`}
+          sub={`${s.downloadsTotal} lifetime · ${s.downloadEvents30d} in ${s.windowDays}d`}
         />
         <StatCard
           icon={MousePointerClick}
@@ -139,9 +186,18 @@ export default async function AnalyticsPage() {
           icon={TrendingUp}
           label="Conversion"
           value={s.conversionRate === null ? "—" : `${s.conversionRate}%`}
-          sub={`${s.leads30d} lead${s.leads30d === 1 ? "" : "s"} in 30d`}
+          sub={`${s.leads30d} lead${s.leads30d === 1 ? "" : "s"} in ${s.windowDays}d`}
         />
       </div>
+
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base">Daily page views · last {s.windowDays} days</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DailyViewsChart data={s.dailyViews} />
+        </CardContent>
+      </Card>
 
       <Card className="border-border/50">
         <CardHeader>
@@ -207,6 +263,19 @@ export default async function AnalyticsPage() {
 
         <Card className="border-border/50">
           <CardHeader>
+            <CardTitle className="text-base">Most read blog posts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {s.topBlogPosts.length ? (
+              <BarList items={s.topBlogPosts} valueKey="views" labelKey="title" />
+            ) : (
+              <EmptyNote text="Blog post views will appear here." />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader>
             <CardTitle className="text-base">Top downloads</CardTitle>
           </CardHeader>
           <CardContent>
@@ -214,6 +283,32 @@ export default async function AnalyticsPage() {
               <BarList items={s.topResources} valueKey="downloads" labelKey="title" />
             ) : (
               <EmptyNote text="No downloadable resources yet." />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">Traffic sources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {s.sources.length ? (
+              <BarList items={s.sources} valueKey="count" labelKey="referrer" />
+            ) : (
+              <EmptyNote text="Referrer data will appear here." />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">Devices</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {s.devices.length ? (
+              <BarList items={s.devices} valueKey="count" labelKey="device" />
+            ) : (
+              <EmptyNote text="Device data will appear here." />
             )}
           </CardContent>
         </Card>

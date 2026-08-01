@@ -1,10 +1,15 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fail, ok } from "@/lib/result";
 import type { Result } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
+import { SETTINGS_ROW_ID, normalizeAnalyticsConfig } from "@/types/settings";
+import type { AnalyticsConfig } from "@/types/settings";
+import { analyticsConfigSchema } from "@/lib/validation";
+import { saveSettings } from "@/lib/settings/repository";
 
 /* ─── Public event tracking (fire-and-forget, must never break pages) ─── */
 
@@ -15,11 +20,27 @@ export interface TrackEventOptions {
   metadata?: Record<string, unknown>;
 }
 
+async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+  try {
+    const admin = createAdminClient();
+    const { data } = (await admin
+      .from("site_settings")
+      .select("analytics_config")
+      .eq("id", SETTINGS_ROW_ID)
+      .maybeSingle()) as unknown as { data: { analytics_config: unknown } | null };
+    return normalizeAnalyticsConfig(data?.analytics_config);
+  } catch {
+    return normalizeAnalyticsConfig(null);
+  }
+}
+
 export async function trackEventAction(
   event: string,
   options: TrackEventOptions = {},
 ): Promise<void> {
   try {
+    const config = await getAnalyticsConfig();
+    if (!config.enabled) return;
     const supabase = await createClient();
     const metadata: Record<string, unknown> = {
       ...(options.sessionId ? { session: options.sessionId } : {}),
@@ -62,6 +83,11 @@ export interface AnalyticsSummary {
   topSearches: { keyword: string; count: number }[];
   topPages: { path: string; count: number }[];
   ctaBreakdown: { label: string; count: number }[];
+  dailyViews: { date: string; count: number }[];
+  topBlogPosts: { title: string; slug: string; views: number }[];
+  sources: { referrer: string; count: number }[];
+  devices: { device: string; count: number }[];
+  trackingEnabled: boolean;
   recentEvents: { event: string; page_path: string; label: string; created_at: string }[];
 }
 
@@ -73,8 +99,21 @@ interface RawEvent {
   created_at: string;
 }
 
+interface EventMetadata {
+  session?: string;
+  referrer?: string;
+  device?: string;
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "") || "(direct)";
+  } catch {
+    return "(direct)";
+  }
+}
+
 export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSummary>> {
-  const WINDOW_DAYS = 30;
   try {
     const supabase = await createClient();
     const {
@@ -83,9 +122,11 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
     if (!user) return fail("Authentication required.");
 
     const admin = createAdminClient();
-    const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const config = await getAnalyticsConfig();
+    const windowDays = Math.max(7, config.windowDays);
+    const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000).toISOString();
 
-    const [eventsRes, projectsRes, templatesRes, resourcesRes, leadsRes, downloadsRes] =
+    const [eventsRes, projectsRes, templatesRes, resourcesRes, leadsRes, downloadsRes, postsRes] =
       await Promise.all([
         admin
           .from("analytics_events")
@@ -109,6 +150,11 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
           .limit(5),
         admin.from("leads").select("id").gte("created_at", since),
         admin.from("resources").select("downloads_count"),
+        admin
+          .from("blog_posts")
+          .select("title,slug")
+          .order("published_at", { ascending: false })
+          .limit(100),
       ]);
 
     const events = (eventsRes.data ?? []) as unknown as RawEvent[];
@@ -120,7 +166,7 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
     const sessionCount = new Set(
       pageViews
         .map((e) => {
-          const metadata = (e.metadata ?? {}) as { session?: string };
+          const metadata = (e.metadata ?? {}) as EventMetadata;
           return metadata.session ?? "";
         })
         .filter(Boolean),
@@ -143,6 +189,48 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
       ctaCounts.set(label, (ctaCounts.get(label) ?? 0) + 1);
     }
 
+    // Daily page views across the window, zero-filled so charts are continuous.
+    const dailyCounts = new Map<string, number>();
+    for (let i = windowDays - 1; i >= 0; i--) {
+      const day = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      dailyCounts.set(day, 0);
+    }
+    for (const e of pageViews) {
+      const day = e.created_at.slice(0, 10);
+      if (dailyCounts.has(day)) dailyCounts.set(day, (dailyCounts.get(day) ?? 0) + 1);
+    }
+
+    // Traffic sources + devices from page-view metadata.
+    const sourceCounts = new Map<string, number>();
+    const deviceCounts = new Map<string, number>();
+    for (const e of pageViews) {
+      const metadata = (e.metadata ?? {}) as EventMetadata;
+      const host = metadata.referrer ? hostOf(metadata.referrer) : "(direct)";
+      sourceCounts.set(host, (sourceCounts.get(host) ?? 0) + 1);
+      const device = metadata.device ?? "unknown";
+      deviceCounts.set(device, (deviceCounts.get(device) ?? 0) + 1);
+    }
+
+    // Top blog posts by page_view count on /blog/<slug>.
+    const blogSlugCounts = new Map<string, number>();
+    for (const e of pageViews) {
+      const match = /^\/blog\/([^/?#]+)/.exec(e.page_path);
+      if (match) {
+        blogSlugCounts.set(match[1], (blogSlugCounts.get(match[1]) ?? 0) + 1);
+      }
+    }
+    const blogTitleBySlug = new Map(
+      (postsRes.data ?? []).map((p: { slug: string; title: string }) => [p.slug, p.title]),
+    );
+    const topBlogPosts = [...blogSlugCounts.entries()]
+      .map(([slug, views]) => ({
+        slug,
+        title: blogTitleBySlug.get(slug) ?? slug,
+        views,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 5);
+
     const downloadsTotal = (downloadsRes.data ?? []).reduce(
       (sum: number, r: { downloads_count: number }) => sum + (r.downloads_count ?? 0),
       0,
@@ -150,7 +238,7 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
     const leads30d = leadsRes.count ?? leadsRes.data?.length ?? 0;
 
     return ok({
-      windowDays: WINDOW_DAYS,
+      windowDays,
       pageViews30d: pageViews.length,
       uniqueSessions30d: sessionCount,
       downloadsTotal,
@@ -183,6 +271,16 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
         .map(([label, count]) => ({ label, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10),
+      dailyViews: [...dailyCounts.entries()].map(([date, count]) => ({ date, count })),
+      topBlogPosts,
+      sources: [...sourceCounts.entries()]
+        .map(([referrer, count]) => ({ referrer, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8),
+      devices: [...deviceCounts.entries()]
+        .map(([device, count]) => ({ device, count }))
+        .sort((a, b) => b.count - a.count),
+      trackingEnabled: config.enabled,
       recentEvents: [...events]
         .sort((a, b) => b.created_at.localeCompare(a.created_at))
         .slice(0, 10)
@@ -198,5 +296,85 @@ export async function getAnalyticsSummaryAction(): Promise<Result<AnalyticsSumma
       message: err instanceof Error ? err.message : err,
     });
     return fail(err instanceof Error ? err.message : "Failed to load analytics");
+  }
+}
+
+/* ─── Admin config ─── */
+
+export async function saveAnalyticsConfigAction(
+  input: Record<string, unknown>,
+): Promise<Result<AnalyticsConfig>> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail("Authentication required.");
+
+    const parsed = analyticsConfigSchema.safeParse(input);
+    if (!parsed.success) {
+      return fail(parsed.error.issues.map((i) => i.message).join("; "));
+    }
+
+    const result = await saveSettings({ analytics_config: parsed.data });
+    if (!result.success) return fail(result.error);
+    revalidatePath("/admin/analytics");
+    return ok(parsed.data);
+  } catch (err) {
+    logError("saveAnalyticsConfigAction failed", {
+      message: err instanceof Error ? err.message : err,
+    });
+    return fail(err instanceof Error ? err.message : "Failed to save analytics settings");
+  }
+}
+
+/* ─── Admin CSV export ─── */
+
+export async function exportAnalyticsCsvAction(): Promise<Result<string>> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail("Authentication required.");
+
+    const admin = createAdminClient();
+    const config = await getAnalyticsConfig();
+    const since = new Date(
+      Date.now() - Math.max(7, config.windowDays) * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    const { data, error } = await admin
+      .from("analytics_events")
+      .select("created_at,event,page_path,label,session_id")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true })
+      .limit(5000);
+    if (error) return fail(error.message);
+
+    const rows = (data ?? []) as unknown as {
+      created_at: string;
+      event: string;
+      page_path: string;
+      label: string;
+      session_id: string | null;
+    }[];
+
+    const escape = (value: string) => {
+      const text = value.replaceAll('"', '""');
+      return /[",\n]/.test(text) ? `"${text}"` : text;
+    };
+
+    const lines = [
+      ["created_at", "event", "page_path", "label", "session_id"],
+      ...rows.map((r) => [r.created_at, r.event, r.page_path, r.label, r.session_id ?? ""]),
+    ].map((row) => row.map(escape).join(","));
+
+    return ok(lines.join("\n"));
+  } catch (err) {
+    logError("exportAnalyticsCsvAction failed", {
+      message: err instanceof Error ? err.message : err,
+    });
+    return fail(err instanceof Error ? err.message : "Failed to export analytics");
   }
 }

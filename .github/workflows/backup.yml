@@ -1,0 +1,48 @@
+name: nightly-backup
+
+on:
+  schedule:
+    # 03:00 UTC daily — offsite backup to the `backups` branch.
+    # Note: GitHub disables scheduled workflows after 60 days without
+    # repository activity. The Vercel cron /api/backup is the primary
+    # backup; this workflow is the offsite extra copy.
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Export tables + storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/backup-to-branch.mjs
+
+      - name: Commit and push to backups branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "backup-bot"
+          git config user.email "backup-bot@users.noreply.github.com"
+          git switch -c backups 2>/dev/null || git switch backups
+          git add backups/
+          if git diff --cached --quiet; then
+            echo "No backup changes — nothing to commit."
+            exit 0
+          fi
+          git commit -m "backup: $(date -u +%Y-%m-%d)"
+          git push origin backups

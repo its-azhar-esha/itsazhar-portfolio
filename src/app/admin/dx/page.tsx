@@ -12,10 +12,14 @@ import {
   ShieldCheck,
   XCircle,
   AlertTriangle,
+  Archive,
+  HeartPulse,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDxReportAction } from "@/lib/dx/actions";
 import type { CheckStatus } from "@/lib/dx/actions";
+import { getSettings } from "@/lib/settings/repository";
+import { DxConfigCard } from "@/components/admin/dx/config-card";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +91,7 @@ function StatPill({ label, value, tone }: { label: string; value: string; tone?:
 }
 
 export default async function DxPage() {
-  const result = await getDxReportAction();
+  const [result, settingsResult] = await Promise.all([getDxReportAction(), getSettings()]);
 
   if (!result.success) {
     return (
@@ -101,14 +105,16 @@ export default async function DxPage() {
   }
 
   const r = result.data;
+  const dxConfig = settingsResult.success ? settingsResult.data?.dx_config : undefined;
+  const backupStale = r.backups.ageDays !== null && r.backups.ageDays > 3;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Developer Tools</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Health checks, schema drift, broken references and SEO validation — everything that keeps
-          the site running.
+          Health checks, schema drift, backups, broken references and SEO validation — everything
+          that keeps the site running.
         </p>
       </div>
 
@@ -124,16 +130,24 @@ export default async function DxPage() {
           tone={r.migrationStatus.ok ? "ok" : "bad"}
         />
         <StatPill
-          label="Broken media refs"
-          value={String(r.brokenRefs.total)}
-          tone={r.brokenRefs.total === 0 ? "ok" : "bad"}
+          label="Keep-alive streak (days)"
+          value={String(r.keepAlive.streakDays)}
+          tone={r.keepAlive.okToday ? "ok" : r.keepAlive.streakDays > 0 ? "ok" : "bad"}
         />
         <StatPill
-          label={`Links OK (of ${r.links.checked})`}
-          value={String(r.links.ok)}
-          tone={r.links.broken.length === 0 ? "ok" : "bad"}
+          label="Last backup"
+          value={
+            r.backups.latest
+              ? r.backups.ageDays === 0
+                ? "today"
+                : `${r.backups.ageDays} day${r.backups.ageDays === 1 ? "" : "s"} ago`
+              : "never"
+          }
+          tone={r.backups.ok ? "ok" : backupStale || !r.backups.latest ? "bad" : undefined}
         />
       </div>
+
+      {dxConfig && <DxConfigCard initial={dxConfig} />}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="Health monitor" icon={Activity}>
@@ -151,6 +165,136 @@ export default async function DxPage() {
               </li>
             ))}
           </ul>
+        </Section>
+
+        <Section
+          title="Keep-alive history"
+          icon={HeartPulse}
+          right={<StatusBadge status={r.keepAlive.okToday ? "ok" : "warn"} />}
+        >
+          <p className="text-muted-foreground mb-3 text-xs">
+            Daily /api/health checks (Vercel cron).{" "}
+            {r.keepAlive.recordEnabled
+              ? "Recording is enabled."
+              : "Recording is disabled in the configuration."}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {r.keepAlive.recent.map((c) => (
+              <span
+                key={c.checked_on}
+                title={`${c.checked_on}: ${c.ok ? "ok" : "failed"}${c.latency_ms != null ? ` (${c.latency_ms}ms)` : ""}`}
+                className={cn(
+                  "h-3.5 w-3.5 rounded-[3px]",
+                  c.ok ? "bg-emerald-500/80" : "bg-red-500/80",
+                )}
+              />
+            ))}
+            {r.keepAlive.recent.length === 0 && (
+              <p className="text-muted-foreground text-sm">
+                No checks recorded yet — the first /api/health cron run will appear here.
+              </p>
+            )}
+          </div>
+        </Section>
+
+        <Section
+          title="Backup status"
+          icon={Archive}
+          right={<StatusBadge status={r.backups.ok ? "ok" : backupStale ? "error" : "warn"} />}
+        >
+          {!r.backups.latest ? (
+            <p className="text-muted-foreground text-sm">
+              No backups yet. The nightly /api/backup cron exports every table to the{" "}
+              <code className="font-mono">backups</code> storage bucket.
+            </p>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap gap-2">
+                <StatPill
+                  label={`Backup ${r.backups.latest.backup_date}`}
+                  value={r.backups.ageDays === 0 ? "today" : `${r.backups.ageDays}d ago`}
+                  tone={r.backups.ok ? "ok" : backupStale ? "bad" : undefined}
+                />
+                <StatPill label="Tables" value={String(r.backups.latest.table_count)} />
+                <StatPill label="Files" value={String(r.backups.latest.file_count)} />
+                <StatPill label="Size" value={humanBytes(r.backups.latest.size_bytes)} tone="ok" />
+              </div>
+              {backupStale && (
+                <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600">
+                  Last backup is over 3 days old. Check that the Vercel cron and the GitHub backup
+                  workflow are running.
+                </p>
+              )}
+            </div>
+          )}
+        </Section>
+
+        <Section title="RLS posture" icon={ShieldCheck}>
+          <p className="text-muted-foreground mb-3 text-xs">
+            Every public table should have RLS enabled. Service-role-only tables (health_checks,
+            backups) are intentionally policy-free.
+          </p>
+          <div className="border-border/40 divide-border/40 divide-y overflow-hidden rounded-lg border text-xs">
+            {r.rls.map((row) => {
+              const isLedger = row.table_name === "health_checks" || row.table_name === "backups";
+              const atRisk = !row.rls_enabled;
+              const locked = row.rls_enabled && row.policy_count === 0 && isLedger;
+              return (
+                <div key={row.table_name} className="flex items-center gap-2 px-3 py-2">
+                  <span
+                    className={cn(
+                      "h-2 w-2 shrink-0 rounded-full",
+                      atRisk ? "bg-red-500" : "bg-emerald-500",
+                    )}
+                  />
+                  <span className="font-mono">{row.table_name}</span>
+                  <span className="text-muted-foreground ml-auto">
+                    {!row.rls_enabled
+                      ? "RLS DISABLED"
+                      : locked
+                        ? "locked (service role only)"
+                        : `${row.policy_count} polic${row.policy_count === 1 ? "y" : "ies"}`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+
+        <Section
+          title="Orphan storage files"
+          icon={FileWarning}
+          right={<StatusBadge status={r.orphans.total === 0 ? "ok" : "warn"} />}
+        >
+          <p className="text-muted-foreground mb-3 text-xs">
+            Files in storage not referenced by any media_files record.
+          </p>
+          {r.orphans.total === 0 ? (
+            <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-500">
+              <CheckCircle2 className="h-3.5 w-3.5" /> No orphan files found.
+            </p>
+          ) : (
+            <>
+              <p className="mb-2 text-sm font-medium text-amber-500">
+                {r.orphans.total} orphan file{r.orphans.total === 1 ? "" : "s"} (largest first).
+              </p>
+              <ul className="space-y-1.5">
+                {r.orphans.items.map((file, i) => (
+                  <li
+                    key={`${file.bucket}-${file.path}-${i}`}
+                    className="border-border/40 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs"
+                  >
+                    <span className="truncate font-mono">
+                      {file.bucket}/{file.path}
+                    </span>
+                    <span className="text-muted-foreground ml-auto shrink-0">
+                      {humanBytes(file.sizeBytes)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Section>
 
         <Section title="Environment checker" icon={ShieldCheck}>

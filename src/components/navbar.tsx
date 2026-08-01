@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { spring, durationFast } from "@/lib/motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { NavItemConfig } from "@/types/settings";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -25,15 +26,38 @@ interface NavbarProps {
   showBlog?: boolean;
   showHub?: boolean;
   showPlayground?: boolean;
+  navOrder?: NavItemConfig[] | null;
 }
 
-export function Navbar({ logoUrl, bookingUrl, showBlog, showHub, showPlayground }: NavbarProps) {
+export function Navbar({
+  logoUrl,
+  bookingUrl,
+  showBlog,
+  showHub,
+  showPlayground,
+  navOrder,
+}: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const pathname = usePathname();
   const bookHref = bookingUrl || "/contact";
-  let links = showBlog ? [...navLinks, { label: "Blog", href: "/blog" }] : navLinks;
-  links = showHub ? [...links, { label: "Hub", href: "/hub" }] : links;
-  links = showPlayground ? [...links, { label: "Playground", href: "/playground" }] : links;
+
+  const moduleEnabled: Record<string, boolean> = {
+    "/blog": showBlog !== false,
+    "/hub": showHub !== false,
+    "/playground": showPlayground !== false,
+  };
+
+  let links: { label: string; href: string }[];
+  if (navOrder && navOrder.length > 0) {
+    links = navOrder
+      .filter((item) => item.enabled && (moduleEnabled[item.href] ?? true))
+      .map((item) => ({ label: item.label, href: item.href }));
+    if (links.length === 0) {
+      links = navLinks.filter((link) => moduleEnabled[link.href] ?? true);
+    }
+  } else {
+    links = navLinks.filter((link) => moduleEnabled[link.href] ?? true);
+  }
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

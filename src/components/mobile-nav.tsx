@@ -49,6 +49,10 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href);
 
+  const navEnabled = (href: string) =>
+    settings.nav_order.some((item) => item.href === href) &&
+    (settings.nav_order.find((item) => item.href === href)?.enabled ?? true);
+
   const moreItems = [
     { label: "Contact", href: "/contact", icon: Mail, visible: true },
     {
@@ -63,9 +67,19 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
       icon: Quote,
       visible: settings.show_testimonials,
     },
-    { label: "Blog", href: "/blog", icon: Newspaper, visible: settings.show_blog },
-    { label: "Hub", href: "/hub", icon: Boxes, visible: settings.show_hub },
-    { label: "Playground", href: "/playground", icon: Workflow, visible: settings.show_playground },
+    {
+      label: "Blog",
+      href: "/blog",
+      icon: Newspaper,
+      visible: settings.show_blog && navEnabled("/blog"),
+    },
+    { label: "Hub", href: "/hub", icon: Boxes, visible: settings.show_hub && navEnabled("/hub") },
+    {
+      label: "Playground",
+      href: "/playground",
+      icon: Workflow,
+      visible: settings.show_playground && navEnabled("/playground"),
+    },
   ].filter((item) => item.visible);
 
   const bookHref = settings.booking_url || "/contact";

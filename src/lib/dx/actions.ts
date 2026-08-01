@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +10,10 @@ import type { Result } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
 import { env } from "@/lib/env";
 import { SITE_URL } from "@/lib/site";
+import { SETTINGS_ROW_ID, normalizeDxConfig } from "@/types/settings";
+import type { DxConfig } from "@/types/settings";
+import { dxConfigSchema } from "@/lib/validation";
+import { saveSettings } from "@/lib/settings/repository";
 
 /* ─── Types ─── */
 
@@ -51,6 +56,37 @@ export interface LinkStatus {
   statusCode?: number;
 }
 
+export interface KeepAliveStatus {
+  recent: { checked_on: string; ok: boolean; latency_ms: number | null }[];
+  okToday: boolean;
+  streakDays: number;
+  recordEnabled: boolean;
+}
+
+export interface BackupStatus {
+  latest: {
+    backup_date: string;
+    status: string;
+    table_count: number;
+    file_count: number;
+    size_bytes: number;
+  } | null;
+  ageDays: number | null;
+  ok: boolean;
+}
+
+export interface RlsStatusRow {
+  table_name: string;
+  rls_enabled: boolean;
+  policy_count: number;
+}
+
+export interface OrphanFile {
+  bucket: string;
+  path: string;
+  sizeBytes: number;
+}
+
 export interface DxReport {
   environment: CheckItem[];
   health: CheckItem[];
@@ -82,6 +118,13 @@ export interface DxReport {
     broken: LinkStatus[];
     checked: number;
   };
+  keepAlive: KeepAliveStatus;
+  backups: BackupStatus;
+  rls: RlsStatusRow[];
+  orphans: {
+    total: number;
+    items: OrphanFile[];
+  };
 }
 
 const MEDIA_REF = /media:([0-9a-f-]{36})/gi;
@@ -101,6 +144,13 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     const admin = createAdminClient();
     const environment: CheckItem[] = [];
     const health: CheckItem[] = [];
+
+    const { data: configRow } = (await admin
+      .from("site_settings")
+      .select("dx_config")
+      .eq("id", SETTINGS_ROW_ID)
+      .maybeSingle()) as unknown as { data: { dx_config: unknown } | null };
+    const dxConfig = normalizeDxConfig(configRow?.dx_config);
 
     /* Environment checker */
     environment.push({
@@ -192,8 +242,10 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     const buckets: BucketStatus[] = [];
     let totalObjects = 0;
     let totalBytes = 0;
+    let bucketList: Awaited<ReturnType<typeof admin.storage.listBuckets>>["data"] = null;
     try {
-      const { data: bucketList } = await admin.storage.listBuckets();
+      const res = await admin.storage.listBuckets();
+      bucketList = res.data;
       for (const bucket of bucketList ?? []) {
         let objects = 0;
         let size = 0;
@@ -238,6 +290,8 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       "case_studies",
       "site_settings",
       "analytics_events",
+      "health_checks",
+      "backups",
     ];
     const tables: TableStatus[] = [];
     for (const name of tableNames) {
@@ -329,12 +383,13 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       if (post.status !== "published") continue;
       const issues: string[] = [];
       if (!post.seo_title) issues.push("No custom SEO title (uses article title)");
-      else if (post.seo_title.length > 70)
+      else if (post.seo_title.length > dxConfig.seoTitleMax)
         issues.push(`SEO title too long (${post.seo_title.length} chars)`);
       if (!post.seo_description) issues.push("Missing meta description");
-      else if (post.seo_description.length > 160)
+      else if (post.seo_description.length > dxConfig.seoDescMax)
         issues.push(`Meta description too long (${post.seo_description.length} chars)`);
-      else if (post.seo_description.length < 120) issues.push("Meta description under 120 chars");
+      else if (post.seo_description.length < dxConfig.seoDescMin)
+        issues.push(`Meta description under ${dxConfig.seoDescMin} chars`);
       if (!post.keywords || post.keywords.length < 3) issues.push("Fewer than 3 keywords");
       if (!post.og_image) issues.push("No Open Graph image");
       if (!post.canonical_url) issues.push("No canonical URL");
@@ -398,13 +453,15 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
 
     const links: LinkStatus[] = [];
     let okCount = 0;
-    for (const item of linksToCheck.slice(0, 25)) {
+    const linkCap = dxConfig.linkCheckMaxUrls;
+    const linkTimeout = dxConfig.linkCheckTimeoutMs;
+    for (const item of linksToCheck.slice(0, linkCap)) {
       let result: LinkStatus;
       try {
         const res = await fetch(item.url, {
           method: "HEAD",
           redirect: "follow",
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(linkTimeout),
         });
         result = {
           url: item.url,
@@ -416,7 +473,7 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
         try {
           const res = await fetch(item.url, {
             redirect: "follow",
-            signal: AbortSignal.timeout(8000),
+            signal: AbortSignal.timeout(linkTimeout),
           });
           result = {
             url: item.url,
@@ -431,6 +488,123 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       if (result.status === "ok") okCount += 1;
       links.push(result);
     }
+
+    /* Keep-alive history (from /api/health daily checks) */
+    const { data: checkRows } = await admin
+      .from("health_checks")
+      .select("checked_on,ok,latency_ms")
+      .order("checked_on", { ascending: false })
+      .limit(30);
+    const checks = (checkRows ?? []) as {
+      checked_on: string;
+      ok: boolean;
+      latency_ms: number | null;
+    }[];
+    let streakDays = 0;
+    for (const c of checks) {
+      if (c.ok) streakDays += 1;
+      else break;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const okToday = checks.some((c) => c.checked_on === today && c.ok);
+    const keepAlive: KeepAliveStatus = {
+      recent: checks,
+      okToday,
+      streakDays,
+      recordEnabled: dxConfig.recordHealthChecks,
+    };
+
+    /* Latest backup (written by /api/backup or the GitHub backup workflow) */
+    const { data: backupRows } = await admin
+      .from("backups")
+      .select("backup_date,status,table_count,file_count,size_bytes,created_at")
+      .order("backup_date", { ascending: false })
+      .limit(1);
+    const latestBackup = (backupRows ?? [])[0] as
+      | {
+          backup_date: string;
+          status: string;
+          table_count: number;
+          file_count: number;
+          size_bytes: number;
+          created_at: string;
+        }
+      | undefined;
+    const backups: BackupStatus = {
+      latest: latestBackup
+        ? {
+            backup_date: latestBackup.backup_date,
+            status: latestBackup.status,
+            table_count: latestBackup.table_count,
+            file_count: latestBackup.file_count,
+            size_bytes: latestBackup.size_bytes,
+          }
+        : null,
+      ageDays: latestBackup
+        ? Math.max(
+            0,
+            Math.round((Date.now() - new Date(latestBackup.created_at).getTime()) / 86_400_000),
+          )
+        : null,
+      ok: Boolean(
+        latestBackup && latestBackup.status === "ok" && latestBackup.backup_date >= today,
+      ),
+    };
+
+    /* RLS posture per public table */
+    const { data: rlsRows } = await admin.rpc("list_rls_status" as never);
+    const rls = ((rlsRows ?? []) as RlsStatusRow[]).map((r) => ({
+      table_name: r.table_name,
+      rls_enabled: r.rls_enabled,
+      policy_count: Number(r.policy_count),
+    }));
+
+    /* Orphan storage files (files not referenced by media_files) */
+    const orphans: OrphanFile[] = [];
+    try {
+      const { data: mediaRows } = await admin.from("media_files").select("bucket,storage_path");
+      const tracked = new Set(
+        ((mediaRows ?? []) as { bucket: string; storage_path: string }[]).map(
+          (m) => `${m.bucket}/${m.storage_path}`,
+        ),
+      );
+      const scanBucket = async (
+        bucketName: string,
+        prefix: string,
+        budget: { files: number },
+      ): Promise<void> => {
+        const { data: files, error } = await admin.storage
+          .from(bucketName)
+          .list(prefix, { limit: 1000, offset: 0 });
+        if (error) return;
+        for (const file of files ?? []) {
+          const metadata = file.metadata as { size?: number } | null;
+          const isFile = metadata !== null && typeof metadata?.size === "number";
+          if (isFile) {
+            if (budget.files >= 3000) return;
+            budget.files += 1;
+            const key = `${bucketName}/${prefix}${file.name}`;
+            if (!tracked.has(key)) {
+              orphans.push({
+                bucket: bucketName,
+                path: `${prefix}${file.name}`,
+                sizeBytes: metadata.size ?? 0,
+              });
+            }
+          } else {
+            await scanBucket(bucketName, `${prefix}${file.name}/`, budget);
+          }
+        }
+      };
+      for (const bucket of bucketList ?? []) {
+        await scanBucket(bucket.name, "", { files: 0 });
+      }
+    } catch (err) {
+      logError("dx orphan scan failed", {
+        message: err instanceof Error ? err.message : err,
+      });
+    }
+    const orphanItems = orphans.sort((a, b) => b.sizeBytes - a.sizeBytes).slice(0, 30);
 
     return ok({
       environment,
@@ -463,11 +637,47 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
         broken: links.filter((l) => l.status !== "ok"),
         checked: links.length,
       },
+      keepAlive,
+      backups,
+      rls,
+      orphans: {
+        total: orphans.length,
+        items: orphanItems,
+      },
     });
   } catch (err) {
     logError("getDxReportAction failed", {
       message: err instanceof Error ? err.message : err,
     });
     return fail(err instanceof Error ? err.message : "Failed to run DX report");
+  }
+}
+
+/* ─── Admin config ─── */
+
+export async function saveDxConfigAction(
+  input: Record<string, unknown>,
+): Promise<Result<DxConfig>> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail("Authentication required.");
+
+    const parsed = dxConfigSchema.safeParse(input);
+    if (!parsed.success) {
+      return fail(parsed.error.issues.map((i) => i.message).join("; "));
+    }
+
+    const result = await saveSettings({ dx_config: parsed.data });
+    if (!result.success) return fail(result.error);
+    revalidatePath("/admin/dx");
+    return ok(parsed.data);
+  } catch (err) {
+    logError("saveDxConfigAction failed", {
+      message: err instanceof Error ? err.message : err,
+    });
+    return fail(err instanceof Error ? err.message : "Failed to save DX settings");
   }
 }

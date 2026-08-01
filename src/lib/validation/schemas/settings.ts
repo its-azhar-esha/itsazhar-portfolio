@@ -6,6 +6,33 @@ const optionalUrl = z
   .nullish()
   .transform((v) => (v && v.trim() !== "" ? v : null));
 
+export const navItemSchema = z.object({
+  label: z.string().trim().min(1, "Navigation label is required").max(24),
+  href: z
+    .string()
+    .trim()
+    .min(1, "Navigation href is required")
+    .max(120)
+    .startsWith("/", "Href must start with /"),
+  enabled: z.boolean(),
+});
+
+export const analyticsConfigSchema = z.object({
+  enabled: z.boolean(),
+  retentionDays: z.number().int().min(7, "Retention must be at least 7 days").max(365),
+  windowDays: z.number().int().min(7, "Window must be at least 7 days").max(90),
+  trackSearchKeywords: z.boolean(),
+});
+
+export const dxConfigSchema = z.object({
+  recordHealthChecks: z.boolean(),
+  linkCheckTimeoutMs: z.number().int().min(1000).max(30000),
+  linkCheckMaxUrls: z.number().int().min(1).max(200),
+  seoTitleMax: z.number().int().min(40).max(120),
+  seoDescMin: z.number().int().min(60).max(300),
+  seoDescMax: z.number().int().min(80).max(400),
+});
+
 export const siteSettingsSchema = z.object({
   site_name: z.string().trim().min(1, "Site name is required").max(80),
   site_title: z.string().trim().min(1, "Site title is required").max(100),
@@ -38,6 +65,9 @@ export const siteSettingsSchema = z.object({
   ga4_measurement_id: z.string().trim().max(40).nullish(),
   gtm_id: z.string().trim().max(40).nullish(),
   clarity_project_id: z.string().trim().max(40).nullish(),
+  nav_order: z.array(navItemSchema).min(1, "At least one navigation item is required").max(12),
+  analytics_config: analyticsConfigSchema,
+  dx_config: dxConfigSchema,
 });
 
 export type SiteSettingsFormValues = z.infer<typeof siteSettingsSchema>;

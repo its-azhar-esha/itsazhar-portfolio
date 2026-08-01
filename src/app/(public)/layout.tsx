@@ -44,6 +44,7 @@ export default async function PublicLayout({ children }: { children: React.React
             showBlog={settings.show_blog}
             showHub={settings.show_hub}
             showPlayground={settings.show_playground}
+            navOrder={settings.nav_order}
           />
           <main id="main-content" className="flex-1 pb-[72px] md:pb-0">
             <PageTransition>{children}</PageTransition>

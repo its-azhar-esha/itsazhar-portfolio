@@ -354,6 +354,9 @@ export interface Database {
           ga4_measurement_id: string | null;
           gtm_id: string | null;
           clarity_project_id: string | null;
+          nav_order: unknown;
+          analytics_config: unknown;
+          dx_config: unknown;
           created_at: string;
           updated_at: string;
         };
@@ -392,6 +395,9 @@ export interface Database {
           ga4_measurement_id?: string | null;
           gtm_id?: string | null;
           clarity_project_id?: string | null;
+          nav_order?: unknown;
+          analytics_config?: unknown;
+          dx_config?: unknown;
           created_at?: string;
           updated_at?: string;
         };
@@ -430,6 +436,9 @@ export interface Database {
           ga4_measurement_id?: string | null;
           gtm_id?: string | null;
           clarity_project_id?: string | null;
+          nav_order?: unknown;
+          analytics_config?: unknown;
+          dx_config?: unknown;
           created_at?: string;
           updated_at?: string;
         };
@@ -536,6 +545,64 @@ export interface Database {
           label?: string;
           metadata?: unknown;
           session_id?: string | null;
+          created_at?: string;
+        };
+      };
+      backups: {
+        Row: {
+          id: string;
+          backup_date: string;
+          status: string;
+          table_count: number;
+          file_count: number;
+          size_bytes: number;
+          manifest: unknown;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          backup_date: string;
+          status?: string;
+          table_count?: number;
+          file_count?: number;
+          size_bytes?: number;
+          manifest?: unknown;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          backup_date?: string;
+          status?: string;
+          table_count?: number;
+          file_count?: number;
+          size_bytes?: number;
+          manifest?: unknown;
+          created_at?: string;
+        };
+      };
+      health_checks: {
+        Row: {
+          id: string;
+          checked_on: string;
+          ok: boolean;
+          latency_ms: number | null;
+          detail: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          checked_on: string;
+          ok?: boolean;
+          latency_ms?: number | null;
+          detail?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          checked_on?: string;
+          ok?: boolean;
+          latency_ms?: number | null;
+          detail?: string;
           created_at?: string;
         };
       };

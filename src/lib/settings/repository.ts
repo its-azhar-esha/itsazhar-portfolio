@@ -1,7 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/database.types";
 import type { SiteSettings, SiteSettingsInput } from "@/types/settings";
-import { SETTINGS_ROW_ID, DEFAULT_SITE_SETTINGS } from "@/types/settings";
+import {
+  SETTINGS_ROW_ID,
+  DEFAULT_SITE_SETTINGS,
+  normalizeNavOrder,
+  normalizeAnalyticsConfig,
+  normalizeDxConfig,
+} from "@/types/settings";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
 
@@ -45,6 +51,9 @@ function rowToSiteSettings(
     ga4_measurement_id: row.ga4_measurement_id,
     gtm_id: row.gtm_id,
     clarity_project_id: row.clarity_project_id,
+    nav_order: normalizeNavOrder(row.nav_order),
+    analytics_config: normalizeAnalyticsConfig(row.analytics_config),
+    dx_config: normalizeDxConfig(row.dx_config),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
