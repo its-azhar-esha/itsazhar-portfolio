@@ -35,6 +35,7 @@ export async function saveHeroContentAction(
         content: parsed.data as unknown as Record<string, unknown>,
       });
       if (result.success) {
+        revalidatePath("/", "layout");
         revalidatePath("/admin/content");
         await logAudit({
           action: "hero.updated",
@@ -52,6 +53,7 @@ export async function saveHeroContentAction(
       status: "published",
     });
     if (result.success) {
+      revalidatePath("/", "layout");
       revalidatePath("/admin/content");
       await logAudit({
         action: "hero.updated",

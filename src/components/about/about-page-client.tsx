@@ -392,8 +392,17 @@ export function AboutPageClient({ content }: AboutPageClientProps) {
     ];
   }, [projects]);
 
-  const { basic, biography, buildSteps, tools, industries, timeline, principles, socialLinks } =
-    content;
+  const {
+    basic,
+    biography,
+    buildSteps,
+    tools,
+    industries,
+    timeline,
+    principles,
+    socialLinks,
+    resume,
+  } = content;
 
   return (
     <div className="pt-24 md:pt-32">
@@ -829,6 +838,20 @@ export function AboutPageClient({ content }: AboutPageClientProps) {
               </motion.a>
             ))}
           </div>
+          {resume?.url ? (
+            <div className="mt-8 text-center">
+              <Button asChild variant="outline" size="lg" className="gap-2">
+                <Link
+                  href={resume.url}
+                  target={resume.url.startsWith("http") ? "_blank" : undefined}
+                  rel={resume.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                >
+                  <FileText className="h-4 w-4" />
+                  {resume.label || "Download Resume"}
+                </Link>
+              </Button>
+            </div>
+          ) : null}
         </div>
       </section>
 

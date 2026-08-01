@@ -20,12 +20,12 @@ export async function getPublicAboutContent(): Promise<AboutContent> {
   }
 }
 
-export async function getAdminAboutContent(): Promise<AboutContent | null> {
+export async function getAdminAboutContent(): Promise<AboutContent> {
   try {
     const result = await findByKey("about");
-    if (!result.success || !result.data?.content) return null;
+    if (!result.success || !result.data?.content) return DEFAULT_ABOUT_CONTENT;
     return result.data.content as unknown as AboutContent;
   } catch {
-    return null;
+    return DEFAULT_ABOUT_CONTENT;
   }
 }

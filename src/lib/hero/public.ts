@@ -20,12 +20,12 @@ export async function getPublicHeroContent(): Promise<HeroContent> {
   }
 }
 
-export async function getAdminHeroContent(): Promise<HeroContent | null> {
+export async function getAdminHeroContent(): Promise<HeroContent> {
   try {
     const result = await findByKey("hero");
-    if (!result.success || !result.data?.content) return null;
+    if (!result.success || !result.data?.content) return DEFAULT_HERO_CONTENT;
     return result.data.content as unknown as HeroContent;
   } catch {
-    return null;
+    return DEFAULT_HERO_CONTENT;
   }
 }

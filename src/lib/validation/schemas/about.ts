@@ -35,7 +35,7 @@ export const aboutSocialLinkSchema = z.object({
 
 export const aboutResumeSchema = z.object({
   label: z.string().min(1, "Label is required"),
-  url: z.string().min(1, "URL is required"),
+  url: z.string(),
 });
 
 export const aboutSeoSchema = z.object({

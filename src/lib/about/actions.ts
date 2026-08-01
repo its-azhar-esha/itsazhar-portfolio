@@ -35,6 +35,7 @@ export async function saveAboutContentAction(
         content: parsed.data as unknown as Record<string, unknown>,
       });
       if (result.success) {
+        revalidatePath("/", "layout");
         revalidatePath("/admin/content");
         await logAudit({
           action: "about.updated",
@@ -52,6 +53,7 @@ export async function saveAboutContentAction(
       status: "published",
     });
     if (result.success) {
+      revalidatePath("/", "layout");
       revalidatePath("/admin/content");
       await logAudit({
         action: "about.updated",
