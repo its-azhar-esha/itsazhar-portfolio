@@ -1640,5 +1640,10 @@ separate About + Hero bespoke editors kept as-is.
 - Admin verified with fresh auth session: `/admin/content` hub lists
   all 10 sections; editors for shared/projects/hub/playground render
   field groups + stored values (no login redirect).
+- Fix (64421f5): the home definition used bare field keys while defaults
+  and wiring are nested - home editor rendered empty inputs. All home
+  keys prefixed per section; every definition path is now validated
+  against defaults. Editors prefill current copy, and the admin DB
+  round-trip (insert/select/update/delete) was verified against RLS.
 
 - **Last Updated:** 2026-08-01 (Phase 10 - schema-driven page-copy CMS)
