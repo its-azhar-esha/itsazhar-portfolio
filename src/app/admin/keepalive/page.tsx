@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { AlertTriangle, Activity, CheckCircle2, Info, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getKeepAliveReportAction, type KeepAliveComponent } from "@/lib/keepalive/actions";
-import { KeepAliveCard, STATUS_META, InfoNote } from "@/components/admin/keepalive/keepalive-card";
+import { KeepAliveCard, InfoNote } from "@/components/admin/keepalive/keepalive-card";
+import { STATUS_META } from "@/lib/keepalive/status-meta";
 
 export const dynamic = "force-dynamic";
 

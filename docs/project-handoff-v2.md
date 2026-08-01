@@ -1819,7 +1819,7 @@ separate About + Hero bespoke editors kept as-is.
   not follow the admin theme (html stays `dark`) - keep admin styling
   token-based.
 
-- **Last Updated:** 2026-08-01 (Phase 31 - keep-alive page + theme fix + recommendations)
+- **Last Updated:** 2026-08-01 (Phase 31 - keep-alive page + theme fix + recommendations; crash fix)
 
 ### Comprehensive System Status (/admin overview)
 
@@ -1898,3 +1898,25 @@ separate About + Hero bespoke editors kept as-is.
 - No pg_cron or edge functions exist — the page documents this
   explicitly: keep-alive is handled externally by Vercel cron + GitHub
   Actions with redundancy.
+
+### Keep-Alive page crash fix (2026-08-01)
+
+- **Root cause:** `STATUS_META` (a plain object) was exported from
+  `src/components/admin/keepalive/keepalive-card.tsx`, which is a
+  `"use client"` component. The server component page
+  (`src/app/admin/keepalive/page.tsx`) imported it and read
+  `STATUS_META[status]` during server render. Because it's a client
+  reference stub, property access returned `undefined`, so
+  `STATUS_META[status] ?? STATUS_META.info` was still `undefined` and
+  `.badge` threw `TypeError: Cannot read properties of undefined
+(reading 'badge')`. The crash surfaced on client-side navigation
+  (RSC render, digest `831986376`) → admin error boundary
+  ("Dashboard error").
+- **Fix:** extracted `STATUS_META` into a plain shared module
+  (`src/lib/keepalive/status-meta.ts`, no `"use client"`) so both the
+  server component and the client card import the real object.
+  `keepalive-card.tsx` re-exports it for backward compatibility of
+  imports, and `page.tsx` imports it directly from the shared module.
+- Verified: keep-alive page loads via direct URL and client-side nav
+  with zero console errors; full admin regression passed
+  (dashboard, projects, settings, security, activity, dx, media, blog).
