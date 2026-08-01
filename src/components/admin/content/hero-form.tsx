@@ -27,7 +27,6 @@ interface FormState {
   primaryHref: string;
   secondaryLabel: string;
   secondaryHref: string;
-  metrics: string;
   badges: string;
   backgroundImage: string;
   backgroundVideo: string;
@@ -46,7 +45,6 @@ function contentToForm(content: HeroContent): FormState {
     primaryHref: content.actions.primary.href,
     secondaryLabel: content.actions.secondary.label,
     secondaryHref: content.actions.secondary.href,
-    metrics: JSON.stringify(content.metrics, null, 2),
     badges: content.badges.join(", "),
     backgroundImage: content.background.image,
     backgroundVideo: content.background.video,
@@ -68,7 +66,6 @@ function formToContent(form: FormState): Record<string, unknown> {
       primary: { label: form.primaryLabel, href: form.primaryHref },
       secondary: { label: form.secondaryLabel, href: form.secondaryHref },
     },
-    metrics: safeParseJson(form.metrics, []),
     badges: form.badges
       .split(",")
       .map((b) => b.trim())
@@ -82,14 +79,6 @@ function formToContent(form: FormState): Record<string, unknown> {
       description: form.seoDescription,
     },
   };
-}
-
-function safeParseJson(value: string, fallback: unknown): unknown {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
 }
 
 function SectionCard({
@@ -120,7 +109,6 @@ export function HeroEditor({ initial }: HeroEditorProps) {
         initial ?? {
           basic: { headline: "", highlight: "", subheadline: "", availability: "", location: "" },
           actions: { primary: { label: "", href: "" }, secondary: { label: "", href: "" } },
-          metrics: [],
           badges: [],
           background: { image: "", video: "" },
           seo: { title: "", description: "" },
@@ -134,7 +122,6 @@ export function HeroEditor({ initial }: HeroEditorProps) {
   const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(
     null,
   );
-  const [jsonError, setJsonError] = React.useState<string | null>(null);
   const messageTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasChanges = React.useMemo(
@@ -159,27 +146,7 @@ export function HeroEditor({ initial }: HeroEditorProps) {
     if (message) setMessage(null);
   }
 
-  function validateJson(): boolean {
-    try {
-      const parsed = JSON.parse(fields.metrics);
-      if (!Array.isArray(parsed)) {
-        setJsonError("Metrics must be a JSON array");
-        return false;
-      }
-      setJsonError(null);
-      return true;
-    } catch {
-      setJsonError("Metrics contains invalid JSON");
-      return false;
-    }
-  }
-
   async function handleSave() {
-    if (!validateJson()) {
-      showMessage("error", "Please fix the JSON error in Metrics before saving.");
-      return;
-    }
-
     setSaving(true);
     setMessage(null);
     try {
@@ -238,10 +205,10 @@ export function HeroEditor({ initial }: HeroEditorProps) {
                 Actions
               </TabsTrigger>
               <TabsTrigger
-                value="metrics"
+                value="badges"
                 className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm data-[state=active]:shadow-none"
               >
-                Metrics & Badges
+                Badges
               </TabsTrigger>
               <TabsTrigger
                 value="background"
@@ -366,22 +333,7 @@ export function HeroEditor({ initial }: HeroEditorProps) {
               </SectionCard>
             </TabsContent>
 
-            <TabsContent value="metrics" className="mt-0 space-y-5">
-              <SectionCard
-                title="Metrics"
-                description='JSON array of stats. Each entry: {"value": "12+", "label": "Automation Systems Built"}'
-              >
-                <div className="space-y-2">
-                  <Textarea
-                    value={fields.metrics}
-                    onChange={(e) => handleChange({ metrics: e.target.value })}
-                    className="min-h-[120px] font-mono text-xs"
-                    spellCheck={false}
-                  />
-                  {jsonError && <p className="text-xs text-red-500">{jsonError}</p>}
-                </div>
-              </SectionCard>
-
+            <TabsContent value="badges" className="mt-0 space-y-5">
               <SectionCard title="Badges" description="Trust badges shown below the CTA buttons.">
                 <div className="space-y-2">
                   <Textarea

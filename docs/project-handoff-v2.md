@@ -1771,4 +1771,52 @@ separate About + Hero bespoke editors kept as-is.
   owner may add (requires an account, not code): UptimeRobot-style
   monitor on /api/health (endpoint is already monitor-friendly).
 
-- **Last Updated:** 2026-08-01 (Phase 27 - reliability re-verification)
+## 28. Live Statistics + Admin Theme Toggle (2026-08-01)
+
+### Live statistics (replaces hardcoded numbers)
+
+- New server-side module `src/lib/stats/` -> `getPublicStats()`
+  (render-time, DB-backed, mock fallback). Never stored - always in
+  sync with the CMS the moment content is added/updated/unpublished/
+  deleted.
+- Home hero metrics (previously CMS-editable hardcoded JSON, now
+  computed):
+  - "Automation Systems Built" = published projects (status `active`)
+  - "Workflows Created" = published `workflow_templates`
+  - "AI Automation Services" = published `services`
+  - "Documented Systems" = % of published projects fully documented
+    (challenge + solution + impact + workflow[] all non-empty)
+- About "By the Numbers" (previously computed client-side from the
+  public projects fetch; now server-computed and passed as a prop):
+  - Projects = published projects, Technologies = unique
+    technologies across published projects, Industries = unique
+    industries across published projects, Workflows = published
+    `workflow_templates`.
+  - Note: the services table has no technology/industry columns, so
+    tech/industry uniqueness is project-derived (the only reliable
+    source). Documented in Phase 28.
+- Hero CMS editor: `metrics` JSON field removed (type, defaults,
+  Zod schema, form, editor tab "Metrics & Badges" -> "Badges").
+  Metrics are no longer manually maintainable by design.
+- Verified locally against production DB (5 active projects / 13 techs
+  / 11 industries / 5 of 5 documented / 6 published services / 3
+  published workflow_templates): home renders "5+ / 3+ / 6+ / 100%",
+  about renders "5 / 13 / 11 / 3".
+
+### Admin-only theme toggle (light/dark)
+
+- Independent of the public site (html is always `dark` there; the
+  toggle never touches it).
+- Implementation: scoped CSS token classes `.admin-light` /
+  `.admin-dark` in `globals.css` (same hsl values as `:root` / `.dark`)
+  applied on the AdminShell wrapper div; the app uses no portals and
+  no `dark:` variants in admin/UI components, so tokens fully theme
+  every admin page incl. login + toasts.
+- Persistence: localStorage key `admin-theme` via a small
+  `useSyncExternalStore` store (hydrates without SSR mismatch;
+  lint-clean). Toggle button (Sun/Moon) in the admin header.
+- To extend later: any new raw-color `dark:` class inside admin would
+  not follow the admin theme (html stays `dark`) - keep admin styling
+  token-based.
+
+- **Last Updated:** 2026-08-01 (Phase 28 - live stats + admin theme)

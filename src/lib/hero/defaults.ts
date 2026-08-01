@@ -19,12 +19,6 @@ export const DEFAULT_HERO_CONTENT: HeroContent = {
       href: "/projects",
     },
   },
-  metrics: [
-    { value: "12+", label: "Automation Systems Built" },
-    { value: "50+", label: "Workflows Created" },
-    { value: "15+", label: "AI Automation Services" },
-    { value: "100%", label: "Documented Systems" },
-  ],
   badges: ["AI Agents", "n8n", "APIs", "Workflow Automation", "Business Systems"],
   background: {
     image: "",

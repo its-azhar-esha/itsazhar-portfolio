@@ -9,7 +9,7 @@ export default async function AdminContentHeroPage() {
       <div className="mb-8">
         <h2 className="text-lg font-semibold">Hero Section</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Edit the homepage hero — headline, actions, metrics, and badges.
+          Edit the homepage hero — headline, actions, badges, and background.
         </p>
       </div>
       <HeroEditor initial={hero} />

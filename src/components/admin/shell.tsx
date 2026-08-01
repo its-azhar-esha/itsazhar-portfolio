@@ -9,6 +9,44 @@ import { AdminMobileMenu } from "./mobile-menu";
 import { ToastProvider } from "@/components/ui/toast";
 import type { SiteSettings } from "@/types/settings";
 
+const ADMIN_THEME_STORAGE_KEY = "admin-theme";
+type AdminTheme = "dark" | "light";
+
+const adminThemeListeners = new Set<() => void>();
+
+function notifyAdminThemeListeners() {
+  adminThemeListeners.forEach((listener) => listener());
+}
+
+function subscribeAdminTheme(listener: () => void): () => void {
+  adminThemeListeners.add(listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    adminThemeListeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function readAdminTheme(): AdminTheme {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const stored = window.localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    // localStorage unavailable — keep default
+  }
+  return "dark";
+}
+
+function persistAdminTheme(theme: AdminTheme) {
+  try {
+    window.localStorage.setItem(ADMIN_THEME_STORAGE_KEY, theme);
+  } catch {
+    // localStorage unavailable — session-only toggle
+  }
+  notifyAdminThemeListeners();
+}
+
 export function AdminShell({
   children,
   settings,
@@ -19,6 +57,17 @@ export function AdminShell({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const adminTheme = React.useSyncExternalStore<AdminTheme>(
+    subscribeAdminTheme,
+    readAdminTheme,
+    () => "dark",
+  );
+
+  function toggleAdminTheme() {
+    persistAdminTheme(adminTheme === "dark" ? "light" : "dark");
+  }
+
+  const themeClass = adminTheme === "light" ? "admin-light" : "admin-dark";
 
   const showBack = pathname !== "/admin";
 
@@ -32,7 +81,7 @@ export function AdminShell({
 
   return (
     <ToastProvider>
-      <div className="flex min-h-screen">
+      <div className={`${themeClass} flex min-h-screen`}>
         <AdminSidebar settings={settings} />
         <AdminMobileMenu
           open={mobileOpen}
@@ -40,7 +89,11 @@ export function AdminShell({
           settings={settings}
         />
         <div className="flex flex-1 flex-col md:ml-60">
-          <AdminHeader onMenuClick={() => setMobileOpen(true)} />
+          <AdminHeader
+            onMenuClick={() => setMobileOpen(true)}
+            theme={adminTheme}
+            onToggleTheme={toggleAdminTheme}
+          />
           <main className="flex-1">
             {showBack && (
               <div className="mx-auto max-w-5xl px-4 pt-5 sm:px-6">

@@ -5,11 +5,6 @@ export const heroActionSchema = z.object({
   href: z.string().min(1, "URL is required"),
 });
 
-export const heroMetricSchema = z.object({
-  value: z.string().min(1, "Value is required"),
-  label: z.string().min(1, "Label is required"),
-});
-
 export const heroBackgroundSchema = z.object({
   image: z.string(),
   video: z.string(),
@@ -34,7 +29,6 @@ export const heroContentSchema = z.object({
     primary: heroActionSchema,
     secondary: heroActionSchema,
   }),
-  metrics: z.array(heroMetricSchema).min(1, "At least one metric is required"),
   badges: z.array(z.string()),
   background: heroBackgroundSchema,
   seo: heroSeoSchema,

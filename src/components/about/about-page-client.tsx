@@ -31,13 +31,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { spring, springSoft, fadeIn } from "@/lib/motion";
-import { getProjects } from "@/lib/projects-data";
-import type { Project } from "@/lib/projects-data";
 import { useChat } from "@/providers";
 import type { AboutContent } from "@/types/about";
 
+export interface AboutStat {
+  label: string;
+  value: number;
+}
+
 interface AboutPageClientProps {
   content: AboutContent;
+  stats: AboutStat[];
 }
 
 const lucideIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -366,31 +370,8 @@ function LucideIcon({ name }: { name: string }) {
   return <Icon className="h-5 w-5" />;
 }
 
-export function AboutPageClient({ content }: AboutPageClientProps) {
+export function AboutPageClient({ content, stats }: AboutPageClientProps) {
   const { setIsOpen } = useChat();
-  const [projects, setProjects] = React.useState<Project[]>([]);
-
-  React.useEffect(() => {
-    getProjects().then(setProjects);
-  }, []);
-
-  const stats = React.useMemo(() => {
-    const uniqueTech = new Set<string>();
-    const uniqueIndustries = new Set<string>();
-    let totalWorkflows = 0;
-    for (const p of projects) {
-      for (const t of [...(p.tech || []), ...p.tags]) uniqueTech.add(t);
-      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-      for (const ind of inds) uniqueIndustries.add(ind);
-      totalWorkflows += p.workflow?.length || 0;
-    }
-    return [
-      { label: "Projects", value: projects.length },
-      { label: "Technologies", value: uniqueTech.size },
-      { label: "Industries", value: uniqueIndustries.size },
-      { label: "Workflows", value: totalWorkflows },
-    ];
-  }, [projects]);
 
   const {
     basic,

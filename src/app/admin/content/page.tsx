@@ -14,7 +14,7 @@ const bespokeSections = [
   {
     key: "hero",
     title: "Hero Section",
-    description: "Edit the homepage hero — headline, actions, metrics, and badges.",
+    description: "Edit the homepage hero — headline, actions, badges, and background.",
     icon: Code2,
     href: "/admin/content/hero",
   },

@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { fadeUp, scaleIn, slideUp, spring, springSoft, cardHover } from "@/lib/motion";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import type { HeroContent } from "@/types/hero";
+import type { HeroContent, HeroMetric } from "@/types/hero";
 
 interface HeroProps {
   content: HeroContent;
+  metrics: HeroMetric[];
 }
 
 const particlePositions = [
@@ -63,7 +64,7 @@ function AnimatedStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-export function Hero({ content }: HeroProps) {
+export function Hero({ content, metrics }: HeroProps) {
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
   const sectionRef = React.useRef<HTMLElement>(null);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -79,7 +80,7 @@ export function Hero({ content }: HeroProps) {
     [isDesktop],
   );
 
-  const { basic, actions, metrics, badges } = content;
+  const { basic, actions, badges } = content;
 
   return (
     <section

@@ -8,7 +8,9 @@ import { About } from "@/components/about";
 import { Contact } from "@/components/contact";
 import { CTA } from "@/components/cta";
 import { getPublicHeroContent } from "@/lib/hero";
+import { getPublicStats } from "@/lib/stats";
 import { getPageMetadata } from "@/lib/seo";
+import type { HeroMetric } from "@/types/hero";
 import { getPublicFeaturedServicesAction } from "@/lib/services";
 import { getPublicCaseStudiesAction } from "@/lib/case-studies";
 import { getPublicTestimonialsAction } from "@/lib/testimonials";
@@ -27,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const [
     heroContent,
+    stats,
     featuredServices,
     settings,
     caseStudies,
@@ -35,6 +38,7 @@ export default async function Home() {
     projectsContent,
   ] = await Promise.all([
     getPublicHeroContent(),
+    getPublicStats(),
     getPublicFeaturedServicesAction(),
     getPublicSiteSettings(),
     getPublicCaseStudiesAction(),
@@ -43,9 +47,16 @@ export default async function Home() {
     getPublicPageContent<ProjectsPageContent>("projects", DEFAULT_PROJECTS_CONTENT),
   ]);
 
+  const heroMetrics: HeroMetric[] = [
+    { value: `${stats.projects}+`, label: "Automation Systems Built" },
+    { value: `${stats.workflows}+`, label: "Workflows Created" },
+    { value: `${stats.services}+`, label: "AI Automation Services" },
+    { value: `${stats.documentation}%`, label: "Documented Systems" },
+  ];
+
   return (
     <>
-      {settings.show_hero ? <Hero content={heroContent} /> : null}
+      {settings.show_hero ? <Hero content={heroContent} metrics={heroMetrics} /> : null}
       {settings.show_showcase ? (
         <Showcase copy={homeContent.showcase} detail={projectsContent.detail} />
       ) : null}

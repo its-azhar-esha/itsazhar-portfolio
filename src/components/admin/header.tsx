@@ -1,15 +1,17 @@
 "use client";
 
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, Moon, Sun } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth";
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
+  theme: "dark" | "light";
+  onToggleTheme: () => void;
 }
 
-export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
+export function AdminHeader({ onMenuClick, theme, onToggleTheme }: AdminHeaderProps) {
   return (
     <header className="border-border/40 bg-background/80 sticky top-0 z-20 flex h-14 items-center gap-4 border-b px-4 backdrop-blur-xl sm:px-6">
       <button
@@ -41,7 +43,19 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
           }
         `}</style>
       </div>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={theme === "dark" ? "Switch admin to light mode" : "Switch admin to dark mode"}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="text-muted-foreground hover:text-foreground gap-2"
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          <span className="hidden sm:inline">{theme === "dark" ? "Light" : "Dark"}</span>
+        </Button>
         <form action={signOut}>
           <Button
             variant="ghost"

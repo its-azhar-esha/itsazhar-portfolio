@@ -1,7 +1,6 @@
 export interface HeroContent {
   basic: HeroBasic;
   actions: HeroActions;
-  metrics: HeroMetric[];
   badges: string[];
   background: HeroBackground;
   seo: HeroSeo;
