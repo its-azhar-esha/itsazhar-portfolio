@@ -20,6 +20,9 @@ import {
   LogOut,
   BarChart3,
   Activity,
+  History,
+  KeyRound,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -70,6 +73,9 @@ function buildNavItems(settings: SiteSettings): NavItem[] {
     },
     { label: "SEO", href: "/admin/seo", icon: Search },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { label: "Activity", href: "/admin/activity", icon: History },
+    { label: "Integrations", href: "/admin/integrations", icon: KeyRound },
+    { label: "Security", href: "/admin/security", icon: ShieldCheck },
     { label: "Developer Tools", href: "/admin/dx", icon: Activity },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ];

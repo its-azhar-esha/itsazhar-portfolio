@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { createBlogPostSchema, updateBlogPostSchema } from "@/lib/validation";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "./repository";
 import type {
@@ -43,7 +44,15 @@ export async function createBlogPostAction(
     }
 
     const result = await createBlogPost(parsed.data as CreateBlogPostInput, user.id);
-    if (result.success) revalidateBlogPaths(parsed.data.slug);
+    if (result.success) {
+      revalidateBlogPaths(parsed.data.slug);
+      await logAudit({
+        action: "blog.created",
+        entity: "blog_posts",
+        entityId: result.data.id,
+        detail: { slug: result.data.slug },
+      });
+    }
     return result;
   } catch (err) {
     logError("createBlogPostAction failed", {
@@ -71,7 +80,15 @@ export async function updateBlogPostAction(
     }
 
     const result = await updateBlogPost(id, parsed.data as UpdateBlogPostInput, user.id);
-    if (result.success) revalidateBlogPaths(parsed.data.slug);
+    if (result.success) {
+      revalidateBlogPaths(parsed.data.slug);
+      await logAudit({
+        action: "blog.updated",
+        entity: "blog_posts",
+        entityId: id,
+        detail: { slug: result.data.slug },
+      });
+    }
     return result;
   } catch (err) {
     logError("updateBlogPostAction failed", {
@@ -91,7 +108,10 @@ export async function deleteBlogPostAction(id: string): Promise<Result<void>> {
     if (!user) return fail("Authentication required.");
 
     const result = await deleteBlogPost(id, user.id);
-    if (result.success) revalidateBlogPaths();
+    if (result.success) {
+      revalidateBlogPaths();
+      await logAudit({ action: "blog.deleted", entity: "blog_posts", entityId: id });
+    }
     return result;
   } catch (err) {
     logError("deleteBlogPostAction failed", {

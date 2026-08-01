@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { createServiceSchema, updateServiceSchema } from "@/lib/validation";
 import { createService, updateService, deleteService } from "./repository";
 import type { Database } from "@/database.types";
@@ -85,7 +86,15 @@ export async function createServiceAction(
     }
 
     const result = await createService(parsed.data as CreateServiceInput, user.id);
-    if (result.success) revalidateServicePaths(parsed.data.slug);
+    if (result.success) {
+      revalidateServicePaths(parsed.data.slug);
+      await logAudit({
+        action: "service.created",
+        entity: "services",
+        entityId: result.data.id,
+        detail: { slug: result.data.slug },
+      });
+    }
     return result;
   } catch (err) {
     logError("createServiceAction failed", {
@@ -113,7 +122,15 @@ export async function updateServiceAction(
     }
 
     const result = await updateService(id, parsed.data as UpdateServiceInput, user.id);
-    if (result.success) revalidateServicePaths(parsed.data.slug);
+    if (result.success) {
+      revalidateServicePaths(parsed.data.slug);
+      await logAudit({
+        action: "service.updated",
+        entity: "services",
+        entityId: id,
+        detail: { slug: result.data.slug },
+      });
+    }
     return result;
   } catch (err) {
     logError("updateServiceAction failed", {
@@ -133,7 +150,10 @@ export async function deleteServiceAction(id: string): Promise<Result<void>> {
     if (!user) return fail("Authentication required.");
 
     const result = await deleteService(id, user.id);
-    if (result.success) revalidateServicePaths();
+    if (result.success) {
+      revalidateServicePaths();
+      await logAudit({ action: "service.deleted", entity: "services", entityId: id });
+    }
     return result;
   } catch (err) {
     logError("deleteServiceAction failed", {

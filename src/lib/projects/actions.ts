@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validation";
 import type { DbProject, Project } from "@/types/project";
 import {
@@ -36,7 +37,15 @@ export async function createProjectAction(
     }
 
     const result = await createProject(parsed.data as never, user.id);
-    if (result.success) revalidatePath("/admin/projects");
+    if (result.success) {
+      revalidatePath("/admin/projects");
+      await logAudit({
+        action: "project.created",
+        entity: "projects",
+        entityId: result.data.id,
+        detail: { slug: result.data.slug },
+      });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to create project");
@@ -62,7 +71,15 @@ export async function updateProjectAction(
     }
 
     const result = await updateProject(id, parsed.data as never, user.id);
-    if (result.success) revalidatePath("/admin/projects");
+    if (result.success) {
+      revalidatePath("/admin/projects");
+      await logAudit({
+        action: "project.updated",
+        entity: "projects",
+        entityId: id,
+        detail: { slug: result.data.slug },
+      });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to update project");
@@ -79,7 +96,10 @@ export async function deleteProjectAction(id: string): Promise<Result<void>> {
     if (!user) return fail("Authentication required.");
 
     const result = await deleteProject(id, user.id);
-    if (result.success) revalidatePath("/admin/projects");
+    if (result.success) {
+      revalidatePath("/admin/projects");
+      await logAudit({ action: "project.deleted", entity: "projects", entityId: id });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete project");

@@ -1070,6 +1070,102 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
       ]),
     ],
   ),
+
+  /* ───────────────────────────── Activity ───────────────────────────── */
+
+  "activity-page": entry(
+    "activity-page",
+    "Activity page",
+    "An append-only log of every important admin change — who did what, when, on which item.",
+    [
+      s("what", "What this page does", [
+        "Lists the most recent entries from the audit log: actions like media uploads, content changes, SEO edits, settings updates and integration key changes, each with the affected section, item id, extra details, timestamp and the admin who performed it.",
+      ]),
+      s("why", "Why it exists", [
+        "It makes the CMS accountable: when something changed unexpectedly, you can see exactly what happened, when, and by whom, without digging through database logs.",
+      ]),
+      s("when", "When to use it", [
+        "After publishing major changes, when you suspect something was edited accidentally, or whenever you want to audit recent admin activity.",
+      ]),
+      s("how", "How it works", [
+        "Every admin mutation action (media, blog, projects, services, SEO, settings, integrations) writes one row to the audit log after it succeeds. This page reads the log in reverse-chronological order and offers a section filter.",
+      ]),
+      s("effects", "What happens if it is empty", [
+        "No auditable admin actions have happened yet. Public-site visits do not appear here — use Analytics for visitor data.",
+      ]),
+      s("best", "Best practices", [
+        "Check the filter when hunting for a specific change; the full detail JSON is available on hover of the details snippet.",
+      ]),
+      s("notes", "Important notes", [
+        "The log is append-only and best-effort: a failure to write an audit entry never blocks the underlying action.",
+      ]),
+    ],
+  ),
+
+  /* ─────────────────────────── Integrations ─────────────────────────── */
+
+  "integrations-page": entry(
+    "integrations-page",
+    "Integrations page",
+    "Manage external API keys (Groq, OpenRouter) from the admin panel — stored encrypted, never shown again.",
+    [
+      s("what", "What this page does", [
+        "Shows the external services the site can use (AI providers), their current source (stored key, environment variable, or unconfigured), usage counts, and lets you save, rotate, expire or remove stored keys.",
+      ]),
+      s("why", "Why it exists", [
+        "Previously API keys could only be set as environment variables in the hosting provider — slow to change and invisible in the CMS. Now keys are manageable from the admin panel, encrypted at rest.",
+      ]),
+      s("when", "When to use it", [
+        "To add a new provider key, rotate a key that may have leaked, or remove a key you no longer use.",
+      ]),
+      s("how", "How it works", [
+        "Keys are encrypted with AES-256-GCM before they reach the database, using a key derived from your deployment secrets. At runtime the AI providers use the stored key first, falling back to the matching environment variable. The key is decrypted only server-side, momentarily, inside the AI call.",
+      ]),
+      s("effects", "What happens when you save a key", [
+        "The AI chat uses it on the next request. The key is never displayed again after saving — rotate instead of re-reading.",
+      ]),
+      s("best", "Best practices", [
+        "Set an expiry date when the key is temporary.",
+        "Rotate immediately if you suspect a key leaked.",
+        "If the environment variable exists, it acts as a fallback when no stored key exists.",
+      ]),
+      s("warning", "Security warning", [
+        "Treat keys as credentials: never paste them into chats, support tickets, or anywhere else. The stored value is encrypted, but access to the admin panel is still the ultimate gate.",
+      ]),
+    ],
+  ),
+
+  /* ───────────────────────────── Security ───────────────────────────── */
+
+  "security-page": entry(
+    "security-page",
+    "Security page",
+    "Sign-in history for the admin panel: every attempt with IP address, browser and success state.",
+    [
+      s("what", "What this page does", [
+        "Shows the last 100 sign-in attempts against the admin login, including successful and failed ones, with the email used, IP address, browser user-agent and timestamp, plus summary counts.",
+      ]),
+      s("why", "Why it exists", [
+        "Spotting failed login bursts or logins from unknown IPs lets you react before an account is compromised.",
+      ]),
+      s("when", "When to use it", [
+        "Occasionally as a health check, or immediately if you suspect your admin credentials were exposed.",
+      ]),
+      s("how", "How it works", [
+        "Every sign-in attempt (success or failure) writes a row to the login history with the forwarded IP and user agent. The page reads the latest entries and summarizes them.",
+      ]),
+      s("effects", "What happens after a failed login", [
+        "The failure is recorded with the IP; repeated failures from the same IP indicate a brute-force attempt.",
+      ]),
+      s("best", "Best practices", [
+        "Use a strong, unique password for the admin panel.",
+        "If you see unexpected failed attempts, rotate the password immediately.",
+      ]),
+      s("notes", "Important notes", [
+        "Only the latest 100 entries are shown; the full table keeps growing in the database.",
+      ]),
+    ],
+  ),
 };
 
 export function getHelp(id: string): HelpEntry | undefined {

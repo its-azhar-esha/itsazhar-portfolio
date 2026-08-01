@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { createSeoSchema, updateSeoSchema } from "@/lib/validation";
 import { createSeo, updateSeo, deleteSeo } from "./repository";
 import type { SeoEntry, CreateSeoInput, UpdateSeoInput } from "@/types/seo";
@@ -37,7 +38,15 @@ export async function createSeoAction(input: Record<string, unknown>): Promise<R
     }
 
     const result = await createSeo(parsed.data as CreateSeoInput);
-    if (result.success) revalidateSeoPaths(parsed.data.page_key);
+    if (result.success) {
+      revalidateSeoPaths(parsed.data.page_key);
+      await logAudit({
+        action: "seo.created",
+        entity: "seo",
+        entityId: result.data.id,
+        detail: { pageKey: result.data.page_key },
+      });
+    }
     return result;
   } catch (err) {
     logError("createSeoAction failed", { message: err instanceof Error ? err.message : err });
@@ -63,7 +72,15 @@ export async function updateSeoAction(
     }
 
     const result = await updateSeo(id, parsed.data as UpdateSeoInput);
-    if (result.success) revalidateSeoPaths(parsed.data.page_key ?? "");
+    if (result.success) {
+      revalidateSeoPaths(parsed.data.page_key ?? "");
+      await logAudit({
+        action: "seo.updated",
+        entity: "seo",
+        entityId: id,
+        detail: { pageKey: result.data.page_key },
+      });
+    }
     return result;
   } catch (err) {
     logError("updateSeoAction failed", { id, message: err instanceof Error ? err.message : err });
@@ -80,7 +97,10 @@ export async function deleteSeoAction(id: string): Promise<Result<void>> {
     if (!user) return fail("Authentication required.");
 
     const result = await deleteSeo(id);
-    if (result.success) revalidatePath("/admin/seo");
+    if (result.success) {
+      revalidatePath("/admin/seo");
+      await logAudit({ action: "seo.deleted", entity: "seo", entityId: id });
+    }
     return result;
   } catch (err) {
     logError("deleteSeoAction failed", { id, message: err instanceof Error ? err.message : err });

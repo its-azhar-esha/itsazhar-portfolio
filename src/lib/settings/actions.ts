@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { siteSettingsSchema } from "@/lib/validation";
 import { saveSettings } from "./repository";
 import type { SiteSettings } from "@/types/settings";
@@ -29,6 +30,7 @@ export async function saveSiteSettingsAction(
     if (result.success) {
       revalidatePath("/", "layout");
       revalidatePath("/admin/settings");
+      await logAudit({ action: "settings.updated", entity: "settings" });
     }
     return result;
   } catch (err) {

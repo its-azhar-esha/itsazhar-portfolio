@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { createContentSchema, updateContentSchema } from "@/lib/validation";
 import { create, update, remove } from "./repository";
 import type { ContentEntry, CreateContentInput, UpdateContentInput } from "@/types/content";
@@ -25,7 +26,15 @@ export async function createContentAction(
     }
 
     const result = await create(parsed.data as CreateContentInput);
-    if (result.success) revalidatePath("/admin/content");
+    if (result.success) {
+      revalidatePath("/admin/content");
+      await logAudit({
+        action: "content.created",
+        entity: "content_entries",
+        entityId: result.data.id,
+        detail: { key: result.data.key },
+      });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to create content");
@@ -50,7 +59,15 @@ export async function updateContentAction(
     }
 
     const result = await update(id, parsed.data as UpdateContentInput);
-    if (result.success) revalidatePath("/admin/content");
+    if (result.success) {
+      revalidatePath("/admin/content");
+      await logAudit({
+        action: "content.updated",
+        entity: "content_entries",
+        entityId: id,
+        detail: { key: result.data.key },
+      });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to update content");
@@ -66,7 +83,10 @@ export async function deleteContentAction(id: string): Promise<Result<void>> {
     if (!user) return fail("Authentication required.");
 
     const result = await remove(id);
-    if (result.success) revalidatePath("/admin/content");
+    if (result.success) {
+      revalidatePath("/admin/content");
+      await logAudit({ action: "content.deleted", entity: "content_entries", entityId: id });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete content");

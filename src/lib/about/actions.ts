@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { findByKey, create, update } from "@/lib/content/repository";
 import { aboutContentSchema } from "@/lib/validation";
 import type { Result } from "@/lib/result";
@@ -33,7 +34,14 @@ export async function saveAboutContentAction(
       const result = await update(existing.data.id, {
         content: parsed.data as unknown as Record<string, unknown>,
       });
-      if (result.success) revalidatePath("/admin/content");
+      if (result.success) {
+        revalidatePath("/admin/content");
+        await logAudit({
+          action: "about.updated",
+          entity: "content_entries",
+          entityId: existing.data.id,
+        });
+      }
       return result;
     }
 
@@ -43,7 +51,14 @@ export async function saveAboutContentAction(
       content: parsed.data as unknown as Record<string, unknown>,
       status: "published",
     });
-    if (result.success) revalidatePath("/admin/content");
+    if (result.success) {
+      revalidatePath("/admin/content");
+      await logAudit({
+        action: "about.updated",
+        entity: "content_entries",
+        entityId: result.data.id,
+      });
+    }
     return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to save about content");
