@@ -122,13 +122,6 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
   };
 }
 
-function toLocalDateTime(iso: string): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
-}
-
 function toIso(local: string): string | null {
   if (!local) return null;
   const date = new Date(local);

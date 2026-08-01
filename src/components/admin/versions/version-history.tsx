@@ -52,8 +52,21 @@ export function VersionHistory({ entity, entityId, onRestored }: VersionHistoryP
   }
 
   React.useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    async function fetchVersions() {
+      const result = await listContentVersionsAction(entity, entityId);
+      if (cancelled) return;
+      if (result.success) {
+        setVersions(result.data);
+      } else {
+        setError(result.error);
+      }
+      setLoading(false);
+    }
+    void fetchVersions();
+    return () => {
+      cancelled = true;
+    };
   }, [entity, entityId]);
 
   async function handleRestore() {
