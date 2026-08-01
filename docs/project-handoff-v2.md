@@ -1363,4 +1363,47 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    (8880 bytes); `robots.txt` lists both disallow rules; `/admin`
    307s to `/admin/login` with X-Frame-Options DENY present.
 
-- **Last Updated:** 2026-08-01 (Phase 9G — original brand assets, secrets hygiene, safe hardening)
+## 21. Phase 9H - DX + Analytics admin redesign, help system, loading states (2026-08-01, commit `946ce53`)
+
+1. **Help system (admin panel)** — every major section, feature and
+   setting on the DX + Analytics pages has a small **?** button that
+   opens a dialog explaining: what it does, why it exists, when to use
+   it, how it works, effects of changing it (enabled/disabled/
+   modified), best practices, notes and warnings.
+   - `src/lib/admin-help.ts` — the content registry (typed
+     `HelpEntry`/`HelpSection` with section kinds: what/why/when/how/
+     effects/best/notes/warning). 34 entries for DX + 22 for
+     Analytics, including every config field.
+   - `src/components/ui/help-dialog.tsx` — `HelpButton` (inline
+     client ? button, works inside server components) + `HelpDialog`
+     (framer-motion modal, ESC/backdrop close, icons per section
+     kind, fallback entry for unknown ids).
+   - `src/components/admin/section-card.tsx` — shared admin card
+     (icon chip + title + optional help + optional right slot) used
+     by both redesigned pages.
+2. **DX page redesign** — clean stat tiles (each with help), the
+   config card is a compact grid with per-field ? buttons, all 13
+   sections share the SectionCard look. Stat tiles for backup size/
+   tables inside Backup status; storage/migration tiles likewise.
+   `src/app/admin/dx/loading.tsx` shows a skeleton immediately
+   (the report does real DB + storage + outbound requests per load).
+3. **Analytics page redesign** — header + page help, stat cards with
+   help, chart/funnel cards in the new style, 9 leaderboard cards via
+   SectionCard, recent-events card; `loading.tsx` skeleton added.
+4. **Config cards** (`dx/config-card.tsx`, `analytics/config-card.tsx`)
+   — per-field help buttons, **dirty state** ("Unsaved changes" amber
+   dot / "All changes saved" green check), Save button disabled while
+   clean or saving (spinner during save). `CsvExportButton` already
+   had a spinner.
+5. **AdminPageSkeleton** (`src/components/admin/page-skeleton.tsx`) —
+   reusable streaming skeleton (title/description + pulse tiles +
+   card blocks); used by both loading.tsx files.
+6. **Verification** — tsc clean, lint at baseline (1 pre-existing
+   warning), build green (61 routes); production verified with an
+   authenticated session: `/admin/dx` 200 with 34 help buttons,
+   `/admin/analytics` 200 with 22, config cards render "All changes
+   saved". Extending help to the remaining admin sections (projects,
+   blog, media, settings…) can reuse `HelpButton` + `admin-help.ts`
+   entries without new infrastructure.
+
+- **Last Updated:** 2026-08-01 (Phase 9H — DX + Analytics redesign with help system and loading states)
