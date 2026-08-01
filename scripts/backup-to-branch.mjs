@@ -24,6 +24,16 @@ const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!url || !key) {
   console.log("[backup] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — skipping.");
+  fs.mkdirSync(path.join(root, "backups"), { recursive: true });
+  const readme = path.join(root, "backups", "README.md");
+  if (!fs.existsSync(readme)) {
+    fs.writeFileSync(
+      readme,
+      `# Backups\n\nOffsite nightlies created by .github/workflows/backup.yml.\n` +
+        `This directory is only populated once the SUPABASE_URL and\n` +
+        `SUPABASE_SERVICE_ROLE_KEY repository secrets are configured.\n`,
+    );
+  }
   process.exit(0);
 }
 
