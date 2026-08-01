@@ -1647,3 +1647,67 @@ separate About + Hero bespoke editors kept as-is.
   round-trip (insert/select/update/delete) was verified against RLS.
 
 - **Last Updated:** 2026-08-01 (Phase 10 - schema-driven page-copy CMS)
+
+## 25. Final Pre-Launch Review (2026-08-01)
+
+- Inactivity/keep-alive audit: PASS, fully automated, no manual
+  intervention required.
+  - Vercel crons (primary, registered in vercel.json): /api/health
+    daily 12:00 UTC (real Supabase query resets the Free-plan 7-day
+    pause timer; upserts one health_checks ledger row per day),
+    /api/backup daily 00:00 UTC (exports all 19 content tables to the
+    private `backups` bucket + storage catalog; prunes analytics_events
+    and old backup folders; ledger row in `backups`). Verified firing
+    in production: bucket auto-created 2026-08-01, full run completed
+    (19 tables, 59.6 KB, status ok).
+  - GitHub Actions fallback (added 2026-08-01): keepalive.yml pings
+    /api/health daily; nightly-backup.yml exports tables + storage to
+    the `backups` branch (offsite copy). First scheduled runs 2026-08-02
+    03:00/12:00 UTC. NOTE: GH disables scheduled workflows after 60 days
+    without repo activity - Vercel cron is the primary mechanism.
+  - Backups/health ledgers have zero RLS policies (service-role only,
+    by design); DX page reads them via service-role client. Health
+    checks + backups verified via service-role REST probes.
+- Final review fixes (commit pending):
+  - Deleted dead `src/content/` directory (8 files: about/faq/
+    industries/navigation/projects/services/site/socials - zero imports
+    since the CMS migration; only a stale comment in
+    src/lib/ai/knowledge.ts referenced it).
+  - Fixed broken PWA icon paths: manifest.webmanifest + apple-touch-icon
+    pointed at /icons/* but files live at public root.
+  - Added OG/social share images: src/app/opengraph-image.tsx +
+    twitter-image.tsx (next/og ImageResponse, zero new deps, static
+    prerender, 1200x630 / 1200x675, dark brand style).
+  - Removed dead Yandex config: CSP entries (mc.yandex.ru) + preconnect
+    in layout - no Yandex tracker exists (GA4/GTM/Clarity only).
+  - Removed debug console.log from AI providers (groq/openrouter);
+    error logging retained.
+- Final review status (all verified):
+  - Lint 0 errors (1 pre-existing img warning), tsc clean, production
+    build green (30 static + dynamic routes incl. /opengraph-image,
+    /twitter-image).
+  - RLS enabled on all 26 tables (0-policy tables are intentional
+    service-role-only: analytics_events, audit_log, backups,
+    content_versions, health_checks, integration_settings, login_history).
+  - Migrations fully in sync (00001-00029 local == remote).
+  - Auth: middleware redirect + getUser() on all 57 mutation actions +
+    RLS. Admin chat API 401-guards. Public chat is open (knowledge
+    fallback, lead capture) by design.
+  - Security headers: CSP (self + GA/GTM/Groq/OpenRouter/Supabase),
+    X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy,
+    poweredByHeader off. .env.example placeholders only, .env.local
+    untracked.
+  - Media: single upload path (src/lib/media/upload.ts), session-
+    authenticated, client+server validation; buckets project-media
+    (public, image/video) + media (public) + backups (private).
+  - SEO: sitemap covers static + projects + blog + hub + templates;
+    robots disallows /api + /admin; metadata from site_settings with
+    fallbacks; og/twitter images now present.
+  - Responsive: mobile nav/More sheets, breakpoint grids verified
+    across public + admin components.
+  - Known minor items (accepted, no change): public /api/chat has no
+    rate limit (lead capture is the abuse sink; keep-alive unaffected);
+    admin pages rely on middleware + per-action getUser() (env is
+    always set in prod, so the middleware client cannot fail there).
+
+- **Last Updated:** 2026-08-01 (Phase 25 - final pre-launch review)

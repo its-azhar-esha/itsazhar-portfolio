@@ -16,8 +16,6 @@ export async function streamOpenRouter(
     throw new Error("OpenRouter API key is not configured");
   }
 
-  console.log("[OpenRouter] Attempting stream with model:", MODEL);
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -51,8 +49,6 @@ export async function streamOpenRouter(
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");
       console.error(`[OpenRouter] Error ${response.status}: ${errorText}`);
-    } else {
-      console.log("[OpenRouter] Stream started successfully");
     }
 
     return response;

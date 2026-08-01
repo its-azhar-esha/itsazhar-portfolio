@@ -16,8 +16,6 @@ export async function streamGroq(
     throw new Error("Groq API key is not configured");
   }
 
-  console.log("[Groq] Attempting stream with model:", MODEL);
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -49,8 +47,6 @@ export async function streamGroq(
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");
       console.error(`[Groq] Error ${response.status}: ${errorText}`);
-    } else {
-      console.log("[Groq] Stream started successfully");
     }
 
     return response;

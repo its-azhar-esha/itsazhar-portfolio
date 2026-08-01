@@ -386,12 +386,10 @@ export function findRelevantKnowledge(message: string): string {
 }
 
 /*
- * FUTURE: Auto-generate AI knowledge from content layer
- * import { projects } from "@/content/projects"
- * import { services } from "@/content/services"
- * import { faqItems } from "@/content/faq"
- * This will replace the file-system based knowledge loading
- * when transitioning to a CMS-driven architecture.
+ * CMS-driven knowledge: the AI chat now pulls live page copy and
+ * entity data via buildCmsKnowledge (see cms-context.ts), so the
+ * file-system based knowledge below is only a fallback when the
+ * database is unavailable.
  */
 
 export function loadFallbackFAQ(): string {
