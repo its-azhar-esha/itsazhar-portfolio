@@ -10,11 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { modalOverlay, spring } from "@/lib/motion";
 import type { Project } from "@/lib/projects-data";
+import type { ProjectsDetailContent } from "@/lib/content/defaults/projects";
 import Link from "next/link";
 
 interface ProjectModalProps {
   project: Project | null;
   projects: Project[];
+  detail: ProjectsDetailContent;
   onClose: () => void;
 }
 
@@ -69,7 +71,7 @@ function WorkflowTimeline({ steps }: { steps: string[] }) {
   );
 }
 
-export function ProjectModal({ project, projects, onClose }: ProjectModalProps) {
+export function ProjectModal({ project, projects, detail, onClose }: ProjectModalProps) {
   const router = useRouter();
   const related = React.useMemo(() => {
     if (!project) return [];
@@ -216,7 +218,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                     transition={spring}
                   >
                     <Button className="gap-1.5">
-                      <Play className="h-4 w-4" /> Watch Full Demo
+                      <Play className="h-4 w-4" /> {detail.watchDemo}
                     </Button>
                   </motion.div>
                 )}
@@ -226,7 +228,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                   transition={spring}
                 >
                   <Button variant="outline" className="gap-1.5">
-                    View Case Study <ExternalLink className="h-4 w-4" />
+                    {detail.viewCaseStudy} <ExternalLink className="h-4 w-4" />
                   </Button>
                 </motion.div>
               </div>
@@ -240,7 +242,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                   className="mt-8"
                 >
                   <h3 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
-                    The Challenge
+                    {detail.challenge}
                   </h3>
                   <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                     {project.challenge}
@@ -257,7 +259,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                   className="mt-6"
                 >
                   <h3 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
-                    The Solution
+                    {detail.solution}
                   </h3>
                   <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                     {project.solution}
@@ -304,7 +306,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                   className="mt-6"
                 >
                   <h3 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wider uppercase">
-                    Technology Stack
+                    {detail.stack}
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {project.tech.map((t) => (
@@ -329,7 +331,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                   className="border-border/50 mt-10 border-t pt-8"
                 >
                   <h3 className="text-muted-foreground mb-4 text-sm font-semibold tracking-wider uppercase">
-                    Related Projects
+                    {detail.related}
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {related.map((r) => (
@@ -361,9 +363,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
               )}
 
               <div className="border-border/50 mt-8 border-t pt-6">
-                <p className="text-muted-foreground text-sm">
-                  Interested in a similar system for your business?
-                </p>
+                <p className="text-muted-foreground text-sm">{detail.ctaTitle}</p>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -371,7 +371,7 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                 >
                   <Link href="/contact">
                     <Button className="group mt-3">
-                      Book a Free 15-Min Audit
+                      {detail.ctaButton}
                       <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                     </Button>
                   </Link>

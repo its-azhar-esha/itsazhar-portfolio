@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { springSoft } from "@/lib/motion";
+import type { SiteSettings } from "@/types/settings";
 
 interface SocialLink {
   name: string;
@@ -76,10 +77,21 @@ const socials: SocialLink[] = [
   },
 ];
 
-export function SocialLinks() {
+export function SocialLinks({ settings }: { settings: SiteSettings }) {
+  const settingsOverrides: Record<string, { url?: string; username?: string }> = {
+    LinkedIn: { url: settings.social_linkedin ?? undefined },
+    Fiverr: { url: settings.social_fiverr ?? undefined },
+    YouTube: { url: settings.social_youtube ?? undefined },
+  };
+  const resolved = socials.map((social) => {
+    const override = settingsOverrides[social.name];
+    if (!override?.url) return social;
+    return { ...social, url: override.url };
+  });
+
   return (
     <div className="flex flex-col gap-2">
-      {socials.map((social, i) => (
+      {resolved.map((social, i) => (
         <motion.a
           key={social.name}
           href={social.url}

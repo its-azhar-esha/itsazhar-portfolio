@@ -4,19 +4,17 @@ import { ArrowRight, GitBranch, Wand2, Workflow } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPublicTemplatesAction, getPublicWorkflowCategoriesAction } from "@/lib/hub/actions";
-import { getPublicSiteSettings } from "@/lib/settings";
+import { getPageMetadata } from "@/lib/seo";
+import { getPublicPageContent } from "@/lib/content";
+import {
+  DEFAULT_PLAYGROUND_CONTENT,
+  type PlaygroundPageContent,
+} from "@/lib/content/defaults/playground";
 import { cn } from "@/lib/utils";
 import { TemplateCard } from "@/components/playground/template-card";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getPublicSiteSettings();
-  const title = `Workflow Playground | ${settings.site_name || "Azhar"}`;
-  return {
-    title,
-    description:
-      "Visual workflow builder with copy-paste ready automation templates. Build, share and remix automation flows in your browser.",
-    openGraph: { title, type: "website" },
-  };
+  return getPageMetadata("playground");
 }
 
 export default async function PlaygroundPage({
@@ -25,13 +23,14 @@ export default async function PlaygroundPage({
   searchParams: Promise<{ search?: string; category?: string; difficulty?: string }>;
 }) {
   const params = await searchParams;
-  const [templates, categories] = await Promise.all([
+  const [templates, categories, content] = await Promise.all([
     getPublicTemplatesAction({
       search: params.search,
       category: params.category,
       difficulty: params.difficulty,
     }),
     getPublicWorkflowCategoriesAction(),
+    getPublicPageContent<PlaygroundPageContent>("playground", DEFAULT_PLAYGROUND_CONTENT),
   ]);
 
   const featured = templates.filter((t) => t.featured).slice(0, 3);
@@ -42,26 +41,23 @@ export default async function PlaygroundPage({
       <header className="border-border/40 border-b">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20 lg:px-8">
           <Badge variant="secondary" className="mb-4">
-            Workflow Playground
+            {content.hero.badge}
           </Badge>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Build automation flows, visually
+            {content.hero.title}
           </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Drag and drop triggers, AI steps and actions. Start from a ready-made template or build
-            from scratch — no code required.
-          </p>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{content.hero.intro}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/playground/builder">
               <Button size="lg" className="gap-2">
                 <Workflow className="h-4 w-4" />
-                Open the builder
+                {content.hero.openBuilder}
               </Button>
             </Link>
             <Link href="/playground/builder">
               <Button size="lg" variant="outline" className="gap-2">
                 <Wand2 className="h-4 w-4" />
-                Start from a blank canvas
+                {content.hero.blankCanvas}
               </Button>
             </Link>
           </div>
@@ -80,7 +76,7 @@ export default async function PlaygroundPage({
                   : "text-muted-foreground border-border/60 hover:border-primary/40 hover:text-primary",
               )}
             >
-              All categories
+              {content.filters.allCategories}
             </Link>
             {categories.map((c) => (
               <Link
@@ -103,7 +99,7 @@ export default async function PlaygroundPage({
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-lg font-semibold tracking-tight">
-            {featured.length > 0 ? "Featured templates" : "Templates"}
+            {featured.length > 0 ? content.sections.featured : content.sections.all}
           </h2>
           <form action="/playground" method="get" className="flex flex-wrap items-center gap-2">
             <input type="hidden" name="category" value={params.category ?? ""} />
@@ -112,19 +108,19 @@ export default async function PlaygroundPage({
               defaultValue={params.difficulty ?? ""}
               className="border-border bg-background text-muted-foreground h-9 rounded-lg border px-3 text-sm focus:outline-none"
             >
-              <option value="">Any difficulty</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
+              <option value="">{content.difficulty.any}</option>
+              <option value="beginner">{content.difficulty.beginner}</option>
+              <option value="intermediate">{content.difficulty.intermediate}</option>
+              <option value="advanced">{content.difficulty.advanced}</option>
             </select>
             <input
               name="search"
               defaultValue={params.search ?? ""}
-              placeholder="Search templates..."
+              placeholder={content.filters.searchPlaceholder}
               className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 h-9 w-56 rounded-lg border px-3 text-sm focus:outline-none"
             />
             <Button type="submit" size="sm" variant="outline">
-              Search
+              {content.filters.search}
             </Button>
           </form>
         </div>
@@ -132,11 +128,11 @@ export default async function PlaygroundPage({
         {templates.length === 0 ? (
           <div className="mx-auto max-w-7xl py-16 text-center">
             <GitBranch className="text-muted-foreground mx-auto h-12 w-12" />
-            <h2 className="mt-4 text-lg font-semibold">No templates found</h2>
+            <h2 className="mt-4 text-lg font-semibold">{content.empty.title}</h2>
             <p className="text-muted-foreground mt-2 text-sm">
               {params.search || params.category || params.difficulty
-                ? "Try different filters or search terms."
-                : "Templates are on the way — check back soon."}
+                ? content.empty.filtered
+                : content.empty.comingSoon}
             </p>
           </div>
         ) : (
@@ -164,12 +160,10 @@ export default async function PlaygroundPage({
         )}
 
         <div className="border-border/40 mt-16 flex flex-col items-center rounded-2xl border py-12 text-center">
-          <p className="text-muted-foreground text-sm">
-            Built a workflow you like? Save it and share it with a link — anyone can remix it.
-          </p>
+          <p className="text-muted-foreground text-sm">{content.ctaTitle}</p>
           <Link href="/playground/builder">
             <Button size="lg" className="mt-4 gap-2">
-              Open the builder
+              {content.ctaButton}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

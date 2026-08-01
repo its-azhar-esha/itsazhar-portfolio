@@ -25,16 +25,23 @@ import { useChat } from "@/providers";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { spring, springSoft } from "@/lib/motion";
 import type { SiteSettings } from "@/types/settings";
+import type { SharedMobileContent } from "@/lib/content/defaults/shared";
 
 const tabs = [
   { label: "Home", href: "/", icon: House },
   { label: "Services", href: "/#services", icon: Briefcase },
   { label: "Projects", href: "/projects", icon: FolderKanban },
   { label: "About", href: "/about", icon: User },
-  { label: "More", href: null, icon: LayoutGrid },
+  { label: null, href: null, icon: LayoutGrid },
 ];
 
-export function MobileNav({ settings }: { settings: SiteSettings }) {
+export function MobileNav({
+  settings,
+  content,
+}: {
+  settings: SiteSettings;
+  content: SharedMobileContent;
+}) {
   const pathname = usePathname();
   const { setIsOpen: setChatOpen } = useChat();
   const [moreOpen, setMoreOpen] = React.useState(false);
@@ -54,28 +61,33 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
     (settings.nav_order.find((item) => item.href === href)?.enabled ?? true);
 
   const moreItems = [
-    { label: "Contact", href: "/contact", icon: Mail, visible: true },
+    { label: content.contact, href: "/contact", icon: Mail, visible: true },
     {
-      label: "Case Studies",
+      label: content.caseStudies,
       href: "/#case-studies",
       icon: FileText,
       visible: settings.show_case_studies,
     },
     {
-      label: "Testimonials",
+      label: content.testimonials,
       href: "/#testimonials",
       icon: Quote,
       visible: settings.show_testimonials,
     },
     {
-      label: "Blog",
+      label: content.blog,
       href: "/blog",
       icon: Newspaper,
       visible: settings.show_blog && navEnabled("/blog"),
     },
-    { label: "Hub", href: "/hub", icon: Boxes, visible: settings.show_hub && navEnabled("/hub") },
     {
-      label: "Playground",
+      label: content.hub,
+      href: "/hub",
+      icon: Boxes,
+      visible: settings.show_hub && navEnabled("/hub"),
+    },
+    {
+      label: content.playground,
       href: "/playground",
       icon: Workflow,
       visible: settings.show_playground && navEnabled("/playground"),
@@ -126,7 +138,7 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
                         moreActive ? "text-primary" : "text-muted-foreground",
                       )}
                     >
-                      {item.label}
+                      {item.label ?? content.more}
                     </motion.span>
                   </motion.button>
                 );
@@ -193,7 +205,7 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
             >
               <div className="bg-muted-foreground/30 mx-auto mt-2 h-1 w-10 rounded-full" />
               <div className="flex items-center justify-between px-5 pt-3 pb-2">
-                <p className="text-sm font-semibold">More</p>
+                <p className="text-sm font-semibold">{content.more}</p>
                 <button
                   type="button"
                   onClick={() => setMoreOpen(false)}
@@ -229,19 +241,19 @@ export function MobileNav({ settings }: { settings: SiteSettings }) {
                     className="hover:bg-accent/50 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors"
                   >
                     <Sparkles className="text-muted-foreground h-5 w-5" />
-                    AI Assistant
+                    {content.aiAssistant}
                   </button>
                 </div>
 
                 <div className="border-border/50 mt-3 flex items-center justify-between rounded-lg border px-3 py-3">
-                  <span className="text-sm font-medium">Theme</span>
+                  <span className="text-sm font-medium">{content.theme}</span>
                   <ThemeToggle />
                 </div>
 
                 <Link href={bookHref} onClick={() => setMoreOpen(false)}>
                   <div className="from-primary to-primary/80 mt-3 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r px-4 py-3 text-sm font-semibold text-white shadow-lg">
                     <CalendarCheck className="h-4 w-4" />
-                    Book a Free 15-Min Audit
+                    {content.ctaLabel}
                   </div>
                 </Link>
               </div>

@@ -5,6 +5,8 @@ import { PageTransition } from "@/components/page-transition";
 import { ToastProvider } from "@/components/ui/toast";
 import { CtaClickTracker, PageViewTracker } from "@/components/analytics/trackers";
 import { getPublicSiteSettings } from "@/lib/settings";
+import { getPublicPageContent } from "@/lib/content";
+import { DEFAULT_SHARED_CONTENT, type SharedContent } from "@/lib/content/defaults/shared";
 import { resolveMediaValue } from "@/lib/media/repository";
 import dynamic from "next/dynamic";
 
@@ -13,7 +15,10 @@ const MobileNav = dynamic(() =>
 );
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getPublicSiteSettings();
+  const [settings, content] = await Promise.all([
+    getPublicSiteSettings(),
+    getPublicPageContent<SharedContent>("shared", DEFAULT_SHARED_CONTENT),
+  ]);
   const logoUrl = settings.logo ? await resolveMediaValue(settings.logo) : null;
 
   if (settings.maintenance_mode) {
@@ -25,10 +30,10 @@ export default async function PublicLayout({ children }: { children: React.React
           </span>
         </div>
         <h1 className="mt-6 text-2xl font-bold tracking-tight">
-          {settings.site_name} — Under Maintenance
+          {settings.site_name} — {content.maintenance.title}
         </h1>
         <p className="text-muted-foreground mt-3 max-w-md text-sm">
-          The site is temporarily down for maintenance. Please check back soon.
+          {content.maintenance.description}
         </p>
       </div>
     );
@@ -45,12 +50,14 @@ export default async function PublicLayout({ children }: { children: React.React
             showHub={settings.show_hub}
             showPlayground={settings.show_playground}
             navOrder={settings.nav_order}
+            nav={content.nav}
+            brandName={content.brand.name}
           />
           <main id="main-content" className="flex-1 pb-[72px] md:pb-0">
             <PageTransition>{children}</PageTransition>
           </main>
-          <MobileNav settings={settings} />
-          <Footer settings={settings} logoUrl={logoUrl} />
+          <MobileNav settings={settings} content={content.mobile} />
+          <Footer settings={settings} logoUrl={logoUrl} content={content.footer} />
           <PageViewTracker />
           <CtaClickTracker />
         </div>

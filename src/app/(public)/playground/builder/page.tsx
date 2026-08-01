@@ -5,6 +5,11 @@ import {
   getPublicTemplatesAction,
 } from "@/lib/hub/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
+import { getPublicPageContent } from "@/lib/content";
+import {
+  DEFAULT_PLAYGROUND_CONTENT,
+  type PlaygroundPageContent,
+} from "@/lib/content/defaults/playground";
 import { WorkflowBuilder } from "@/components/playground/workflow-builder";
 import type { WorkflowEdge, WorkflowNode } from "@/types/hub";
 
@@ -44,9 +49,10 @@ export default async function BuilderPage({
   searchParams: Promise<{ t?: string; template?: string }>;
 }) {
   const params = await searchParams;
-  const [nodeTypes, templates] = await Promise.all([
+  const [nodeTypes, templates, content] = await Promise.all([
     getPublicNodeTypesAction(),
     getPublicTemplatesAction({}),
+    getPublicPageContent<PlaygroundPageContent>("playground", DEFAULT_PLAYGROUND_CONTENT),
   ]);
 
   let initialNodes: WorkflowNode[] = [];
@@ -76,12 +82,8 @@ export default async function BuilderPage({
       <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Workflow Builder</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {initialNodes.length > 0
-                ? `Loaded "${initialTitle || "workflow"}" — remix it, then save and share.`
-                : "Drag nodes from the library, connect them, then save and share your flow."}
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">{content.builder.title}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">{content.builder.subtitle}</p>
           </div>
         </div>
         <WorkflowBuilder

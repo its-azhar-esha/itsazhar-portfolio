@@ -5,6 +5,11 @@ import { ArrowRight, Calendar, Eye, GitBranch, ListOrdered, Play, Workflow } fro
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPublicTemplateAction } from "@/lib/hub/actions";
+import { getPublicPageContent } from "@/lib/content";
+import {
+  DEFAULT_PLAYGROUND_CONTENT,
+  type PlaygroundPageContent,
+} from "@/lib/content/defaults/playground";
 import { DIFFICULTY_LABELS } from "@/constants/hub";
 
 interface TemplateDetailPageProps {
@@ -32,6 +37,10 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
   const template = await getPublicTemplateAction(slug);
   if (!template) notFound();
 
+  const [content] = await Promise.all([
+    getPublicPageContent<PlaygroundPageContent>("playground", DEFAULT_PLAYGROUND_CONTENT),
+  ]);
+
   const nodeCount = new Map<string, number>();
   for (const node of template.nodes) {
     nodeCount.set(node.type, (nodeCount.get(node.type) ?? 0) + 1);
@@ -42,7 +51,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
     <div className="pt-24 md:pt-32">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         <Link href="/playground" className="text-muted-foreground hover:text-primary text-sm">
-          ← Back to templates
+          {content.template.back}
         </Link>
 
         <div className="mt-6">
@@ -63,11 +72,12 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
           <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
             <span className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />
-              {template.views_count.toLocaleString()} views
+              {template.views_count.toLocaleString()} {content.template.views}
             </span>
             <span className="flex items-center gap-1.5">
               <GitBranch className="h-4 w-4" />
-              {template.nodes.length} nodes · {template.edges.length} connections
+              {template.nodes.length} {content.template.stats.split(" · ")[0]} ·{" "}
+              {template.edges.length} {content.template.stats.split(" · ")[1]}
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
@@ -82,13 +92,13 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
             <Link href={`/playground/builder?t=${template.slug}`}>
               <Button size="lg" className="gap-2">
                 <Play className="h-4 w-4" />
-                Use this template
+                {content.template.use}
               </Button>
             </Link>
             <Link href="/playground/builder">
               <Button size="lg" variant="outline" className="gap-2">
                 <Workflow className="h-4 w-4" />
-                Open blank builder
+                {content.template.blank}
               </Button>
             </Link>
           </div>
@@ -98,7 +108,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
           <section className="mt-14">
             <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
               <ListOrdered className="h-5 w-5" />
-              How it works
+              {content.template.howItWorks}
             </h2>
             <ol className="mt-5 space-y-4">
               {template.walkthrough.map((step, i) => (
@@ -139,12 +149,10 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
         </section>
 
         <div className="border-border/40 mt-14 flex flex-col items-center rounded-2xl border py-10 text-center">
-          <p className="text-muted-foreground text-sm">
-            Prefer to build it yourself or need a custom automation?
-          </p>
+          <p className="text-muted-foreground text-sm">{content.template.ctaTitle}</p>
           <Link href="/contact">
             <Button variant="outline" className="mt-4 gap-2">
-              Talk to me about your workflow <ArrowRight className="h-4 w-4" />
+              {content.template.ctaButton} <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>

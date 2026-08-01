@@ -123,7 +123,13 @@ function ServiceCard({ feature, i }: { feature: FeatureItem; i: number }) {
   );
 }
 
-export function Features({ services }: { services?: PublicService[] }) {
+export function Features({
+  services,
+  copy,
+}: {
+  services?: PublicService[];
+  copy: { title: string; intro: string };
+}) {
   const features = React.useMemo<FeatureItem[]>(() => {
     if (services && services.length > 0) return toFeatureItems(services);
     return fallbackFeatures;
@@ -140,12 +146,8 @@ export function Features({ services }: { services?: PublicService[] }) {
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">What I build.</h2>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Intelligent automation systems designed around real business needs. From AI agents to
-            workflow orchestration, I build scalable solutions that reduce manual effort, improve
-            efficiency, and help teams operate smarter.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{copy.title}</h2>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{copy.intro}</p>
         </motion.div>
 
         <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

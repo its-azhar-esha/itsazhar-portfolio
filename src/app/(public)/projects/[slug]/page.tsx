@@ -12,6 +12,11 @@ import {
   getRelatedProjects,
 } from "@/lib/projects-data";
 import { getPageMetadata } from "@/lib/seo";
+import { getPublicPageContent } from "@/lib/content";
+import {
+  DEFAULT_PROJECTS_CONTENT,
+  type ProjectsPageContent,
+} from "@/lib/content/defaults/projects";
 import { incrementProjectViewsAction } from "@/lib/analytics/actions";
 import Link from "next/link";
 
@@ -67,6 +72,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const { prev, next } = await getAdjacentProjects(slug);
   const related = await getRelatedProjects(slug);
+  const content = await getPublicPageContent<ProjectsPageContent>(
+    "projects",
+    DEFAULT_PROJECTS_CONTENT,
+  );
 
   return (
     <div className="pt-24 md:pt-32">
@@ -77,7 +86,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               href="/projects"
               className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
-              &larr; All Projects
+              {content.detail.back}
             </Link>
           </div>
           <Badge variant="secondary" className="mb-4 w-fit">
@@ -117,7 +126,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {project.gallery && project.gallery.length > 0 && (
         <section className="border-border/40 border-b py-12 md:py-16">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold sm:text-2xl">Gallery</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.gallery}</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {project.gallery.map((src, i) => (
                 <div
@@ -141,7 +150,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {project.challenge && (
         <section className="border-border/40 border-b py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-destructive text-xl font-bold sm:text-2xl">The Challenge</h2>
+            <h2 className="text-destructive text-xl font-bold sm:text-2xl">
+              {content.detail.challenge}
+            </h2>
             <p className="text-muted-foreground mt-4 leading-relaxed">{project.challenge}</p>
           </div>
         </section>
@@ -150,7 +161,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {project.solution && (
         <section className="border-border/40 border-b py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-primary text-xl font-bold sm:text-2xl">The Solution</h2>
+            <h2 className="text-primary text-xl font-bold sm:text-2xl">
+              {content.detail.solution}
+            </h2>
             <p className="text-muted-foreground mt-4 leading-relaxed">{project.solution}</p>
           </div>
         </section>
@@ -159,7 +172,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {project.workflow && (
         <section className="border-border/40 border-b py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold sm:text-2xl">Workflow</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.workflow}</h2>
             <div className="mt-8 space-y-0">
               {project.workflow.map((step, i) => (
                 <div key={i} className="relative flex gap-6 pb-8 last:pb-0">
@@ -180,7 +193,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {project.tech && (
         <section className="border-border/40 border-b py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold sm:text-2xl">Technology Stack</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.stack}</h2>
             <div className="mt-6 flex flex-wrap gap-2">
               {project.tech.map((t) => (
                 <Badge key={t} variant="outline" className="px-3 py-1.5 text-sm">
@@ -210,7 +223,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {related.length > 0 && (
         <section className="border-border/40 border-t py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold sm:text-2xl">Related Projects</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.related}</h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {related.map((r) => (
                 <Link key={r.slug} href={`/projects/${r.slug}`}>
@@ -242,7 +255,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               >
                 <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
                 <div className="text-left">
-                  <div className="text-muted-foreground/60 text-xs">Previous</div>
+                  <div className="text-muted-foreground/60 text-xs">{content.detail.previous}</div>
                   <div className="font-medium">{prev.name}</div>
                 </div>
               </Link>
@@ -255,7 +268,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 className="group text-muted-foreground hover:text-foreground flex items-center gap-2 text-right text-sm transition-colors"
               >
                 <div>
-                  <div className="text-muted-foreground/60 text-xs">Next</div>
+                  <div className="text-muted-foreground/60 text-xs">{content.detail.next}</div>
                   <div className="font-medium">{next.name}</div>
                 </div>
                 <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
@@ -270,12 +283,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <section className="border-border/40 border-t py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
-            <p className="text-muted-foreground text-sm">
-              Interested in a similar system for your business?
-            </p>
+            <p className="text-muted-foreground text-sm">{content.detail.ctaTitle}</p>
             <Link href="/contact">
               <Button size="lg" className="mt-4 gap-2">
-                Book a Free 15-Min Audit
+                {content.detail.ctaButton}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

@@ -18,3 +18,6 @@ export const createContentSchema = z.object({
 });
 
 export const updateContentSchema = createContentSchema.partial();
+
+/** Any JSON object — used for the generic per-page content entries. */
+export const pageContentSchema = z.object({}).catchall(z.unknown());

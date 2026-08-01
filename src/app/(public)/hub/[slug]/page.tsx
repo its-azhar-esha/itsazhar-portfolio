@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronDown, Download, FileText, History, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getPublicResourceAction } from "@/lib/hub/actions";
+import { getPublicPageContent } from "@/lib/content";
+import { DEFAULT_HUB_CONTENT, type HubPageContent } from "@/lib/content/defaults/hub";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { renderMarkdown } from "@/lib/markdown";
 import { DownloadButton } from "@/components/hub/download-button";
@@ -46,9 +48,10 @@ export default async function ResourceDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [resource, settings] = await Promise.all([
+  const [resource, settings, content] = await Promise.all([
     getPublicResourceAction(slug),
     getPublicSiteSettings(),
+    getPublicPageContent<HubPageContent>("hub", DEFAULT_HUB_CONTENT),
   ]);
   if (!resource) notFound();
 
@@ -62,7 +65,7 @@ export default async function ResourceDetailPage({
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Hub
+          {content.detail.back}
         </Link>
 
         <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_360px]">
@@ -74,13 +77,13 @@ export default async function ResourceDetailPage({
               {resource.category && <Badge variant="outline">{resource.category.name}</Badge>}
               {resource.featured && (
                 <Badge variant="outline" className="text-primary border-primary/30">
-                  Featured
+                  {content.detail.featured}
                 </Badge>
               )}
               {premium && (
                 <Badge variant="outline" className="text-primary border-primary/30">
                   <Lock className="h-3 w-3" />
-                  Premium
+                  {content.detail.premium}
                 </Badge>
               )}
             </div>
@@ -134,7 +137,7 @@ export default async function ResourceDetailPage({
               <section className="mt-12">
                 <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                   <History className="h-4 w-4" />
-                  Version history
+                  {content.detail.versionHistory}
                 </h2>
                 <div className="border-border/60 mt-4 divide-y rounded-lg border">
                   {resource.changelog.map((entry) => (
@@ -165,28 +168,30 @@ export default async function ResourceDetailPage({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
-                    Price
+                    {content.detail.price}
                   </p>
                   <p className="mt-1 text-3xl font-bold tracking-tight">
                     {resource.pricing.model === "free" ? (
-                      <span className="text-emerald-500">Free</span>
+                      <span className="text-emerald-500">{content.detail.free}</span>
                     ) : (
                       <span className="text-primary">
                         {resource.pricing.price
                           ? `${resource.pricing.currency ?? "$"}${resource.pricing.price}`
-                          : "Paid"}
+                          : content.detail.paid}
                         {resource.pricing.model === "subscription" && (
-                          <span className="text-muted-foreground text-sm font-medium">/mo</span>
+                          <span className="text-muted-foreground text-sm font-medium">
+                            {content.detail.perMonth}
+                          </span>
                         )}
                       </span>
                     )}
                   </p>
                   <p className="text-muted-foreground mt-1 text-xs">
                     {resource.pricing.model === "free"
-                      ? "Download free, forever."
+                      ? content.detail.pricingFree
                       : resource.pricing.model === "subscription"
-                        ? "Subscription · cancel anytime"
-                        : "One-time purchase"}
+                        ? content.detail.pricingSubscription
+                        : content.detail.pricingOneTime}
                   </p>
                 </div>
                 {resource.access_level === "premium" && (
@@ -205,17 +210,17 @@ export default async function ResourceDetailPage({
                   className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors"
                 >
                   <Download className="h-4 w-4" />
-                  Get access
+                  {content.detail.getAccess}
                 </a>
               ) : (
                 <div className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-500">
                   <Download className="h-4 w-4" />
-                  Free download
+                  {content.detail.freeDownload}
                 </div>
               )}
 
               <div className="border-border/50 flex items-center justify-between border-t pt-3">
-                <p className="text-sm font-semibold">Files</p>
+                <p className="text-sm font-semibold">{content.detail.files}</p>
                 <p className="text-muted-foreground text-xs">
                   {resource.files.length} file{resource.files.length === 1 ? "" : "s"}
                 </p>
@@ -223,7 +228,7 @@ export default async function ResourceDetailPage({
 
               {resource.files.length === 0 ? (
                 <p className="text-muted-foreground border-border/50 rounded-lg border border-dashed px-4 py-6 text-center text-sm">
-                  No downloadable files for this resource yet.
+                  {content.detail.noFiles}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -247,7 +252,7 @@ export default async function ResourceDetailPage({
                       {premium && !resource.pricing.purchase_url ? (
                         <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
                           <Lock className="h-3 w-3" />
-                          Unlock this file when purchased.
+                          {content.detail.unlock}
                         </p>
                       ) : (
                         <DownloadButton file={file} />
@@ -260,7 +265,7 @@ export default async function ResourceDetailPage({
               {resource.metadata && Object.keys(resource.metadata).length > 0 && (
                 <div>
                   <p className="text-muted-foreground mb-1.5 text-[11px] font-semibold tracking-wide uppercase">
-                    Details
+                    {content.detail.details}
                   </p>
                   <dl className="text-muted-foreground space-y-1 text-xs">
                     {Object.entries(resource.metadata).map(([key, value]) => (
@@ -275,9 +280,11 @@ export default async function ResourceDetailPage({
             </div>
 
             <div className="border-border/50 bg-card mt-4 rounded-xl border p-5 text-center">
-              <p className="text-muted-foreground text-xs">Need this built for your business?</p>
+              <p className="text-muted-foreground text-xs">{content.detail.ctaTitle}</p>
               <Link href={settings.booking_url || "/contact"}>
-                <p className="text-primary mt-1 text-sm font-semibold">Book a free audit →</p>
+                <p className="text-primary mt-1 text-sm font-semibold">
+                  {content.detail.ctaButton}
+                </p>
               </Link>
             </div>
           </aside>

@@ -5,7 +5,12 @@ export {
   projectFilterSchema,
 } from "./schemas/project";
 
-export { contentKeySchema, createContentSchema, updateContentSchema } from "./schemas/content";
+export {
+  contentKeySchema,
+  createContentSchema,
+  updateContentSchema,
+  pageContentSchema,
+} from "./schemas/content";
 
 export { aboutContentSchema } from "./schemas/about";
 

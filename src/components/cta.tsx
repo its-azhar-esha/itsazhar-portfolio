@@ -6,7 +6,17 @@ import { Button } from "@/components/ui/button";
 import { fadeUp, scaleIn } from "@/lib/motion";
 import Link from "next/link";
 
-export function CTA() {
+export function CTA({
+  copy,
+}: {
+  copy: {
+    badge: string;
+    title: string;
+    intro: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+  };
+}) {
   return (
     <section className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -33,7 +43,7 @@ export function CTA() {
             >
               <div className="bg-background text-muted-foreground mb-6 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm">
                 <Sparkles className="text-primary h-4 w-4" />
-                <span>Stop wasting time. Start automating.</span>
+                <span>{copy.badge}</span>
               </div>
             </motion.div>
 
@@ -45,7 +55,7 @@ export function CTA() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl"
             >
-              Ready to automate your workflow?
+              {copy.title}
             </motion.h2>
 
             <motion.p
@@ -56,8 +66,7 @@ export function CTA() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="text-muted-foreground mt-4 max-w-xl text-lg"
             >
-              Let&apos;s find the automation opportunities in your business. Book a free 15-minute
-              audit and start scaling smarter.
+              {copy.intro}
             </motion.p>
 
             <motion.div
@@ -79,7 +88,7 @@ export function CTA() {
                   data-track-label="Home CTA: Book audit"
                 >
                   <Button size="xl" className="group gap-2 text-base">
-                    Book Free Audit
+                    {copy.primaryLabel}
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px]" />
                   </Button>
                 </Link>
@@ -91,7 +100,7 @@ export function CTA() {
               >
                 <Link href="/projects">
                   <Button variant="outline" size="xl" className="text-base">
-                    View Projects
+                    {copy.secondaryLabel}
                   </Button>
                 </Link>
               </motion.div>

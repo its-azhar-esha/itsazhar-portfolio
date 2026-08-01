@@ -15,7 +15,21 @@ const FALLBACK_STUDIES: PublicCaseStudy[] = MOCK_CASE_STUDIES.filter(
   (cs) => cs.status === "published",
 ).map(toPublicCaseStudy);
 
-export function CaseStudies({ studies }: { studies?: PublicCaseStudy[] }) {
+export function CaseStudies({
+  studies,
+  copy,
+}: {
+  studies?: PublicCaseStudy[];
+  copy: {
+    title: string;
+    intro: string;
+    challenge: string;
+    solution: string;
+    workflow: string;
+    impact: string;
+    readMore: string;
+  };
+}) {
   const items = studies && studies.length > 0 ? studies : FALLBACK_STUDIES;
   const active = items[0]?.slug ?? "";
 
@@ -30,13 +44,8 @@ export function CaseStudies({ studies }: { studies?: PublicCaseStudy[] }) {
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            From manual to automated.
-          </h2>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Each case study explains the problem, automation approach, workflow design, and business
-            impact behind each system.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{copy.title}</h2>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{copy.intro}</p>
         </motion.div>
 
         {items.length > 0 && (
@@ -76,7 +85,7 @@ export function CaseStudies({ studies }: { studies?: PublicCaseStudy[] }) {
                         <div className="border-border relative border-l-2 pb-6 pl-4 md:border-l-0 md:pb-0 md:pl-0">
                           <span className="border-destructive bg-background absolute top-1 -left-[9px] h-4 w-4 rounded-full border-2 md:hidden" />
                           <h4 className="text-destructive mb-2 text-sm font-semibold md:text-base">
-                            The Challenge
+                            {copy.challenge}
                           </h4>
                           <p className="text-muted-foreground text-sm">{cs.challenge}</p>
                         </div>
@@ -84,14 +93,16 @@ export function CaseStudies({ studies }: { studies?: PublicCaseStudy[] }) {
                         <div className="border-border relative border-l-2 pb-6 pl-4 md:border-l-0 md:pb-0 md:pl-0">
                           <span className="border-primary bg-background absolute top-1 -left-[9px] h-4 w-4 rounded-full border-2 md:hidden" />
                           <h4 className="text-primary mb-2 text-sm font-semibold md:text-base">
-                            The Solution
+                            {copy.solution}
                           </h4>
                           <p className="text-muted-foreground text-sm">{cs.solution}</p>
                         </div>
 
                         <div className="border-border relative border-l-2 pb-6 pl-4 md:border-l-0 md:pb-0 md:pl-0">
                           <span className="border-foreground bg-background absolute top-1 -left-[9px] h-4 w-4 rounded-full border-2 md:hidden" />
-                          <h4 className="mb-2 text-sm font-semibold md:text-base">Workflow</h4>
+                          <h4 className="mb-2 text-sm font-semibold md:text-base">
+                            {copy.workflow}
+                          </h4>
                           <ul className="space-y-1.5">
                             {cs.workflow.map((step) => (
                               <li
@@ -108,7 +119,7 @@ export function CaseStudies({ studies }: { studies?: PublicCaseStudy[] }) {
                         <div className="border-border relative border-l-2 pl-4 md:border-l-0 md:pl-0">
                           <span className="bg-background absolute top-1 -left-[9px] h-4 w-4 rounded-full border-2 border-emerald-500 md:hidden" />
                           <div className="bg-muted/50 rounded-lg border p-4">
-                            <h4 className="mb-1 text-sm font-semibold">Impact</h4>
+                            <h4 className="mb-1 text-sm font-semibold">{copy.impact}</h4>
                             <p className="text-muted-foreground text-sm">{cs.impact}</p>
                           </div>
                         </div>
@@ -120,7 +131,7 @@ export function CaseStudies({ studies }: { studies?: PublicCaseStudy[] }) {
                             transition={{ type: "spring", stiffness: 400, damping: 20 }}
                           >
                             <Button variant="outline" size="sm" className="group gap-1.5">
-                              Read Full Case Study
+                              {copy.readMore}
                               <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-[3px]" />
                             </Button>
                           </motion.div>

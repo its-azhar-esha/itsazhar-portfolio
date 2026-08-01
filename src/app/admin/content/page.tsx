@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Code2 } from "lucide-react";
+import { PAGE_CONTENT_DEFINITIONS } from "@/lib/content/schemas";
 
-const sections = [
+const bespokeSections = [
   {
     key: "about",
     title: "About Page",
@@ -20,11 +21,24 @@ const sections = [
 ];
 
 export default function AdminContentPage() {
+  const sections = [
+    ...bespokeSections,
+    ...PAGE_CONTENT_DEFINITIONS.map((def) => ({
+      key: def.key,
+      title: def.title,
+      description: def.description,
+      icon: def.icon,
+      href: def.href,
+    })),
+  ];
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <div className="mb-8">
         <h2 className="text-lg font-semibold">Content</h2>
-        <p className="text-muted-foreground mt-1 text-sm">Manage site copy, pages, and sections.</p>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Manage site copy, pages, and sections. Each page has its own dedicated editor.
+        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {sections.map((section) => {

@@ -27,6 +27,7 @@ import type { Variants } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import type { Project } from "@/lib/projects-data";
+import type { ProjectsDetailContent } from "@/lib/content/defaults/projects";
 
 const ProjectModal = dynamic(
   () => import("./project-modal").then((m) => ({ default: m.ProjectModal })),
@@ -49,7 +50,15 @@ const featuredTextVariants = {
   }),
 };
 
-function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () => void }) {
+function FeaturedCard({
+  project,
+  onSelect,
+  copy,
+}: {
+  project: Project;
+  onSelect: () => void;
+  copy: { watchDemo: string; viewCaseStudy: string };
+}) {
   return (
     <Card className="border-primary/20 from-card to-background hover:border-primary/40 hover:shadow-primary/5 group relative overflow-hidden bg-gradient-to-b transition-all duration-300 hover:shadow-lg">
       <div className="pointer-events-none absolute inset-0">
@@ -119,7 +128,7 @@ function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () =>
         >
           {project.hasVideo && (
             <Button size="sm" className="gap-1.5" onClick={onSelect}>
-              <Play className="h-3.5 w-3.5" /> Watch Demo
+              <Play className="h-3.5 w-3.5" /> {copy.watchDemo}
             </Button>
           )}
           <Button
@@ -128,7 +137,7 @@ function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () =>
             className="group gap-1.5"
             onClick={onSelect}
           >
-            View Case Study{" "}
+            {copy.viewCaseStudy}{" "}
             <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
           </Button>
         </motion.div>
@@ -137,7 +146,15 @@ function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () =>
   );
 }
 
-function SmallCard({ project, onSelect }: { project: Project; onSelect: () => void }) {
+function SmallCard({
+  project,
+  onSelect,
+  copy,
+}: {
+  project: Project;
+  onSelect: () => void;
+  copy: { viewCaseStudy: string };
+}) {
   return (
     <Card className="hover:border-primary/30 hover:shadow-primary/5 group h-full transition-all duration-300 hover:shadow-lg">
       <div className="bg-muted relative aspect-video w-full overflow-hidden">
@@ -177,7 +194,7 @@ function SmallCard({ project, onSelect }: { project: Project; onSelect: () => vo
       </CardContent>
       <CardFooter className="gap-3">
         <Button size="sm" variant="outline" className="group gap-1.5" onClick={onSelect}>
-          View Case Study{" "}
+          {copy.viewCaseStudy}{" "}
           <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
         </Button>
       </CardFooter>
@@ -185,7 +202,13 @@ function SmallCard({ project, onSelect }: { project: Project; onSelect: () => vo
   );
 }
 
-export function Showcase() {
+export function Showcase({
+  copy,
+  detail,
+}: {
+  copy: { title: string; intro: string; watchDemo: string; viewCaseStudy: string; viewAll: string };
+  detail: ProjectsDetailContent;
+}) {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [index, setIndex] = React.useState(0);
   const [direction, setDirection] = React.useState(0);
@@ -273,14 +296,8 @@ export function Showcase() {
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Featured Systems & Automation Demos
-          </h2>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Explore AI-powered systems built to solve real operational challenges — combining
-            automation workflows, AI agents, and intelligent integrations to create scalable
-            business solutions.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{copy.title}</h2>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{copy.intro}</p>
         </motion.div>
 
         <>
@@ -355,11 +372,13 @@ export function Showcase() {
                           <FeaturedCard
                             project={project}
                             onSelect={() => setSelectedProject(project)}
+                            copy={copy}
                           />
                         ) : (
                           <SmallCard
                             project={project}
                             onSelect={() => setSelectedProject(project)}
+                            copy={copy}
                           />
                         )}
                       </motion.div>
@@ -440,7 +459,7 @@ export function Showcase() {
                         className="gap-1.5"
                         onClick={() => setSelectedProject(project)}
                       >
-                        <Play className="h-3.5 w-3.5" /> Watch Demo
+                        <Play className="h-3.5 w-3.5" /> {copy.watchDemo}
                       </Button>
                     )}
                     <Button
@@ -449,7 +468,7 @@ export function Showcase() {
                       className="group gap-1.5"
                       onClick={() => setSelectedProject(project)}
                     >
-                      View Case Study{" "}
+                      {copy.viewCaseStudy}{" "}
                       <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
                     </Button>
                   </CardFooter>
@@ -470,7 +489,7 @@ export function Showcase() {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}>
             <Link href="/projects">
               <Button variant="outline" size="lg" className="group gap-2">
-                View All Projects
+                {copy.viewAll}
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px]" />
               </Button>
             </Link>
@@ -481,6 +500,7 @@ export function Showcase() {
       <ProjectModal
         project={selectedProject}
         projects={projects}
+        detail={detail}
         onClose={() => setSelectedProject(null)}
       />
     </section>

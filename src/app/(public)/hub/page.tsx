@@ -12,6 +12,9 @@ import {
   getPublicCollectionsAction,
 } from "@/lib/hub/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
+import { getPageMetadata } from "@/lib/seo";
+import { getPublicPageContent } from "@/lib/content";
+import { DEFAULT_HUB_CONTENT, type HubPageContent } from "@/lib/content/defaults/hub";
 import { cn } from "@/lib/utils";
 import { RESOURCE_TYPES, RESOURCE_TYPE_LABELS } from "@/constants/hub";
 import type { PublicResource, PublicCollection } from "@/types/hub";
@@ -71,14 +74,7 @@ function CollectionCard({ collection }: { collection: PublicCollection }) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getPublicSiteSettings();
-  const title = `Automation Hub | ${settings.site_name || "Azhar"}`;
-  return {
-    title,
-    description:
-      "Free templates, AI agents, prompts and tools for business automation. Copy, adapt and ship.",
-    openGraph: { title, type: "website" },
-  };
+  return getPageMetadata("hub");
 }
 
 export default async function HubPage({
@@ -98,7 +94,7 @@ export default async function HubPage({
   const sort: SortKey =
     params.sort === "newest" || params.sort === "downloads" ? params.sort : "featured";
 
-  const [resources, categories, collections, settings] = await Promise.all([
+  const [resources, categories, collections, settings, content] = await Promise.all([
     getPublicResourcesAction({
       search: params.search,
       type: params.type,
@@ -107,6 +103,7 @@ export default async function HubPage({
     getPublicCategoriesAction(),
     getPublicCollectionsAction(),
     getPublicSiteSettings(),
+    getPublicPageContent<HubPageContent>("hub", DEFAULT_HUB_CONTENT),
   ]);
 
   const filtered = resources.filter((r) => {
@@ -130,29 +127,29 @@ export default async function HubPage({
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="gap-1.5">
               <Sparkles className="h-3 w-3" />
-              Automation Hub
+              {content.hero.badge}
             </Badge>
           </div>
           <h1 className="mt-4 max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Browse tools, agents &amp; templates
+            {content.hero.title}
           </h1>
           <p className="text-muted-foreground mt-3 max-w-2xl text-base sm:text-lg">
-            Tested in real client work. Free to copy, adapt and ship — or grab the premium versions
-            that save you hours.
+            {content.hero.intro}
           </p>
           <div className="text-muted-foreground mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <span>
-              <strong className="text-foreground">{resources.length}</strong> resources
+              <strong className="text-foreground">{resources.length}</strong>{" "}
+              {content.stats.resources}
             </span>
             <span>
-              <strong className="text-emerald-500">{freeCount}</strong> free
+              <strong className="text-emerald-500">{freeCount}</strong> {content.stats.free}
             </span>
             <span>
-              <strong className="text-primary">{paidCount}</strong> paid
+              <strong className="text-primary">{paidCount}</strong> {content.stats.paid}
             </span>
             <span>
               <strong className="text-foreground">{totalDownloads.toLocaleString()}</strong>{" "}
-              downloads
+              {content.stats.downloads}
             </span>
           </div>
         </div>
@@ -170,7 +167,7 @@ export default async function HubPage({
                   : "text-muted-foreground border-border/60 hover:border-primary/40 hover:text-primary",
               )}
             >
-              All categories
+              {content.filters.allCategories}
             </Link>
             {categories.map((c) => (
               <Link
@@ -193,7 +190,9 @@ export default async function HubPage({
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {collections.length > 0 && (
           <div className="mb-10">
-            <h2 className="mb-4 text-base font-semibold tracking-tight">Collections</h2>
+            <h2 className="mb-4 text-base font-semibold tracking-tight">
+              {content.filters.collections}
+            </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {collections.map((collection) => (
                 <CollectionCard key={collection.id} collection={collection} />
@@ -213,12 +212,12 @@ export default async function HubPage({
               <input
                 name="search"
                 defaultValue={params.search ?? ""}
-                placeholder="Search templates, agents, prompts…"
+                placeholder={content.filters.searchPlaceholder}
                 className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 h-9 w-full rounded-lg border pr-3 pl-9 text-sm focus:outline-none"
               />
             </div>
             <select name="type" defaultValue={params.type ?? ""} className={selectClass}>
-              <option value="">All types</option>
+              <option value="">{content.filters.allTypes}</option>
               {RESOURCE_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {RESOURCE_TYPE_LABELS[type]}
@@ -226,20 +225,20 @@ export default async function HubPage({
               ))}
             </select>
             <select name="price" defaultValue={price} className={selectClass}>
-              <option value="all">All prices</option>
-              <option value="free">Free</option>
-              <option value="paid">Paid</option>
+              <option value="all">{content.filters.allPrices}</option>
+              <option value="free">{content.filters.free}</option>
+              <option value="paid">{content.filters.paid}</option>
             </select>
             <select name="sort" defaultValue={sort} className={selectClass}>
-              <option value="featured">Featured</option>
-              <option value="newest">Newest</option>
-              <option value="downloads">Most downloaded</option>
+              <option value="featured">{content.filters.featured}</option>
+              <option value="newest">{content.filters.newest}</option>
+              <option value="downloads">{content.filters.mostDownloaded}</option>
             </select>
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             {params.category && (
               <span className="text-muted-foreground text-xs">
-                Category:{" "}
+                {content.filters.categoryPrefix}{" "}
                 {categories.find((c) => c.id === params.category)?.name ?? params.category}
               </span>
             )}
@@ -252,12 +251,12 @@ export default async function HubPage({
                   href="/hub"
                   className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
                 >
-                  Clear filters
+                  {content.filters.clear}
                 </Link>
               )}
               <Button type="submit" size="sm" className="gap-1.5">
                 <Search className="h-3.5 w-3.5" />
-                Search
+                {content.filters.search}
               </Button>
             </div>
           </div>
@@ -269,11 +268,11 @@ export default async function HubPage({
         {visible.length === 0 ? (
           <div className="mx-auto max-w-7xl py-16 text-center">
             <Boxes className="text-muted-foreground mx-auto h-12 w-12" />
-            <h2 className="mt-4 text-lg font-semibold">No resources found</h2>
+            <h2 className="mt-4 text-lg font-semibold">{content.empty.title}</h2>
             <p className="text-muted-foreground mt-2 text-sm">
               {params.search || params.type || params.category || price !== "all"
-                ? "Try different filters or search terms."
-                : "Resources are on the way — check back soon."}
+                ? content.empty.filtered
+                : content.empty.comingSoon}
             </p>
           </div>
         ) : (
@@ -284,18 +283,18 @@ export default async function HubPage({
               ))}
             </div>
             <p className="text-muted-foreground mt-8 text-center text-xs">
-              {visible.length} of {resources.length} resource{resources.length === 1 ? "" : "s"}
+              {content.resultsLine
+                .replace("{count}", String(visible.length))
+                .replace("{total}", String(resources.length))}
             </p>
           </>
         )}
 
         <div className="border-border/40 mt-14 flex flex-col items-center rounded-2xl border py-12 text-center">
-          <p className="text-muted-foreground text-sm">
-            Want a custom automation built around your exact workflow?
-          </p>
+          <p className="text-muted-foreground text-sm">{content.ctaTitle}</p>
           <Link href={settings.booking_url || "/contact"}>
             <Button size="lg" className="mt-4 gap-2">
-              Book a Free 15-Min Audit
+              {content.ctaButton}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

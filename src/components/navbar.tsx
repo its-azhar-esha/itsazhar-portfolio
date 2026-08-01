@@ -11,14 +11,7 @@ import { spring, durationFast } from "@/lib/motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItemConfig } from "@/types/settings";
-
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Services", href: "/#services" },
-  { label: "Projects", href: "/projects" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/#contact" },
-];
+import type { SharedNavContent } from "@/lib/content/defaults/shared";
 
 interface NavbarProps {
   logoUrl?: string | null;
@@ -27,6 +20,8 @@ interface NavbarProps {
   showHub?: boolean;
   showPlayground?: boolean;
   navOrder?: NavItemConfig[] | null;
+  nav: SharedNavContent;
+  brandName: string;
 }
 
 export function Navbar({
@@ -36,6 +31,8 @@ export function Navbar({
   showHub,
   showPlayground,
   navOrder,
+  nav,
+  brandName,
 }: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const pathname = usePathname();
@@ -53,10 +50,10 @@ export function Navbar({
       .filter((item) => item.enabled && (moduleEnabled[item.href] ?? true))
       .map((item) => ({ label: item.label, href: item.href }));
     if (links.length === 0) {
-      links = navLinks.filter((link) => moduleEnabled[link.href] ?? true);
+      links = nav.fallbackLinks.filter((link) => moduleEnabled[link.href] ?? true);
     }
   } else {
-    links = navLinks.filter((link) => moduleEnabled[link.href] ?? true);
+    links = nav.fallbackLinks.filter((link) => moduleEnabled[link.href] ?? true);
   }
 
   React.useEffect(() => {
@@ -92,7 +89,7 @@ export function Navbar({
               <span className="text-primary-foreground text-sm font-bold">A</span>
             )}
           </motion.div>
-          <span className="text-lg font-semibold tracking-tight">Azhar</span>
+          <span className="text-lg font-semibold tracking-tight">{brandName}</span>
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
@@ -145,7 +142,7 @@ export function Navbar({
                 size="sm"
                 className="group gap-1.5 shadow-sm transition-shadow duration-200 hover:shadow-md"
               >
-                Book a Free 15-Min Audit
+                {nav.ctaLabel}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
             </Link>

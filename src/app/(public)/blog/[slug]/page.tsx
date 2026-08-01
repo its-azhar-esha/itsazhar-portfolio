@@ -9,6 +9,8 @@ import { CopyLinkButton } from "@/components/blog/copy-link-button";
 import { PostCard } from "@/components/blog/post-card";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPublicBlogPostAction, getPublicBlogPostsAction } from "@/lib/blog/actions";
+import { getPublicPageContent } from "@/lib/content";
+import { DEFAULT_BLOG_CONTENT, type BlogPageContent } from "@/lib/content/defaults/blog";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site";
@@ -92,9 +94,10 @@ function rankRelated(current: PublicBlogPost, all: PublicBlogPost[]): PublicBlog
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [post, allPosts] = await Promise.all([
+  const [post, allPosts, content] = await Promise.all([
     getPublicBlogPostAction(slug),
     getPublicBlogPostsAction(),
+    getPublicPageContent<BlogPageContent>("blog", DEFAULT_BLOG_CONTENT),
   ]);
   if (!post) notFound();
 
@@ -113,7 +116,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               href="/blog"
               className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
-              &larr; All Posts
+              {content.detail.back}
             </Link>
           </div>
 
@@ -148,7 +151,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Clock3 className="h-3 w-3" />
-                    {readTime} min read
+                    {readTime} {content.detail.minRead}
                   </span>
                 </div>
               </div>
@@ -216,24 +219,24 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               {initials(post.author)}
             </span>
             <div>
-              <p className="text-xs font-semibold tracking-wide uppercase">Written by</p>
-              <p className="font-semibold">{post.author || "Azhar"}</p>
-              <p className="text-muted-foreground text-xs">
-                AI automation specialist building systems for businesses worldwide.
+              <p className="text-xs font-semibold tracking-wide uppercase">
+                {content.detail.writtenBy}
               </p>
+              <p className="font-semibold">{post.author || "Azhar"}</p>
+              <p className="text-muted-foreground text-xs">{content.detail.authorBio}</p>
             </div>
           </div>
           <Link href="/contact" data-track="cta_click" data-track-label="Blog author: Get in touch">
             <Button variant="outline" size="sm" className="gap-1.5">
-              Get in touch <ArrowRight className="h-3.5 w-3.5" />
+              {content.detail.getInTouch} <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
         </div>
 
         {related.length > 0 && (
           <div className="border-border/40 mt-14 border-t pt-12">
-            <h2 className="text-2xl font-bold tracking-tight">Keep reading</h2>
-            <p className="text-muted-foreground mt-2 text-sm">More articles on the same topics.</p>
+            <h2 className="text-2xl font-bold tracking-tight">{content.detail.keepReading}</h2>
+            <p className="text-muted-foreground mt-2 text-sm">{content.detail.moreSubtitle}</p>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((p) => (
                 <PostCard key={p.slug} post={p} />
@@ -244,12 +247,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         <div className="border-border/40 border-t py-14 md:py-20">
           <div className="flex flex-col items-center text-center">
-            <p className="text-muted-foreground text-sm">
-              Want systems like the ones I write about, built for your business?
-            </p>
+            <p className="text-muted-foreground text-sm">{content.detail.ctaTitle}</p>
             <Link href="/contact" data-track="cta_click" data-track-label="Blog: Book audit">
               <Button size="lg" className="mt-4 gap-2">
-                Book a Free 15-Min Audit
+                {content.detail.ctaButton}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

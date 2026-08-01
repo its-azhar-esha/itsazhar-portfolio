@@ -69,4 +69,31 @@ export const DEFAULT_SEO: Record<string, DefaultSeo> = {
     canonical_url: `${SITE_URL}/contact`,
     og_image: null,
   },
+  blog: {
+    title: "Blog | Azhar Mahmud | AI Automation",
+    description:
+      "Insights on AI automation, n8n workflows, AI agents and business process automation.",
+    keywords: ["blog", "AI automation", "n8n workflows", "AI agents", "business automation"],
+    robots: "index,follow",
+    canonical_url: `${SITE_URL}/blog`,
+    og_image: null,
+  },
+  hub: {
+    title: "Automation Hub | Free Templates, Agents & Tools",
+    description:
+      "Free templates, AI agents, prompts and tools for business automation. Copy, adapt and ship.",
+    keywords: ["automation hub", "templates", "AI agents", "prompts", "business automation"],
+    robots: "index,follow",
+    canonical_url: `${SITE_URL}/hub`,
+    og_image: null,
+  },
+  playground: {
+    title: "Workflow Playground | Visual Automation Builder",
+    description:
+      "Visual workflow builder with copy-paste ready automation templates. Build, share and remix automation flows in your browser.",
+    keywords: ["workflow playground", "visual builder", "automation templates", "n8n"],
+    robots: "index,follow",
+    canonical_url: `${SITE_URL}/playground`,
+    og_image: null,
+  },
 };

@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import type { SharedLeadFormContent } from "@/lib/content/defaults/shared";
 
-export function LeadForm() {
+export function LeadForm({ content }: { content: SharedLeadFormContent }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [submitted, setSubmitted] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -41,11 +42,8 @@ export function LeadForm() {
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
         <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-        <p className="text-lg font-semibold">Audit requested!</p>
-        <p className="text-muted-foreground text-sm">
-          Thanks for reaching out. I&apos;ll get back to you within 24 hours to schedule your free
-          15-minute automation audit.
-        </p>
+        <p className="text-lg font-semibold">{content.successTitle}</p>
+        <p className="text-muted-foreground text-sm">{content.successDescription}</p>
       </div>
     );
   }
@@ -53,36 +51,42 @@ export function LeadForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="lead-name">Name</Label>
-        <Input id="lead-name" name="name" placeholder="Your name" required maxLength={200} />
+        <Label htmlFor="lead-name">{content.nameLabel}</Label>
+        <Input
+          id="lead-name"
+          name="name"
+          placeholder={content.namePlaceholder}
+          required
+          maxLength={200}
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="lead-email">Email</Label>
+        <Label htmlFor="lead-email">{content.emailLabel}</Label>
         <Input
           id="lead-email"
           name="email"
           type="email"
-          placeholder="you@company.com"
+          placeholder={content.emailPlaceholder}
           required
           maxLength={254}
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="lead-phone">Phone (optional)</Label>
+        <Label htmlFor="lead-phone">{content.phoneLabel}</Label>
         <Input
           id="lead-phone"
           name="phone"
           type="tel"
-          placeholder="+1 234 567 890"
+          placeholder={content.phonePlaceholder}
           maxLength={50}
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="lead-message">What would you like to automate? (optional)</Label>
+        <Label htmlFor="lead-message">{content.messageLabel}</Label>
         <Textarea
           id="lead-message"
           name="message"
-          placeholder="Tell me a little about your workflow..."
+          placeholder={content.messagePlaceholder}
           rows={3}
           maxLength={2000}
         />
@@ -93,11 +97,11 @@ export function LeadForm() {
       <Button type="submit" size="lg" className="w-full gap-2" disabled={submitting}>
         {submitting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Sending...
+            <Loader2 className="h-4 w-4 animate-spin" /> {content.sendingLabel}
           </>
         ) : (
           <>
-            Book Free 15-Min Audit <Send className="h-4 w-4" />
+            {content.submitLabel} <Send className="h-4 w-4" />
           </>
         )}
       </Button>

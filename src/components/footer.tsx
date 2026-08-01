@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { spring } from "@/lib/motion";
 import Link from "next/link";
 import type { SiteSettings } from "@/types/settings";
+import type { SharedFooterContent } from "@/lib/content/defaults/shared";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -20,9 +21,10 @@ const quickLinks = [
 interface FooterProps {
   settings: SiteSettings;
   logoUrl?: string | null;
+  content: SharedFooterContent;
 }
 
-export function Footer({ settings, logoUrl }: FooterProps) {
+export function Footer({ settings, logoUrl, content }: FooterProps) {
   const bookHref = settings.booking_url || "/contact";
   const socialLinks = [
     settings.social_linkedin && {
@@ -51,10 +53,12 @@ export function Footer({ settings, logoUrl }: FooterProps) {
       icon: Mail,
     },
   ].filter((link): link is { label: string; href: string; icon: typeof Globe } => Boolean(link));
-  let links = settings.show_blog ? [...quickLinks, { label: "Blog", href: "/blog" }] : quickLinks;
-  links = settings.show_hub ? [...links, { label: "Automation Hub", href: "/hub" }] : links;
+  let links = settings.show_blog
+    ? [...quickLinks, { label: content.blogLabel, href: "/blog" }]
+    : quickLinks;
+  links = settings.show_hub ? [...links, { label: content.hubLabel, href: "/hub" }] : links;
   links = settings.show_playground
-    ? [...links, { label: "Workflow Playground", href: "/playground" }]
+    ? [...links, { label: content.playgroundLabel, href: "/playground" }]
     : links;
 
   return (
@@ -81,9 +85,7 @@ export function Footer({ settings, logoUrl }: FooterProps) {
               <span className="text-lg font-semibold tracking-tight">{settings.site_name}</span>
             </Link>
             <p className="text-muted-foreground mt-4 max-w-sm text-sm leading-relaxed">
-              I build AI automation systems that eliminate repetitive work, connect business tools,
-              and help teams operate smarter through AI agents, workflows, and intelligent
-              integrations.
+              {content.intro}
             </p>
             <p className="text-muted-foreground mt-3 text-xs">{settings.tagline}</p>
             <div className="mt-4 flex items-center gap-2">
@@ -110,7 +112,7 @@ export function Footer({ settings, logoUrl }: FooterProps) {
           </div>
 
           <nav aria-label="Quick links">
-            <h3 className="text-sm font-semibold">Quick Links</h3>
+            <h3 className="text-sm font-semibold">{content.quickLinksTitle}</h3>
             <ul className="mt-4 space-y-3">
               {links.map((link) => (
                 <li key={link.label}>
@@ -127,10 +129,8 @@ export function Footer({ settings, logoUrl }: FooterProps) {
           </nav>
 
           <div className="lg:col-span-2">
-            <h3 className="text-sm font-semibold">Stop wasting time. Start automating.</h3>
-            <p className="text-muted-foreground mt-2 text-sm">
-              Book a free 15-minute audit and discover what automation can do for your business.
-            </p>
+            <h3 className="text-sm font-semibold">{content.ctaTitle}</h3>
+            <p className="text-muted-foreground mt-2 text-sm">{content.ctaDescription}</p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <motion.div
                 whileHover={{ scale: 1.02 }}
@@ -139,7 +139,7 @@ export function Footer({ settings, logoUrl }: FooterProps) {
               >
                 <Link href={bookHref}>
                   <Button size="sm" className="group gap-1.5">
-                    Book Free Audit
+                    {content.primaryButton}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                   </Button>
                 </Link>
@@ -151,7 +151,7 @@ export function Footer({ settings, logoUrl }: FooterProps) {
               >
                 <Link href="/projects">
                   <Button variant="outline" size="sm">
-                    View Projects
+                    {content.secondaryButton}
                   </Button>
                 </Link>
               </motion.div>

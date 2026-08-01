@@ -6,15 +6,9 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { scaleIn, cardEntrance, roleShuffle } from "@/lib/motion";
 import Link from "next/link";
+import type { HomeAboutContent } from "@/lib/content/defaults/home";
 
-const roles = [
-  "AI Automation Specialist",
-  "Workflow Engineer",
-  "AI Systems Builder",
-  "Automation Architect",
-];
-
-function RoleShuffle() {
+function RoleShuffle({ roles }: { roles: string[] }) {
   const [index, setIndex] = React.useState(0);
 
   React.useEffect(() => {
@@ -22,7 +16,7 @@ function RoleShuffle() {
       setIndex((prev) => (prev + 1) % roles.length);
     }, 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [roles]);
 
   return (
     <div className="relative h-6 overflow-hidden">
@@ -43,7 +37,7 @@ function RoleShuffle() {
   );
 }
 
-export function About() {
+export function About({ copy }: { copy: HomeAboutContent }) {
   return (
     <section id="about" className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -63,7 +57,7 @@ export function About() {
                   <div className="bg-primary/20 mx-auto flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110">
                     <Sparkles className="text-primary h-6 w-6" />
                   </div>
-                  <p className="text-muted-foreground mt-2 text-xs font-medium">Azhar</p>
+                  <p className="text-muted-foreground mt-2 text-xs font-medium">{copy.name}</p>
                 </div>
               </div>
             </div>
@@ -77,14 +71,13 @@ export function About() {
             transition={{ delay: 0.1, duration: 0.4 }}
             className="text-center md:col-span-3 md:text-left"
           >
-            <h2 className="text-2xl font-semibold tracking-tight">Hi, I&apos;m Azhar</h2>
-            <p className="text-primary mt-1 text-sm font-medium">AI Automation Specialist</p>
+            <h2 className="text-2xl font-semibold tracking-tight">{copy.heading}</h2>
+            <p className="text-primary mt-1 text-sm font-medium">{copy.role}</p>
             <p className="text-muted-foreground mt-3 max-w-lg text-sm leading-relaxed">
-              I build intelligent automation systems using n8n, AI agents, APIs, and custom
-              workflows that help businesses reduce repetitive work and improve operations.
+              {copy.intro}
             </p>
             <div className="mt-3 flex justify-center md:justify-start">
-              <RoleShuffle />
+              <RoleShuffle roles={copy.roles} />
             </div>
             <div className="mt-5 flex justify-center md:justify-start">
               <Link href="/about">
@@ -94,7 +87,7 @@ export function About() {
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 >
                   <Button variant="outline" size="sm" className="group gap-1.5">
-                    More About Me
+                    {copy.moreLabel}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-[3px]" />
                   </Button>
                 </motion.div>

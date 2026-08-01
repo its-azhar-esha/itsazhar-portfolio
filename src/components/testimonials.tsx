@@ -18,7 +18,13 @@ function initials(name: string): string {
     .join("");
 }
 
-export function Testimonials({ testimonials }: { testimonials: PublicTestimonial[] }) {
+export function Testimonials({
+  testimonials,
+  copy,
+}: {
+  testimonials: PublicTestimonial[];
+  copy: { title: string; intro: string };
+}) {
   const items = React.useMemo(() => testimonials.filter((t) => t.name && t.quote), [testimonials]);
   const [[index, direction], setIndex] = React.useState<[number, number]>([0, 0]);
   const paused = React.useRef(false);
@@ -54,10 +60,8 @@ export function Testimonials({ testimonials }: { testimonials: PublicTestimonial
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">What clients say.</h2>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Real feedback from the people I&apos;ve built with.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{copy.title}</h2>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{copy.intro}</p>
         </motion.div>
 
         <motion.div

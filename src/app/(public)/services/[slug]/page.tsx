@@ -7,6 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicServiceAction, getPublicServiceSlugsAction } from "@/lib/services";
 import { getPageMetadata } from "@/lib/seo";
+import { getPublicPageContent } from "@/lib/content";
+import {
+  DEFAULT_SERVICES_CONTENT,
+  type ServicesPageContent,
+} from "@/lib/content/defaults/services";
 import { SERVICE_ICONS } from "@/constants/services";
 
 export async function generateStaticParams() {
@@ -47,7 +52,10 @@ export async function generateMetadata({
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = await getPublicServiceAction(slug);
+  const [service, content] = await Promise.all([
+    getPublicServiceAction(slug),
+    getPublicPageContent<ServicesPageContent>("services", DEFAULT_SERVICES_CONTENT),
+  ]);
   if (!service) notFound();
 
   const Icon = SERVICE_ICONS[service.icon] ?? SERVICE_ICONS.bot;
@@ -62,7 +70,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               href="/services"
               className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
-              &larr; All Services
+              {content.detail.back}
             </Link>
           </div>
           <div className="bg-primary/10 text-primary flex h-14 w-14 items-center justify-center rounded-xl">
@@ -80,7 +88,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       {highlights.length > 0 && (
         <section className="py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold sm:text-2xl">What&apos;s included</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.included}</h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {highlights.map((highlight) => (
                 <Card
@@ -105,18 +113,17 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           <div className="flex flex-col items-center text-center">
             <Badge variant="secondary" className="mb-4 gap-1.5 px-4 py-1.5">
               <Sparkles className="h-3.5 w-3.5" />
-              Free Consultation
+              {content.detail.badge}
             </Badge>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Need something like this for your business?
+              {content.detail.ctaTitle}
             </h2>
             <p className="text-muted-foreground mt-4 max-w-xl text-sm leading-relaxed">
-              Book a free 15-minute audit to discuss your workflow, identify automation
-              opportunities, and get actionable recommendations.
+              {content.detail.ctaDescription}
             </p>
             <Link href="/contact" className="mt-8">
               <Button size="lg" className="gap-2">
-                Book a Free 15-Min Audit
+                {content.detail.ctaButton}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

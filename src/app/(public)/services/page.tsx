@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPublicServicesAction } from "@/lib/services";
 import { getPageMetadata } from "@/lib/seo";
+import { getPublicPageContent } from "@/lib/content";
+import {
+  DEFAULT_SERVICES_CONTENT,
+  type ServicesPageContent,
+} from "@/lib/content/defaults/services";
 import { SERVICE_ICONS } from "@/constants/services";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,7 +18,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ServicesPage() {
-  const services = await getPublicServicesAction();
+  const [services, content] = await Promise.all([
+    getPublicServicesAction(),
+    getPublicPageContent<ServicesPageContent>("services", DEFAULT_SERVICES_CONTENT),
+  ]);
 
   return (
     <div className="pt-24 md:pt-32">
@@ -22,16 +30,12 @@ export default async function ServicesPage() {
           <div className="mx-auto max-w-3xl text-center">
             <Badge variant="secondary" className="mb-4 gap-1.5 px-4 py-1.5">
               <Sparkles className="h-3.5 w-3.5" />
-              Services
+              {content.hero.badge}
             </Badge>
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              What I build.
+              {content.hero.title}
             </h1>
-            <p className="text-muted-foreground mt-6 text-lg">
-              Intelligent automation systems designed around real business needs. From AI agents to
-              workflow orchestration, I build scalable solutions that reduce manual effort and
-              improve efficiency.
-            </p>
+            <p className="text-muted-foreground mt-6 text-lg">{content.hero.intro}</p>
           </div>
         </div>
       </section>
@@ -40,9 +44,7 @@ export default async function ServicesPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {services.length === 0 ? (
             <div className="mx-auto max-w-lg py-20 text-center">
-              <p className="text-muted-foreground text-sm">
-                Services are coming soon. Check back shortly.
-              </p>
+              <p className="text-muted-foreground text-sm">{content.emptyMessage}</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -63,7 +65,7 @@ export default async function ServicesPage() {
                         </p>
                         <span className="group/cta text-primary mt-4 inline-flex items-center gap-1.5 text-sm font-medium">
                           <span className="relative">
-                            Learn more
+                            {content.learnMore}
                             <span className="bg-primary absolute -bottom-0.5 left-0 h-px w-0 rounded-full transition-all duration-200 group-hover/cta:w-full" />
                           </span>
                           <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover/cta:translate-x-[3px]" />
@@ -78,7 +80,7 @@ export default async function ServicesPage() {
           <div className="mt-16 flex justify-center">
             <Link href="/contact">
               <Button size="lg" className="gap-2">
-                Book a Free 15-Min Audit
+                {content.detail.ctaButton}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

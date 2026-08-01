@@ -8,16 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialLinks } from "@/components/social-links";
 import Link from "next/link";
+import type { HomeContactContent } from "@/lib/content/defaults/home";
+import type { SiteSettings } from "@/types/settings";
 
-const benefits = [
-  "Identify repetitive tasks",
-  "Find automation opportunities",
-  "Get actionable recommendations",
-  "No charge",
-  "No obligation",
-];
-
-export function Contact() {
+export function Contact({ copy, settings }: { copy: HomeContactContent; settings: SiteSettings }) {
   return (
     <section id="contact" className="border-border/40 border-t py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -29,14 +23,8 @@ export function Contact() {
           transition={{ duration: 0.5 }}
           className="flex flex-col items-center text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Let&apos;s automate something.
-          </h2>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Have a repetitive process slowing your business down? Book a free 15-minute automation
-            audit. I&apos;ll review your workflow, identify automation opportunities, and suggest
-            the right approach — with no pressure and no obligation.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{copy.title}</h2>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">{copy.intro}</p>
         </motion.div>
 
         <div className="mt-16 grid gap-6 lg:grid-cols-5">
@@ -55,16 +43,14 @@ export function Contact() {
               <Card className="border-primary/20 from-card to-background hover:shadow-primary/5 h-full bg-gradient-to-b transition-all duration-300 hover:shadow-lg">
                 <CardHeader>
                   <Badge variant="secondary" className="mb-2 w-fit">
-                    Free
+                    {copy.priceBadge}
                   </Badge>
-                  <CardTitle className="text-xl">Free Automation Audit</CardTitle>
-                  <CardDescription>
-                    15-minute call to discover automation opportunities in your business workflow.
-                  </CardDescription>
+                  <CardTitle className="text-xl">{copy.auditTitle}</CardTitle>
+                  <CardDescription>{copy.auditDescription}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2">
-                    {benefits.map((benefit) => (
+                    {copy.benefits.map((benefit) => (
                       <li
                         key={benefit}
                         className="text-muted-foreground flex items-center gap-2 text-sm"
@@ -86,7 +72,7 @@ export function Contact() {
                           size="lg"
                           className="group gap-2 shadow-sm transition-shadow duration-200 hover:shadow-md"
                         >
-                          Book Free 15-Min Audit
+                          {copy.bookLabel}
                           <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px]" />
                         </Button>
                       </Link>
@@ -98,7 +84,7 @@ export function Contact() {
                     >
                       <Link href="/projects">
                         <Button variant="outline" size="lg" className="group gap-2">
-                          View Projects
+                          {copy.viewProjectsLabel}
                           <ExternalLink className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
                         </Button>
                       </Link>
@@ -119,25 +105,25 @@ export function Contact() {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Find me on</CardTitle>
+                <CardTitle className="text-base">{copy.findMeOn}</CardTitle>
               </CardHeader>
               <CardContent>
-                <SocialLinks />
+                <SocialLinks settings={settings} />
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Details</CardTitle>
+                <CardTitle className="text-base">{copy.details}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <MapPin className="text-primary h-4 w-4 shrink-0" />
-                  Remote, Worldwide
+                  {copy.location}
                 </div>
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Clock className="text-primary h-4 w-4 shrink-0" />
-                  Response Time: Within 24 Hours
+                  {copy.responseTime}
                 </div>
               </CardContent>
             </Card>
