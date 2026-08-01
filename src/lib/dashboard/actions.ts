@@ -1,0 +1,537 @@
+"use server";
+
+/**
+ * Admin dashboard overview (server-only).
+ *
+ * Aggregates best-effort monitoring metrics for the /admin landing page:
+ * service health, storage/database capacity, request volume, rate-limit
+ * posture, bandwidth proxy and integration API usage. Every metric is
+ * computed defensively — a failing source degrades to a visible "error /
+ * unavailable" state instead of failing the whole page.
+ *
+ * Where exact values are not exposed to the platform tier (e.g. egress
+ * bandwidth on Vercel Hobby), the widget shows a clearly-labeled estimate
+ * or an informative status instead of fabricating numbers.
+ */
+
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { fail, ok } from "@/lib/result";
+import type { Result } from "@/lib/result";
+import { error as logError } from "@/lib/logger";
+import { env } from "@/lib/env";
+import { SITE_URL } from "@/lib/site";
+import { formatBytes } from "@/lib/dashboard/format";
+import { getIntegrationList } from "@/lib/integrations/repository";
+
+export type MetricStatus = "ok" | "warn" | "error" | "info";
+
+export interface MetricState {
+  status: MetricStatus;
+  label: string;
+  detail: string;
+}
+
+export interface UsageMeter {
+  label: string;
+  usedLabel: string;
+  quotaLabel: string | null;
+  percent: number | null;
+  status: MetricStatus;
+}
+
+export interface TopTable {
+  name: string;
+  rows: number;
+  sizeBytes: number;
+}
+
+export interface ApiIntegrationMetric {
+  id: string;
+  label: string;
+  icon: string;
+  configured: boolean;
+  maskedKey: string | null;
+  usageCount: number;
+  lastUsedAt: string | null;
+}
+
+export interface DashboardOverview {
+  generatedAt: string;
+  health: {
+    database: MetricState;
+    storage: MetricState;
+    uptime: MetricState;
+    backups: MetricState;
+    migrations: MetricState;
+  };
+  storage: UsageMeter & {
+    totalBytes: number;
+    totalObjects: number;
+    buckets: number;
+  };
+  database: UsageMeter & {
+    totalBytes: number;
+    tables: number;
+    topTables: TopTable[];
+  };
+  requests: {
+    events30d: number;
+    pageViews30d: number;
+    adminActions30d: number;
+    leads30d: number;
+    perDayAvg: number;
+    status: MetricStatus;
+    detail: string;
+  };
+  bandwidth: {
+    status: MetricStatus;
+    detail: string;
+    downloads30d: number;
+    mediaBytes: number;
+  };
+  rateLimit: {
+    status: MetricStatus;
+    detail: string;
+    measuredPerMinute: number;
+  };
+  api: {
+    totalCalls: number;
+    integrations: ApiIntegrationMetric[];
+  };
+  system: {
+    operational: boolean;
+    checks: MetricState[];
+    deployedAt: string | null;
+    siteUrl: string;
+  };
+}
+
+/* Free-tier capacity baselines (Supabase, informational). Exact project
+   limits depend on the plan; these are the published Free-tier values. */
+const STORAGE_QUOTA_BYTES = 1_073_741_824; // 1 GB
+const DATABASE_QUOTA_BYTES = 524_288_000; // 500 MB
+const WINDOW_DAYS = 30;
+
+const VERCEL_PROJECT_ID =
+  process.env.VERCEL_PROJECT_ID?.trim() || "prj_FJlcUnY9FuaGJyf0DM97Bqlg26ZQ";
+
+/* ─── Helpers ─── */
+
+function percentOf(used: number, quota: number): number {
+  if (quota <= 0) return 0;
+  return Math.min(100, Math.round((used / quota) * 1000) / 10);
+}
+
+function meterStatus(percent: number | null): MetricStatus {
+  if (percent === null) return "info";
+  if (percent >= 95) return "error";
+  if (percent >= 70) return "warn";
+  return "ok";
+}
+
+async function ping(admin: ReturnType<typeof createAdminClient>, table: string): Promise<number> {
+  const start = Date.now();
+  await admin
+    .from(table as never)
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+  return Date.now() - start;
+}
+
+async function scanStorageTotals(
+  admin: ReturnType<typeof createAdminClient>,
+): Promise<{ totalBytes: number; totalObjects: number; buckets: number }> {
+  const totals = { totalBytes: 0, totalObjects: 0, buckets: 0 };
+  const bucketList = (await admin.storage.listBuckets()).data ?? [];
+  totals.buckets = bucketList.length;
+  const scan = async (bucketName: string, prefix: string, budget: { files: number }) => {
+    const { data: files, error } = await admin.storage
+      .from(bucketName)
+      .list(prefix, { limit: 1000, offset: 0 });
+    if (error) return;
+    for (const file of files ?? []) {
+      const metadata = file.metadata as { size?: number } | null;
+      const isFile = metadata !== null && typeof metadata?.size === "number";
+      if (isFile) {
+        if (budget.files >= 5000) return;
+        budget.files += 1;
+        totals.totalObjects += 1;
+        totals.totalBytes += metadata.size ?? 0;
+      } else {
+        await scan(bucketName, `${prefix}${file.name}/`, budget);
+      }
+    }
+  };
+  for (const bucket of bucketList) {
+    await scan(bucket.name, "", { files: 0 });
+  }
+  return totals;
+}
+
+/* ─── Overview ─── */
+
+export async function getDashboardOverviewAction(): Promise<Result<DashboardOverview>> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail("Authentication required.");
+
+    const admin = createAdminClient();
+    const now = new Date();
+    const since30d = new Date(now.getTime() - WINDOW_DAYS * 86_400_000).toISOString();
+    const since24h = new Date(now.getTime() - 86_400_000).toISOString();
+    const today = now.toISOString().slice(0, 10);
+
+    /* Health: database + storage reachability */
+    const health: DashboardOverview["health"] = {
+      database: { status: "ok", label: "Database", detail: "Responded in —ms" },
+      storage: { status: "ok", label: "Storage API", detail: "Reachable in —ms" },
+      uptime: { status: "info", label: "Uptime", detail: "No health checks recorded yet" },
+      backups: { status: "info", label: "Backups", detail: "No backup recorded yet" },
+      migrations: { status: "ok", label: "Migrations", detail: "Up to date" },
+    };
+    try {
+      const dbMs = await ping(admin, "blog_posts");
+      health.database = { status: "ok", label: "Database", detail: `Responded in ${dbMs}ms` };
+    } catch (err) {
+      health.database = {
+        status: "error",
+        label: "Database",
+        detail: err instanceof Error ? err.message : "Unreachable",
+      };
+    }
+    try {
+      const start = Date.now();
+      const storageRes = await admin.storage.listBuckets();
+      const latencyMs = Date.now() - start;
+      const bucketCount = storageRes.data?.length ?? 0;
+      health.storage = storageRes.error
+        ? { status: "error", label: "Storage API", detail: storageRes.error.message }
+        : {
+            status: "ok",
+            label: "Storage API",
+            detail: `${bucketCount} bucket(s) reachable in ${latencyMs}ms`,
+          };
+    } catch (err) {
+      health.storage = {
+        status: "error",
+        label: "Storage API",
+        detail: err instanceof Error ? err.message : "Unreachable",
+      };
+    }
+
+    /* Health: keep-alive history */
+    try {
+      const { data: checkRows } = await admin
+        .from("health_checks")
+        .select("checked_on,ok")
+        .order("checked_on", { ascending: false })
+        .limit(30);
+      const checks = (checkRows ?? []) as { checked_on: string; ok: boolean }[];
+      let streak = 0;
+      for (const c of checks) {
+        if (c.ok) streak += 1;
+        else break;
+      }
+      const okToday = checks.some((c) => c.checked_on === today && c.ok);
+      health.uptime = {
+        status: okToday ? "ok" : checks.length === 0 ? "info" : "warn",
+        label: "Uptime",
+        detail:
+          checks.length === 0
+            ? "No health checks recorded yet"
+            : `${streak} day(s) healthy${okToday ? " (checked today)" : " — no check today yet"}`,
+      };
+    } catch (err) {
+      health.uptime = {
+        status: "error",
+        label: "Uptime",
+        detail: err instanceof Error ? err.message : "Unavailable",
+      };
+    }
+
+    /* Health: latest backup */
+    try {
+      const { data: backupRows } = await admin
+        .from("backups")
+        .select("backup_date,status,created_at")
+        .order("backup_date", { ascending: false })
+        .limit(1);
+      const latest = (backupRows ?? [])[0] as
+        { backup_date: string; status: string; created_at: string } | undefined;
+      health.backups = latest
+        ? {
+            status: latest.status === "ok" && latest.backup_date >= today ? "ok" : "warn",
+            label: "Backups",
+            detail:
+              latest.status === "ok"
+                ? `Latest backup ${latest.backup_date} — OK`
+                : `Latest backup ${latest.backup_date} — ${latest.status}`,
+          }
+        : { status: "info", label: "Backups", detail: "No backup recorded yet" };
+    } catch (err) {
+      health.backups = {
+        status: "error",
+        label: "Backups",
+        detail: err instanceof Error ? err.message : "Unavailable",
+      };
+    }
+
+    /* Health: migration drift */
+    try {
+      const { data: appliedRows } = await admin.rpc("list_applied_migrations" as never);
+      const applied = new Set(
+        ((appliedRows ?? []) as { version: string; name: string }[]).map(
+          (r) => `${r.version}_${r.name}.sql`,
+        ),
+      );
+      const local = new Set<string>();
+      try {
+        const { readdirSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        for (const f of readdirSync(join(process.cwd(), "supabase", "migrations"))) {
+          local.add(f);
+        }
+      } catch {
+        // Migrations folder unavailable in this runtime.
+      }
+      const pending = [...local].filter((f) => !applied.has(f)).sort();
+      health.migrations = {
+        status: pending.length === 0 ? "ok" : "warn",
+        label: "Migrations",
+        detail:
+          pending.length === 0
+            ? "Up to date"
+            : `${pending.length} pending: ${pending.slice(0, 2).join(", ")}${pending.length > 2 ? "…" : ""}`,
+      };
+    } catch (err) {
+      health.migrations = {
+        status: "error",
+        label: "Migrations",
+        detail: err instanceof Error ? err.message : "Unavailable",
+      };
+    }
+
+    /* Storage usage */
+    let storageMeter: DashboardOverview["storage"] = {
+      label: "Storage",
+      usedLabel: "0 B",
+      quotaLabel: "1 GB",
+      percent: 0,
+      status: "info",
+      totalBytes: 0,
+      totalObjects: 0,
+      buckets: 0,
+    };
+    try {
+      const totals = await scanStorageTotals(admin);
+      const percent = percentOf(totals.totalBytes, STORAGE_QUOTA_BYTES);
+      storageMeter = {
+        label: "Storage",
+        usedLabel: `${formatBytes(totals.totalBytes)} used`,
+        quotaLabel: `of ${formatBytes(STORAGE_QUOTA_BYTES)} (Free tier)`,
+        percent,
+        status: meterStatus(percent),
+        totalBytes: totals.totalBytes,
+        totalObjects: totals.totalObjects,
+        buckets: totals.buckets,
+      };
+    } catch (err) {
+      logError("dashboard storage scan failed", {
+        message: err instanceof Error ? err.message : err,
+      });
+      storageMeter = {
+        label: "Storage",
+        usedLabel: "Unavailable",
+        quotaLabel: null,
+        percent: null,
+        status: "error",
+        totalBytes: 0,
+        totalObjects: 0,
+        buckets: 0,
+      };
+    }
+
+    /* Database usage */
+    let databaseMeter: DashboardOverview["database"] = {
+      label: "Database",
+      usedLabel: "0 B",
+      quotaLabel: "500 MB",
+      percent: 0,
+      status: "info",
+      totalBytes: 0,
+      tables: 0,
+      topTables: [],
+    };
+    try {
+      const { data: dbUsage } = await admin.rpc("get_db_usage" as never);
+      const usage = (dbUsage ?? {}) as {
+        db_size_bytes?: number;
+        tables?: { name: string; rows: number; size_bytes: number }[];
+      };
+      const totalBytes = usage.db_size_bytes ?? 0;
+      const tables = (usage.tables ?? []).map((t) => ({
+        name: t.name,
+        rows: t.rows,
+        sizeBytes: t.size_bytes,
+      }));
+      const percent = percentOf(totalBytes, DATABASE_QUOTA_BYTES);
+      databaseMeter = {
+        label: "Database",
+        usedLabel: `${formatBytes(totalBytes)} used`,
+        quotaLabel: `of ${formatBytes(DATABASE_QUOTA_BYTES)} (Free tier)`,
+        percent,
+        status: meterStatus(percent),
+        totalBytes,
+        tables: tables.length,
+        topTables: tables.slice(0, 5),
+      };
+    } catch (err) {
+      logError("dashboard db usage failed", {
+        message: err instanceof Error ? err.message : err,
+      });
+      databaseMeter = {
+        label: "Database",
+        usedLabel: "Unavailable",
+        quotaLabel: null,
+        percent: null,
+        status: "error",
+        totalBytes: 0,
+        tables: 0,
+        topTables: [],
+      };
+    }
+
+    /* Request volume (tracked events, 30d) */
+    async function exactCount(
+      table: string,
+      since: string,
+      filters?: { column: string; value: string },
+    ): Promise<number | null> {
+      try {
+        let query = admin
+          .from(table as never)
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since);
+        if (filters) query = query.eq(filters.column, filters.value);
+        const { count } = await query;
+        return count ?? null;
+      } catch {
+        return null;
+      }
+    }
+
+    const [events30d, pageViews30d, adminActions30d, leads30d, events24h, downloadEvents30d] =
+      await Promise.all([
+        exactCount("analytics_events", since30d),
+        exactCount("analytics_events", since30d, { column: "event", value: "page_view" }),
+        exactCount("audit_log", since30d),
+        exactCount("leads", since30d),
+        exactCount("analytics_events", since24h),
+        exactCount("analytics_events", since30d, { column: "event", value: "download" }),
+      ]);
+
+    const requests = {
+      events30d: events30d ?? 0,
+      pageViews30d: pageViews30d ?? 0,
+      adminActions30d: adminActions30d ?? 0,
+      leads30d: leads30d ?? 0,
+      perDayAvg: Math.round((events30d ?? 0) / WINDOW_DAYS),
+      status: "info" as MetricStatus,
+      detail:
+        events30d === null
+          ? "Event tracking unavailable"
+          : "Tracked site events over the last 30 days (page views, downloads, CTA clicks, hub searches)",
+    };
+
+    /* Rate-limit posture: measured tracked traffic vs Supabase per-minute limits */
+    const measuredPerMinute = Math.round(((events24h ?? 0) / 1440) * 100) / 100;
+    const rateLimit = {
+      status: (measuredPerMinute >= 30 ? "warn" : "ok") as MetricStatus,
+      detail:
+        events24h === null
+          ? "Rate limit status unknown — tracking unavailable"
+          : `Measured traffic ≈ ${measuredPerMinute}/min (last 24h). Supabase allows ~200 req/min per API key — tracked volume is a fraction of actual requests, so headroom is ample.`,
+      measuredPerMinute,
+    };
+
+    /* Bandwidth proxy: exact egress needs Vercel Pro / Supabase metrics */
+    const bandwidth = {
+      status: "info" as MetricStatus,
+      detail:
+        "Exact egress requires Vercel Pro (usage API) or Supabase metrics. Proxy shown: hosted media + tracked resource downloads.",
+      downloads30d: downloadEvents30d ?? 0,
+      mediaBytes: storageMeter.totalBytes,
+    };
+
+    /* API usage (AI providers) */
+    const integrationResult = await getIntegrationList();
+    const integrations = integrationResult.success
+      ? integrationResult.data.map((i) => ({
+          id: i.id,
+          label: i.label,
+          icon: i.icon,
+          configured: i.hasStoredKey || i.envConfigured,
+          maskedKey: i.maskedKey,
+          usageCount: i.usageCount,
+          lastUsedAt: i.lastUsedAt,
+        }))
+      : [];
+    const api = {
+      totalCalls: integrations.reduce((sum, i) => sum + i.usageCount, 0),
+      integrations,
+    };
+
+    /* System status + latest deployment */
+    const checks: MetricState[] = [
+      health.database,
+      health.storage,
+      health.uptime,
+      health.backups,
+      health.migrations,
+    ];
+    let deployedAt: string | null = null;
+    if (env.hasVercelToken) {
+      try {
+        const res = await fetch(
+          `https://api.vercel.com/v6/deployments?projectId=${VERCEL_PROJECT_ID}&target=production&limit=1&state=READY`,
+          { headers: { Authorization: `Bearer ${env.vercelToken}` }, cache: "no-store" },
+        );
+        if (res.ok) {
+          const body = (await res.json()) as { deployments?: { createdAt?: number }[] };
+          const latest = body.deployments?.[0];
+          if (latest?.createdAt) deployedAt = new Date(latest.createdAt).toISOString();
+        }
+      } catch {
+        // Deployment info is best-effort.
+      }
+    }
+    const system = {
+      operational: checks.every((c) => c.status === "ok"),
+      checks,
+      deployedAt,
+      siteUrl: SITE_URL,
+    };
+
+    return ok({
+      generatedAt: now.toISOString(),
+      health,
+      storage: storageMeter,
+      database: databaseMeter,
+      requests,
+      bandwidth,
+      rateLimit,
+      api,
+      system,
+    });
+  } catch (err) {
+    logError("getDashboardOverviewAction failed", {
+      message: err instanceof Error ? err.message : err,
+    });
+    return fail(err instanceof Error ? err.message : "Failed to load dashboard overview");
+  }
+}

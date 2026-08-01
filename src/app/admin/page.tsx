@@ -1,192 +1,423 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import {
-  ArrowRight,
-  FolderKanban,
-  ImageIcon,
-  Sparkles,
-  FileText,
-  Settings,
-  Users,
+  Activity,
+  AlertTriangle,
+  ArrowLeftRight,
+  CheckCircle2,
+  Cpu,
+  Database,
+  Gauge,
+  HardDrive,
+  Info,
+  Rocket,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
-import { getProjects } from "@/lib/projects";
-import { getServices } from "@/lib/services";
-import { getLeadStats } from "@/lib/leads";
+import { Badge } from "@/components/ui/badge";
+import {
+  getDashboardOverviewAction,
+  type DashboardOverview,
+  type MetricState,
+  type MetricStatus,
+  type UsageMeter,
+} from "@/lib/dashboard/actions";
+import { formatBytes, formatCount } from "@/lib/dashboard/format";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = { title: "Dashboard | Admin" };
+
+const STATUS_META: Record<MetricStatus, { label: string; dot: string; badge: string }> = {
+  ok: {
+    label: "OK",
+    dot: "bg-emerald-500",
+    badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
+  },
+  warn: {
+    label: "Attention",
+    dot: "bg-amber-500",
+    badge: "border-amber-500/30 bg-amber-500/10 text-amber-600",
+  },
+  error: {
+    label: "Down",
+    dot: "bg-red-500",
+    badge: "border-red-500/30 bg-red-500/10 text-red-500",
+  },
+  info: { label: "Info", dot: "bg-sky-500", badge: "border-sky-500/30 bg-sky-500/10 text-sky-600" },
+};
+
+function StatusBadge({ status }: { status: MetricStatus }) {
+  const meta = STATUS_META[status];
+  return <Badge className={`${meta.badge} text-[10px]`}>{meta.label}</Badge>;
+}
+
+function MeterCard({
+  icon: Icon,
+  meter,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  meter: UsageMeter;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+          {meter.label}
+        </CardTitle>
+        <StatusBadge status={meter.status} />
+      </CardHeader>
+      <CardContent className="px-4 pt-0 pb-4">
+        <p className="text-xl font-bold tracking-tight">{meter.usedLabel}</p>
+        <p className="text-muted-foreground mt-0.5 h-4 text-xs">
+          {meter.quotaLabel ?? "Quota unknown"}
+        </p>
+        <div className="mt-3">
+          {meter.percent !== null ? (
+            <div className="space-y-1.5">
+              <div className="bg-accent h-1.5 w-full overflow-hidden rounded-full">
+                <div
+                  className={`h-full rounded-full ${
+                    meter.status === "error"
+                      ? "bg-red-500"
+                      : meter.status === "warn"
+                        ? "bg-amber-500"
+                        : "bg-primary"
+                  }`}
+                  style={{ width: `${meter.percent}%` }}
+                />
+              </div>
+              <p className="text-muted-foreground text-[11px]">
+                {meter.percent}% of quota used — resource utilization
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-[11px]">Utilization unavailable</p>
+          )}
+        </div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+function HealthChips({ checks }: { checks: MetricState[] }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {checks.map((check) => {
+        const meta = STATUS_META[check.status];
+        return (
+          <span
+            key={check.label}
+            title={check.detail}
+            className="border-border/40 bg-accent/40 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs"
+          >
+            <span className={`${meta.dot} h-1.5 w-1.5 rounded-full`} />
+            {check.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-border/40 bg-accent/40 rounded-lg border px-3 py-2">
+      <p className="text-muted-foreground text-[10px] tracking-wide uppercase">{label}</p>
+      <p className="text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
 export default async function AdminDashboard() {
-  const [projectsResult, servicesResult, leadsResult] = await Promise.all([
-    getProjects({ page: 1, pageSize: 1 }),
-    getServices(),
-    getLeadStats(),
-  ]);
+  const result = await getDashboardOverviewAction();
 
-  const projectCount = projectsResult.success ? projectsResult.data.pagination.total : 0;
-  const serviceCount = servicesResult.success ? servicesResult.data.length : 0;
-  const leadStats = leadsResult.success ? leadsResult.data : null;
-  const projectError = projectsResult.success ? null : projectsResult.error;
-  const serviceError = servicesResult.success ? null : servicesResult.error;
-  const leadError = leadsResult.success ? null : leadsResult.error;
+  if (!result.success) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <div className="border-border/50 bg-card rounded-xl border p-8 text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <p className="text-lg font-semibold">Could not load dashboard</p>
+          <p className="text-muted-foreground mt-2 text-sm">{result.error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  const stats = [
-    {
-      label: "Total Projects",
-      value: String(projectCount),
-      change: projectError ? `Error: ${projectError}` : "Across all statuses",
-    },
-    {
-      label: "Services",
-      value: String(serviceCount),
-      change: serviceError ? `Error: ${serviceError}` : "All statuses",
-    },
-    {
-      label: "New Leads",
-      value: leadStats ? String(leadStats.new) : "0",
-      change: leadError ? `Error: ${leadError}` : `${leadStats?.total ?? 0} total captured`,
-    },
-    { label: "AI Conversations", value: "—", change: "Waiting for data" },
-  ];
-
-  const quickActions = [
-    {
-      label: "View Leads",
-      href: "/admin/leads",
-      icon: Users,
-      desc: "Review audit requests from visitors",
-    },
-    {
-      label: "Manage Projects",
-      href: "/admin/projects",
-      icon: FolderKanban,
-      desc: "Add or update portfolio projects",
-    },
-    {
-      label: "Upload Media",
-      href: "/admin/media",
-      icon: ImageIcon,
-      desc: "Manage images and videos",
-    },
-    {
-      label: "AI Assistant",
-      href: "/admin/ai",
-      icon: Sparkles,
-      desc: "Chat with your CMS content",
-    },
-    {
-      label: "Edit Content",
-      href: "/admin/content",
-      icon: FileText,
-      desc: "Update site copy and pages",
-    },
-    { label: "Settings", href: "/admin/settings", icon: Settings, desc: "Site configuration" },
-  ];
-
-  const recentActivity = [
-    {
-      action: leadStats
-        ? `${leadStats.total} lead${leadStats.total === 1 ? "" : "s"} captured`
-        : "Leads module ready",
-      detail: "Book a Free Audit submissions land here",
-      time: "live",
-    },
-    {
-      action: "Projects and services seeded",
-      detail: "5 projects + 6 services now editable in the CMS",
-      time: "2026-07-31",
-    },
-    {
-      action: "CMS fully operational",
-      detail: "Projects, services, SEO, media, content, settings",
-      time: "2026-07-31",
-    },
-  ];
+  const d: DashboardOverview = result.data;
+  const systemOperational = d.system.operational;
+  const generated = new Date(d.generatedAt).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
-      <div className="space-y-8">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Card className="border-border/50 from-primary/5 to-background bg-gradient-to-br">
-            <CardHeader>
-              <CardTitle>Welcome back</CardTitle>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Manage your portfolio, leads, projects, and site content from one place.
-              </p>
-            </CardHeader>
-          </Card>
+          <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Platform health, usage and capacity at a glance.
+          </p>
         </div>
+        <p className="text-muted-foreground text-xs">Generated {generated}</p>
+      </div>
 
-        <div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <Card key={stat.label} className="border-border/50">
-                <CardHeader className="p-4">
-                  <CardTitle className="text-muted-foreground text-sm font-medium">
-                    {stat.label}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pt-0 pb-4">
-                  <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
-                  <p className="text-muted-foreground mt-0.5 text-xs">{stat.change}</p>
-                </CardContent>
-              </Card>
-            ))}
+      {/* System status */}
+      <Card
+        className={`border-border/50 ${
+          systemOperational
+            ? "to-background bg-gradient-to-br from-emerald-500/10"
+            : "to-background bg-gradient-to-br from-amber-500/10"
+        }`}
+      >
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              {systemOperational ? (
+                <ShieldCheck className="h-5 w-5 text-emerald-500" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              )}
+              {systemOperational ? "All systems operational" : "Attention needed"}
+            </CardTitle>
+            <HealthChips checks={d.system.checks} />
           </div>
-        </div>
+          <p className="text-muted-foreground text-xs">
+            {d.system.checks.map((c) => c.label).join(" · ")} — hover a chip for details.
+          </p>
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Rocket className="h-3 w-3" />
+              {d.system.deployedAt
+                ? `Deployed ${new Date(d.system.deployedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}`
+                : "Deploy info not available (set VERCEL_TOKEN to enable)"}
+            </span>
+            <Link
+              href="/admin/dx"
+              className="text-primary hover:text-primary/80 flex items-center gap-1.5"
+            >
+              <Gauge className="h-3 w-3" />
+              Open developer report →
+            </Link>
+          </div>
+        </CardHeader>
+      </Card>
 
-        <div>
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {quickActions.map((action) => {
-                  const Icon = action.icon;
-                  return (
-                    <Link
-                      key={action.label}
-                      href={action.href}
-                      className="group border-border/40 hover:border-primary/30 hover:bg-accent/30 flex items-start gap-3 rounded-lg border p-3 transition-all duration-200 hover:shadow-sm"
+      {/* Usage meters */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MeterCard icon={HardDrive} meter={d.storage}>
+          <div className="mt-3 flex gap-2">
+            <StatChip label="Objects" value={formatCount(d.storage.totalObjects)} />
+            <StatChip label="Buckets" value={String(d.storage.buckets)} />
+          </div>
+        </MeterCard>
+        <MeterCard icon={Database} meter={d.database}>
+          <div className="mt-3 flex gap-2">
+            <StatChip label="Tables" value={String(d.database.tables)} />
+            <StatChip label="Largest" value={d.database.topTables[0]?.name ?? "—"} />
+          </div>
+        </MeterCard>
+        <MeterCard
+          icon={Activity}
+          meter={{
+            label: "Request volume",
+            usedLabel: `${formatCount(d.requests.events30d)} events`,
+            quotaLabel: `${d.requests.perDayAvg}/day avg · 30-day window`,
+            percent: null,
+            status: d.requests.events30d === 0 ? "info" : d.requests.status,
+          }}
+        >
+          <div className="mt-3 flex gap-2">
+            <StatChip label="Page views" value={formatCount(d.requests.pageViews30d)} />
+            <StatChip label="Admin actions" value={formatCount(d.requests.adminActions30d)} />
+            <StatChip label="Leads" value={formatCount(d.requests.leads30d)} />
+          </div>
+        </MeterCard>
+        <MeterCard
+          icon={ArrowLeftRight}
+          meter={{
+            label: "Bandwidth",
+            usedLabel: `${formatCount(d.bandwidth.downloads30d)} downloads`,
+            quotaLabel: `${formatBytes(d.bandwidth.mediaBytes)} media hosted`,
+            percent: null,
+            status: d.bandwidth.status,
+          }}
+        >
+          <p className="text-muted-foreground mt-3 text-[11px] leading-relaxed">
+            {d.bandwidth.detail}
+          </p>
+        </MeterCard>
+      </div>
+
+      {/* API usage + rate limit */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-border/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+                <Cpu className="h-3.5 w-3.5" />
+              </span>
+              API usage
+            </CardTitle>
+            <span className="text-muted-foreground text-xs">
+              {d.api.totalCalls} total call{d.api.totalCalls === 1 ? "" : "s"}
+            </span>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pt-0 pb-4">
+            {d.api.integrations.length === 0 ? (
+              <p className="text-muted-foreground text-xs">
+                No integrations registered yet. Add providers in the{" "}
+                <Link href="/admin/integrations" className="text-primary hover:underline">
+                  Integration Center
+                </Link>
+                .
+              </p>
+            ) : (
+              d.api.integrations.map((integration) => (
+                <div
+                  key={integration.id}
+                  className="border-border/40 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="bg-accent/50 text-muted-foreground flex h-6 w-6 items-center justify-center rounded-md">
+                      <Cpu className="h-3 w-3" />
+                    </span>
+                    <span className="font-medium">{integration.label}</span>
+                    {integration.maskedKey && (
+                      <code className="bg-accent/50 text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+                        {integration.maskedKey}
+                      </code>
+                    )}
+                  </div>
+                  <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                    <span>
+                      {integration.usageCount} call{integration.usageCount === 1 ? "" : "s"}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 ${
+                        integration.configured ? "text-emerald-600" : "text-amber-600"
+                      }`}
                     >
-                      <div className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{action.label}</p>
-                        <p className="text-muted-foreground mt-0.5 text-xs">{action.desc}</p>
-                      </div>
-                      <ArrowRight className="text-muted-foreground mt-1 h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </Link>
-                  );
-                })}
-              </div>
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          integration.configured ? "bg-emerald-500" : "bg-amber-500"
+                        }`}
+                      />
+                      {integration.configured ? "Configured" : "Not configured"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                </span>
+                Rate limit status
+              </CardTitle>
+              <StatusBadge status={d.rateLimit.status} />
+            </CardHeader>
+            <CardContent className="px-4 pt-0 pb-4">
+              <p className="text-xl font-bold tracking-tight">
+                {d.rateLimit.measuredPerMinute}/min
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                {d.rateLimit.detail}
+              </p>
             </CardContent>
           </Card>
-        </div>
 
-        <div>
           <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">Recent Activity</CardTitle>
+            <CardHeader className="p-4">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+                  <Info className="h-3.5 w-3.5" />
+                </span>
+                Largest tables
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((item, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="bg-primary/40 mt-1.5 h-2 w-2 rounded-full" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{item.action}</p>
-                      <p className="text-muted-foreground text-xs">{item.detail}</p>
+            <CardContent className="space-y-2.5 px-4 pt-0 pb-4">
+              {d.database.topTables.length === 0 ? (
+                <p className="text-muted-foreground text-xs">Database usage unavailable.</p>
+              ) : (
+                d.database.topTables.map((table) => {
+                  const maxSize = d.database.topTables[0]?.sizeBytes || 1;
+                  return (
+                    <div key={table.name} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-mono font-medium">{table.name}</span>
+                        <span className="text-muted-foreground">
+                          {formatCount(table.rows)} rows · {formatBytes(table.sizeBytes)}
+                        </span>
+                      </div>
+                      <div className="bg-accent h-1 w-full overflow-hidden rounded-full">
+                        <div
+                          className="bg-primary h-full rounded-full"
+                          style={{ width: `${Math.max(4, (table.sizeBytes / maxSize) * 100)}%` }}
+                        />
+                      </div>
                     </div>
-                    <p className="text-muted-foreground shrink-0 text-xs">{item.time}</p>
-                  </div>
-                ))}
-              </div>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Service health detail */}
+      <Card className="border-border/50">
+        <CardHeader className="p-4">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <span className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-md">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            </span>
+            Service health
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2 px-4 pt-0 pb-4 sm:grid-cols-2">
+          {d.system.checks.map((check) => {
+            const meta = STATUS_META[check.status];
+            return (
+              <div
+                key={check.label}
+                className="border-border/40 bg-accent/30 flex items-start gap-3 rounded-lg border px-3 py-2.5"
+              >
+                <span className={`${meta.dot} mt-1.5 h-2 w-2 shrink-0 rounded-full`} />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{check.label}</p>
+                  <p className="text-muted-foreground truncate text-xs" title={check.detail}>
+                    {check.detail}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
     </div>
   );
 }
