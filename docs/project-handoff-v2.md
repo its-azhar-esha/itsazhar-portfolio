@@ -1711,3 +1711,64 @@ separate About + Hero bespoke editors kept as-is.
     always set in prod, so the middleware client cannot fail there).
 
 - **Last Updated:** 2026-08-01 (Phase 25 - final pre-launch review)
+
+## 26. CMS Editor Prefill Fix - About / Hero / Home (2026-08-01)
+
+- Root cause: `getAdminHeroContent()` and `getAdminAboutContent()` returned
+  null when no `content_entries` row existed, so the bespoke editors
+  rendered every field EMPTY while the public site rendered
+  DEFAULT_HERO_CONTENT / DEFAULT_ABOUT_CONTENT. Generic page editors were
+  unaffected (they merge PAGE_DEFAULTS over stored content).
+- Fixes (commit 46b5999):
+  - Both admin getters now fall back to the same defaults the public
+    site renders - editors always prefill the current site content.
+  - `saveHeroContentAction` / `saveAboutContentAction` now also call
+    `revalidatePath("/", "layout")` (previously only /admin/content), so
+    saves reflect site-wide immediately, consistent with
+    savePageContentAction.
+  - About resume was editable in the CMS but never rendered on /about -
+    added a "Download Resume" button (shown only when resume.url is
+    non-empty; FileText icon, external links get target=_blank).
+  - `aboutResumeSchema.url` had min(1) while the default url is "" - a
+    save with the default resume would have failed validation. Now
+    allows empty (button renders only when a URL is set).
+- Verified coverage (temp script, deleted after use): all 239 generic
+  definition field keys resolve in PAGE_DEFAULTS; hero form covers all
+  15 leaves of DEFAULT_HERO_CONTENT; about form covers all 20 groups of
+  DEFAULT_ABOUT_CONTENT.
+- Production verification (deployed READY): /admin/content/hero prefill
+  "Automate anything." / "Scale everything." / "Book a Free 15-Min
+  Audit" / metrics 12+,50+ / badges AI Agents,n8n / SEO title; /admin/
+  content/about prefill full bio, 81 tools, industries, timeline,
+  principles, social links, resume label; /admin/content/home prefill
+  all groups (showcase "Featured Systems & Automation Demos", features
+  "What I build.", caseStudies "From manual to automated.",
+  testimonials "What clients say.", contact "Free Automation Audit",
+  CTA "Ready to automate your workflow?").
+- Known non-editable (technical reasons): analytics data-track labels,
+  WorkflowBuilder internal UI strings, offline/404 static fallbacks
+  (offline must render without the network by definition).
+- hero.seo / about.seo remain editable but the site's metadata comes
+  from seo_metadata (/admin/seo); harmless legacy fields.
+
+## 27. Keep-Alive Reliability (re-verified 2026-08-01)
+
+- Vercel crons (primary, Hobby-plan maximum = 2 daily jobs, both in
+  vercel.json): /api/health 12:00 UTC + /api/backup 00:00 UTC.
+  Verified live: health ledger row today (ok, 478ms, "db ok") and
+  backups ledger (ok, 19 tables). The daily Supabase queries reset the
+  Free-plan 7-day inactivity pause timer.
+- GitHub fallback: keepalive.yml (daily /api/health ping) +
+  nightly-backup.yml (offsite `backups` branch). NOTE: GH disables
+  scheduled workflows after 60 days without repo activity - Vercel cron
+  is the primary; this project pushes regularly.
+- Backups: all 19 content tables exported nightly to the private
+  `backups` bucket with a storage catalog + 30-day retention;
+  health/backup ledgers drive the DX dashboard status cards.
+- Public pages degrade gracefully to mock content if the DB is ever
+  paused (no site outage).
+- No manual intervention is required anywhere; optional extra layer the
+  owner may add (requires an account, not code): UptimeRobot-style
+  monitor on /api/health (endpoint is already monitor-friendly).
+
+- **Last Updated:** 2026-08-01 (Phase 27 - reliability re-verification)
