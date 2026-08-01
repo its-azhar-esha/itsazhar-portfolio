@@ -1673,8 +1673,8 @@ separate About + Hero bespoke editors kept as-is.
     industries/navigation/projects/services/site/socials - zero imports
     since the CMS migration; only a stale comment in
     src/lib/ai/knowledge.ts referenced it).
-  - Fixed broken PWA icon paths: manifest.webmanifest + apple-touch-icon
-    pointed at /icons/* but files live at public root.
+  - PWA icon paths verified correct (/icons/* -> public/icons/, files
+    tracked in git; manifest + apple-touch-icon confirmed 200 in prod).
   - Added OG/social share images: src/app/opengraph-image.tsx +
     twitter-image.tsx (next/og ImageResponse, zero new deps, static
     prerender, 1200x630 / 1200x675, dark brand style).
