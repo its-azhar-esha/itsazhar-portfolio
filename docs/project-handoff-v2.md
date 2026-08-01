@@ -1219,6 +1219,9 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
    `FileObject[]` with `metadata.size`; `storage.listBuckets()` data is
    `Bucket[] | null`; `.maybeSingle()` returns a builder (not a bare
    Promise) — wrap in async when passing to helpers. Admin sidebar AND
-   mobile menu both need new nav entries.
+   mobile menu both need new nav entries. **Projects use
+   `status = 'active'`** (not 'published') — 00026 fixes
+   `increment_project_views` to accept both; check status values before
+   writing RPC filters.
 
 - **Last Updated:** 2026-08-01 (Phase 9E — analytics, developer tools, keep-alive)
