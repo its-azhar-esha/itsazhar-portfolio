@@ -13,6 +13,7 @@ export interface DbBlogPost {
   status: BlogPostStatus;
   featured: boolean;
   published_at: string | null;
+  scheduled_for: string | null;
   seo_title: string | null;
   seo_description: string | null;
   og_image: string | null;

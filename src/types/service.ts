@@ -21,6 +21,7 @@ export interface DbService {
   featured: boolean;
   display_order: number;
   status: ServiceStatus;
+  scheduled_for: string | null;
   seo_title: string | null;
   seo_description: string | null;
   seo_keywords: string[];

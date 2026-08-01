@@ -29,6 +29,7 @@ function rowToDbService(row: Database["public"]["Tables"]["services"]["Row"]): D
     featured: row.featured,
     display_order: row.display_order,
     status: row.status as DbService["status"],
+    scheduled_for: row.scheduled_for,
     seo_title: row.seo_title,
     seo_description: row.seo_description,
     seo_keywords: (row.seo_keywords as string[]) ?? [],
@@ -167,6 +168,7 @@ export async function getPublicServicesAction(): Promise<PublicService[]> {
       .from(TABLE)
       .select("*")
       .in("status", ["published"])
+      .or("scheduled_for.is.null,scheduled_for.lte.now")
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: true });
     if (error || !data || data.length === 0) return mockPublicServices();
@@ -189,6 +191,7 @@ export async function getPublicServiceAction(slug: string): Promise<PublicServic
       .select("*")
       .in("status", ["published"])
       .eq("slug", slug)
+      .or("scheduled_for.is.null,scheduled_for.lte.now")
       .maybeSingle();
     if (error || !data) {
       const mock = MOCK_SERVICES.find((s) => s.slug === slug && s.status === "published");

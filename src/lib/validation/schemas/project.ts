@@ -35,6 +35,7 @@ export const createProjectSchema = z.object({
       error: "Status is not a valid option.",
     })
     .default("draft"),
+  scheduled_for: z.string().datetime({ offset: true }).nullish(),
   order: z.number().int().nonnegative().default(0),
   client: z.string().nullable().default(null),
   demo_url: z.string().url("Must be a valid URL").nullable().default(null).or(z.literal("")),

@@ -49,6 +49,7 @@ export interface DbProject {
   category: string;
   featured: boolean;
   status: DbProjectStatus;
+  scheduled_for: string | null;
   order: number;
   client: string | null;
   demo_url: string | null;

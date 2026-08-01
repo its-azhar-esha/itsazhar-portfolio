@@ -137,7 +137,11 @@ export async function getPublicBlogPostsAction(
 ): Promise<PublicBlogPost[]> {
   try {
     const supabase = await createClient();
-    let query = supabase.from(TABLE).select("*").eq("status", "published");
+    let query = supabase
+      .from(TABLE)
+      .select("*")
+      .eq("status", "published")
+      .or("scheduled_for.is.null,scheduled_for.lte.now");
     if (filter.category) query = query.contains("categories", [filter.category]);
     const { data, error } = await query
       .order("published_at", { ascending: false })
@@ -166,6 +170,7 @@ export async function getPublicBlogPostAction(slug: string): Promise<PublicBlogP
       .select("*")
       .eq("slug", slug)
       .eq("status", "published")
+      .or("scheduled_for.is.null,scheduled_for.lte.now")
       .maybeSingle();
     if (error || !data) {
       const mock = MOCK_BLOG_POSTS.find((p) => p.slug === slug && p.status === "published");

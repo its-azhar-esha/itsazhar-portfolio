@@ -23,6 +23,7 @@ export function rowToDbBlogPost(
     status: row.status as BlogPostStatus,
     featured: row.featured,
     published_at: row.published_at,
+    scheduled_for: row.scheduled_for,
     seo_title: row.seo_title,
     seo_description: row.seo_description,
     og_image: row.og_image,

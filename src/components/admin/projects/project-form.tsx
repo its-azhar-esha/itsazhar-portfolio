@@ -36,6 +36,7 @@ export interface FormFields {
   github_url: string;
   featured: boolean;
   status: "draft" | "active" | "archived";
+  scheduledFor: string;
   order: number;
   thumbnail: string;
   images: string;
@@ -71,6 +72,7 @@ function defaultFields(project?: DbProject): FormFields {
       project?.status && VALID_STATUSES.includes(project.status)
         ? (project.status as FormFields["status"])
         : "draft",
+    scheduledFor: project?.scheduled_for ?? "",
     order: Number.isFinite(project?.order) ? (project?.order ?? 0) : 0,
     thumbnail: project?.thumbnail ?? "",
     images: project?.images?.join("\n") ?? "",
@@ -115,7 +117,21 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
       .split(",")
       .map((k) => k.trim())
       .filter(Boolean),
+    scheduled_for: toIso(fields.scheduledFor),
   };
+}
+
+function toLocalDateTime(iso: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+}
+
+function toIso(local: string): string | null {
+  if (!local) return null;
+  const date = new Date(local);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 interface ProjectFormProps {
@@ -178,7 +194,10 @@ export function ProjectForm({ project }: ProjectFormProps) {
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormFields, string>> = {};
       for (const issue of result.error.issues) {
-        const key = issue.path[0] as keyof FormFields | undefined;
+        const rawKey = String(issue.path[0] ?? "");
+        const key = (rawKey === "scheduled_for" ? "scheduledFor" : rawKey) as
+          | keyof FormFields
+          | undefined;
         if (key && !fieldErrors[key]) {
           fieldErrors[key] = issue.message;
         }

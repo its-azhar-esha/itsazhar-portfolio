@@ -22,6 +22,7 @@ export const createServiceSchema = z.object({
     .nonnegative("Display order must be zero or greater")
     .default(0),
   status: z.enum(SERVICE_STATUSES as unknown as [string, ...string[]]).default("draft"),
+  scheduled_for: z.string().datetime({ offset: true }).nullish(),
   seo_title: z
     .string()
     .max(70, "SEO title must be 70 characters or fewer")

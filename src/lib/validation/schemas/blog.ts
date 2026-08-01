@@ -24,6 +24,7 @@ export const createBlogPostSchema = z.object({
   status: z.enum(BLOG_POST_STATUSES as unknown as [string, ...string[]]).default("draft"),
   featured: z.boolean().default(false),
   published_at: z.string().datetime({ offset: true }).nullish(),
+  scheduled_for: z.string().datetime({ offset: true }).nullish(),
   seo_title: z.string().trim().max(70, "SEO title must be 70 characters or fewer").nullish(),
   seo_description: z
     .string()

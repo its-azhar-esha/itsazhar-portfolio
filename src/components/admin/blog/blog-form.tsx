@@ -36,6 +36,7 @@ interface FormFields {
   featured: boolean;
   status: string;
   publishedAt: string;
+  scheduledFor: string;
   seo_title: string;
   seo_description: string;
   og_image: string;
@@ -56,12 +57,26 @@ function defaultFields(post?: DbBlogPost): FormFields {
     featured: post?.featured ?? false,
     status: post?.status ?? "draft",
     publishedAt: post?.published_at ?? "",
+    scheduledFor: post?.scheduled_for ?? "",
     seo_title: post?.seo_title ?? "",
     seo_description: post?.seo_description ?? "",
     og_image: post?.og_image ?? "",
     canonical_url: post?.canonical_url ?? "",
     keywords: post?.keywords ?? [],
   };
+}
+
+function toLocalDateTime(iso: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+}
+
+function toIso(local: string): string | null {
+  if (!local) return null;
+  const date = new Date(local);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function fieldsToJson(fields: FormFields): Record<string, unknown> {
@@ -85,6 +100,7 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
   if (fields.status === "published") {
     data.published_at = fields.publishedAt || new Date().toISOString();
   }
+  data.scheduled_for = toIso(fields.scheduledFor);
   return data;
 }
 
@@ -132,7 +148,10 @@ export function BlogForm({ post }: BlogFormProps) {
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormFields, string>> = {};
       for (const issue of result.error.issues) {
-        const key = issue.path[0] as keyof FormFields | undefined;
+        const rawKey = String(issue.path[0] ?? "");
+        const key = (rawKey === "scheduled_for" ? "scheduledFor" : rawKey) as
+          | keyof FormFields
+          | undefined;
         if (key && !fieldErrors[key]) {
           fieldErrors[key] = issue.message;
         }
@@ -274,6 +293,22 @@ export function BlogForm({ post }: BlogFormProps) {
                 ))}
               </select>
               {errors.status && <p className="text-destructive text-xs">{errors.status}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scheduledFor">Schedule publish (optional)</Label>
+              <Input
+                id="scheduledFor"
+                type="datetime-local"
+                value={fields.scheduledFor ? toLocalDateTime(fields.scheduledFor) : ""}
+                onChange={(e) => handleChange({ scheduledFor: e.target.value })}
+              />
+              <p className="text-muted-foreground text-xs">
+                Leave empty to publish immediately. When set, the post appears publicly only after
+                this time — no cron or manual step needed.
+              </p>
+              {errors.scheduledFor && (
+                <p className="text-destructive text-xs">{errors.scheduledFor}</p>
+              )}
             </div>
           </div>
 

@@ -54,6 +54,7 @@ export function rowToDbProject(row: Database["public"]["Tables"]["projects"]["Ro
     github_url: row.github_url,
     featured: row.featured,
     status: row.status as DbProject["status"],
+    scheduled_for: row.scheduled_for,
     order: row.order,
     seo_title: row.seo_title,
     seo_description: row.seo_description,

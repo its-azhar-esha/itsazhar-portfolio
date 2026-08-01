@@ -111,6 +111,7 @@ export async function getPublicProjectsAction(): Promise<Project[]> {
       .from("projects")
       .select("*")
       .in("status", ["active"])
+      .or("scheduled_for.is.null,scheduled_for.lte.now")
       .order("order", { ascending: true });
     if (error || !data || data.length === 0) return getMockProjects();
     return Promise.all(data.map((row) => resolveProjectMedia(toProject(rowToDbProject(row)))));
@@ -127,6 +128,7 @@ export async function getPublicProjectAction(slug: string): Promise<Project | nu
       .select("*")
       .in("status", ["active"])
       .eq("slug", slug)
+      .or("scheduled_for.is.null,scheduled_for.lte.now")
       .maybeSingle();
     if (error || !data) return getMockProject(slug);
     return resolveProjectMedia(toProject(rowToDbProject(data)));
@@ -138,7 +140,11 @@ export async function getPublicProjectAction(slug: string): Promise<Project | nu
 export async function getPublicSlugsAction(): Promise<string[]> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.from("projects").select("slug").in("status", ["active"]);
+    const { data, error } = await supabase
+      .from("projects")
+      .select("slug")
+      .in("status", ["active"])
+      .or("scheduled_for.is.null,scheduled_for.lte.now");
     if (error || !data || data.length === 0) return getMockSlugs();
     return data.map((r: { slug: string }) => r.slug);
   } catch {

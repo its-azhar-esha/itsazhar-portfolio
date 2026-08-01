@@ -28,6 +28,7 @@ interface FormFields {
   featured: boolean;
   display_order: string;
   status: string;
+  scheduledFor: string;
   seo_title: string;
   seo_description: string;
   seo_keywords: string;
@@ -45,6 +46,7 @@ function defaultFields(service?: DbService): FormFields {
     featured: service?.featured ?? false,
     display_order: String(service?.display_order ?? 0),
     status: service?.status ?? "published",
+    scheduledFor: service?.scheduled_for ?? "",
     seo_title: service?.seo_title ?? "",
     seo_description: service?.seo_description ?? "",
     seo_keywords: service?.seo_keywords?.join(", ") ?? "",
@@ -66,6 +68,7 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
     featured: fields.featured,
     display_order: Number(fields.display_order) || 0,
     status: fields.status,
+    scheduled_for: toIso(fields.scheduledFor),
     seo_title: fields.seo_title || null,
     seo_description: fields.seo_description || null,
     seo_keywords: fields.seo_keywords
@@ -73,6 +76,19 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
       .map((k) => k.trim())
       .filter(Boolean),
   };
+}
+
+function toLocalDateTime(iso: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+}
+
+function toIso(local: string): string | null {
+  if (!local) return null;
+  const date = new Date(local);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 interface ServiceFormProps {
@@ -135,7 +151,10 @@ export function ServiceForm({ service }: ServiceFormProps) {
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormFields, string>> = {};
       for (const issue of result.error.issues) {
-        const key = issue.path[0] as keyof FormFields | undefined;
+        const rawKey = String(issue.path[0] ?? "");
+        const key = (rawKey === "scheduled_for" ? "scheduledFor" : rawKey) as
+          | keyof FormFields
+          | undefined;
         if (key && !fieldErrors[key]) {
           fieldErrors[key] = issue.message;
         }
@@ -316,6 +335,22 @@ export function ServiceForm({ service }: ServiceFormProps) {
                 Published services appear on the public site.
               </p>
               {errors.status && <p className="text-destructive text-xs">{errors.status}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scheduledFor">Schedule publish (optional)</Label>
+              <Input
+                id="scheduledFor"
+                type="datetime-local"
+                value={fields.scheduledFor ? toLocalDateTime(fields.scheduledFor) : ""}
+                onChange={(e) => handleChange({ scheduledFor: e.target.value })}
+              />
+              <p className="text-muted-foreground text-xs">
+                Leave empty to publish immediately. When set, the service appears publicly only
+                after this time.
+              </p>
+              {errors.scheduledFor && (
+                <p className="text-destructive text-xs">{errors.scheduledFor}</p>
+              )}
             </div>
           </div>
 

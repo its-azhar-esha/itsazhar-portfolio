@@ -17,6 +17,7 @@ function rowToDbService(row: Database["public"]["Tables"]["services"]["Row"]): D
     featured: row.featured,
     display_order: row.display_order,
     status: row.status as DbService["status"],
+    scheduled_for: row.scheduled_for,
     seo_title: row.seo_title,
     seo_description: row.seo_description,
     seo_keywords: (row.seo_keywords as string[]) ?? [],

@@ -1,6 +1,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DB_PROJECT_STATUSES } from "@/constants/projects";
 import type { FormFields } from "./project-form";
@@ -16,6 +17,13 @@ const statusDescriptions: Record<string, string> = {
   active: "Published and visible on the public site.",
   archived: "Hidden from the public site but kept in the database.",
 };
+
+function toLocalDateTime(iso: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+}
 
 export function ProjectPublishing({ fields, errors, onChange }: PublishingSectionProps) {
   return (
@@ -70,11 +78,21 @@ export function ProjectPublishing({ fields, errors, onChange }: PublishingSectio
       {errors?.status && <p className="text-xs text-red-500">{errors.status}</p>}
 
       <div className="border-border/40 bg-muted/30 rounded-lg border p-4">
-        <p className="text-muted-foreground text-xs">
-          <span className="text-foreground font-medium">Scheduled publishing</span> — Coming in a
-          future update. For now, set a project to &ldquo;Draft&rdquo; and publish it manually when
-          ready.
+        <Label htmlFor="scheduledFor" className="text-sm font-medium">
+          Schedule publish (optional)
+        </Label>
+        <Input
+          id="scheduledFor"
+          type="datetime-local"
+          value={fields.scheduledFor ? toLocalDateTime(fields.scheduledFor) : ""}
+          onChange={(e) => onChange({ scheduledFor: e.target.value })}
+          className="mt-2"
+        />
+        <p className="text-muted-foreground mt-2 text-xs">
+          Leave empty to publish immediately. When set, the project appears publicly only after
+          this time — even while its status is &ldquo;Active&rdquo;. No cron or manual step needed.
         </p>
+        {errors?.scheduledFor && <p className="text-xs text-red-500">{errors.scheduledFor}</p>}
       </div>
 
       {errors?.featured && <p className="text-xs text-red-500">{errors.featured}</p>}
