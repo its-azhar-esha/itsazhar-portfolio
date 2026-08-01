@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play, Search, X } from "lucide-react";
+import { ArrowRight, FolderKanban, Play, Search, X } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -385,6 +386,21 @@ export default function ProjectsPage() {
                         }}
                       >
                         <Card className="hover:border-primary/30 hover:shadow-primary/5 h-full cursor-pointer transition-all duration-300 hover:shadow-lg">
+                          <div className="bg-muted relative aspect-video w-full overflow-hidden">
+                            {project.coverImage ? (
+                              <Image
+                                src={project.coverImage}
+                                alt={project.name}
+                                fill
+                                sizes="(min-width: 768px) 50vw, 100vw"
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="from-primary/15 flex h-full w-full items-center justify-center bg-gradient-to-br to-teal-500/10">
+                                <FolderKanban className="text-primary/60 h-10 w-10" />
+                              </div>
+                            )}
+                          </div>
                           <CardHeader>
                             <div className="mb-3 flex items-center justify-between gap-2">
                               <Badge variant="secondary" className="w-fit">

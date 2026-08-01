@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +96,47 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </section>
+
+      {project.coverImage && (
+        <section className="border-border/40 border-b py-12 md:py-16">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="bg-muted relative aspect-video w-full overflow-hidden rounded-2xl">
+              <Image
+                src={project.coverImage}
+                alt={project.name}
+                fill
+                priority
+                sizes="(min-width: 896px) 832px, 100vw"
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {project.gallery && project.gallery.length > 0 && (
+        <section className="border-border/40 border-b py-12 md:py-16">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-bold sm:text-2xl">Gallery</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {project.gallery.map((src, i) => (
+                <div
+                  key={i}
+                  className="bg-muted relative aspect-video w-full overflow-hidden rounded-xl"
+                >
+                  <Image
+                    src={src}
+                    alt={`${project.name} screenshot ${i + 1}`}
+                    fill
+                    sizes="(min-width: 896px) 400px, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {project.challenge && (
         <section className="border-border/40 border-b py-16 md:py-20">

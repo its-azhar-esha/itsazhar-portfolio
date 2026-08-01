@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ExternalLink, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowRight,
+  ExternalLink,
+  Play,
+  ChevronLeft,
+  ChevronRight,
+  FolderKanban,
+} from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,9 +51,24 @@ const featuredTextVariants = {
 
 function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () => void }) {
   return (
-    <Card className="border-primary/20 from-card to-background hover:border-primary/40 hover:shadow-primary/5 relative overflow-hidden bg-gradient-to-b transition-all duration-300 hover:shadow-lg">
+    <Card className="border-primary/20 from-card to-background hover:border-primary/40 hover:shadow-primary/5 group relative overflow-hidden bg-gradient-to-b transition-all duration-300 hover:shadow-lg">
       <div className="pointer-events-none absolute inset-0">
         <div className="bg-primary/5 absolute -top-24 -right-24 h-48 w-48 rounded-full blur-3xl" />
+      </div>
+      <div className="bg-muted relative aspect-video w-full overflow-hidden">
+        {project.coverImage ? (
+          <Image
+            src={project.coverImage}
+            alt={project.name}
+            fill
+            sizes="(min-width: 1024px) 640px, 100vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="from-primary/15 flex h-full w-full items-center justify-center bg-gradient-to-br to-teal-500/10">
+            <FolderKanban className="text-primary/60 h-10 w-10" />
+          </div>
+        )}
       </div>
       <CardHeader className="relative">
         <motion.div variants={featuredTextVariants} initial="hidden" animate="visible" custom={0}>
@@ -116,7 +139,22 @@ function FeaturedCard({ project, onSelect }: { project: Project; onSelect: () =>
 
 function SmallCard({ project, onSelect }: { project: Project; onSelect: () => void }) {
   return (
-    <Card className="hover:border-primary/30 hover:shadow-primary/5 h-full transition-all duration-300 hover:shadow-lg">
+    <Card className="hover:border-primary/30 hover:shadow-primary/5 group h-full transition-all duration-300 hover:shadow-lg">
+      <div className="bg-muted relative aspect-video w-full overflow-hidden">
+        {project.coverImage ? (
+          <Image
+            src={project.coverImage}
+            alt={project.name}
+            fill
+            sizes="(min-width: 1024px) 640px, 100vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="from-primary/15 flex h-full w-full items-center justify-center bg-gradient-to-br to-teal-500/10">
+            <FolderKanban className="text-primary/60 h-10 w-10" />
+          </div>
+        )}
+      </div>
       <CardHeader>
         <Badge variant="secondary" className="mb-3 w-fit">
           {project.category}

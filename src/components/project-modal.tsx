@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Play, ExternalLink, ArrowRight } from "lucide-react";
+import { X, Play, ExternalLink, ArrowRight, FolderKanban } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -116,6 +117,41 @@ export function ProjectModal({ project, projects, onClose }: ProjectModalProps) 
                   </span>
                 )}
               </div>
+
+              <div className="bg-muted relative aspect-video w-full overflow-hidden rounded-xl">
+                {project.coverImage ? (
+                  <Image
+                    src={project.coverImage}
+                    alt={project.name}
+                    fill
+                    sizes="(min-width: 768px) 672px, 100vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="from-primary/15 flex h-full w-full items-center justify-center bg-gradient-to-br to-teal-500/10">
+                    <FolderKanban className="text-primary/60 h-10 w-10" />
+                  </div>
+                )}
+              </div>
+
+              {project.gallery && project.gallery.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {project.gallery.map((src, i) => (
+                    <div
+                      key={i}
+                      className="bg-muted relative aspect-video w-full overflow-hidden rounded-xl"
+                    >
+                      <Image
+                        src={src}
+                        alt={`${project.name} screenshot ${i + 1}`}
+                        fill
+                        sizes="(min-width: 768px) 320px, 50vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <h2 className="text-2xl font-bold tracking-tight">{project.name}</h2>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
