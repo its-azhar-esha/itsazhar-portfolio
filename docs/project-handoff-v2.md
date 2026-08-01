@@ -1567,3 +1567,78 @@ hand-synced. `@xyflow/react@12.11.2` (MIT) added for the builder.
   RSC payload — full key never present in HTML).
 
 - **Last Updated:** 2026-08-01 (Phase 9J — masked integration keys, data-driven catalog, monitoring dashboard)
+
+### 24. Full page-copy CMS (schema-driven content editor)
+
+Goal: all editable public page copy is managed from the admin panel - no
+source edits for copy changes. Each page gets its own dedicated editor
+under the existing `/admin/content` hub (sidebar item "Content"), with
+separate About + Hero bespoke editors kept as-is.
+
+- `src/lib/content/` new modules:
+  - `defaults/<page>.ts` + `defaults/index.ts` - typed default copy per
+    page (home, projects, services, contact, blog, hub, playground, shared)
+    with a `DEFAULT_*_CONTENT` export and interfaces; shared holds brand,
+    nav, mobile menu, footer, lead form and maintenance copy.
+  - `merge.ts` - `deepMerge` (recursive plain-object merge; arrays and
+    primitives override) + `isPlainObject`.
+  - `page-defaults.ts` - `PAGE_DEFAULTS` map (8 keys) used as the
+    fallback seed for admin reads.
+  - `resolver.ts` - `getPublicPageContent<T>(key, defaults)` deep-merges
+    stored `content_entries.content` over typed defaults (stored entries
+    are partial overrides; missing rows never break rendering) and
+    `getAdminPageContent(key)` returns the merged view for editors.
+  - `schemas.ts` - `PAGE_CONTENT_DEFINITIONS` registry: one entry per
+    key with title, description, icon, href and field groups
+    (text/textarea/tags/links). Adding a future page = one definition +
+    one defaults file. `getPageContentDefinition(key)`.
+  - `actions.ts` - `savePageContentAction` (auth-checked, Zod-validated
+    against `pageContentSchema`, upserts by key, audits
+    `page-content.created/updated`, revalidates `"/", "layout"` and
+    `/admin/content`) and `getPageContentAction` (admin read).
+  - `mock-data.ts` - extended to 10 seeded entries (c1-c10) covering all
+    8 keys with their defaults so the fallback path renders real copy.
+- Admin UI: `src/app/admin/content/[page]/page.tsx` (dynamic route,
+  `notFound` for unknown keys) + generic
+  `src/components/admin/content/page-content-editor.tsx` (SectionCard
+  groups, FieldInput per field type, dirty tracking, 4s status toast,
+  `structuredClone` + `setByPath`). `/admin/content/page.tsx` hub now
+  lists bespoke About/Hero cards plus all 8 definition cards.
+- Public wiring - every public route now reads `getPublicPageContent`
+  (typed) and renders `content.*` instead of hardcoded strings:
+  - Home (`page.tsx` + showcase/features/case-studies/testimonials/
+    about/contact/cta copy props).
+  - Projects (`/projects` server wrapper + client `projects-page.tsx`
+    for search/filter state; `/projects/[slug]`; `project-modal.tsx`
+    and homepage `showcase` modal take a `detail` prop; status badge
+    display maps legacy status values to content labels).
+  - Services (`/services` + `[slug]`), Contact (`/contact` incl.
+    benefits/detail cards), Blog (`/blog` + `[slug]` incl. author
+    bio/keep-reading/CTA), Hub (`/hub` + `[slug]` incl. pricing/files/
+    CTA), Playground (index, builder, `template/[slug]`, `share/[code]`).
+  - Shared chrome (`src/app/(public)/layout.tsx` fetches `shared` and
+    passes copy down): navbar (CTA + fallback links + brand name),
+    mobile-nav (More sheet labels, AI Assistant, Theme, CTA), footer
+    (intro, quick links, module labels, CTA), lead-form (labels +
+    success state), maintenance screen, `social-links` now takes
+    `settings` and uses settings URLs (LinkedIn/Fiverr/YouTube) with
+    hardcoded fallbacks.
+- SEO title/description stay in `seo_metadata` (`/admin/seo`); page
+  content entries hold page copy only. Added `blog`/`hub`/`playground`
+  SEO defaults (`src/lib/seo/defaults.ts`). `pageContentSchema` added
+  to validation.
+- Known scope: interactive builder/editor UI strings inside the
+  `WorkflowBuilder` client component and analytics `data-track-label`
+  values remain hardcoded (not page copy).
+
+### 24.1 Verification
+
+- tsc clean, lint 0 errors (1 pre-existing img warning), build green
+  (31/31 routes incl. new `/admin/content/[page]`).
+- Deployed (0b9e002, READY); public pages probed 200 (home, projects +
+  detail, services, contact, blog, hub, playground, builder).
+- Admin verified with fresh auth session: `/admin/content` hub lists
+  all 10 sections; editors for shared/projects/hub/playground render
+  field groups + stored values (no login redirect).
+
+- **Last Updated:** 2026-08-01 (Phase 10 - schema-driven page-copy CMS)
