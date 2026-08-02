@@ -48,6 +48,10 @@ Nothing is off-limits; the user prefers being asked over being skipped.
   `GRANT` statements is invisible to the Data API. Verify via
   `list_data_api_grants()` (shown on `/admin/dx`).
 - Resolve media references at render time (never persist resolved URLs).
+- Resolve the site URL / domain at render time via `getSiteUrl()` from
+  `@/lib/site/urls` (DB `monitoring_config.siteUrl` → `NEXT_PUBLIC_SITE_URL`
+  env → default). Never hardcode the public domain in consumers; health/backup
+  URLs resolve through `getHealthCheckUrl()` / `getBackupUrl()`.
 - Public pages fall back to mocks/defaults when Supabase is unavailable; admin
   pages must surface real errors.
 

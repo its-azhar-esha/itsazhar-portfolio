@@ -2059,4 +2059,89 @@ manual upkeep, even after months/years of sporadic traffic.
 - Third-party uptime monitor (e.g. UptimeRobot) for an independent
   third keep-alive layer.
 
-- **Last Updated:** 2026-08-02 (Phase 33 — long-term reliability hardening)
+- **Last Updated:** 2026-08-02 (Phase 34 — admin-configurable domain & monitoring)
+
+## 34. Admin-Configurable Domain & Monitoring Webhooks (2026-08-02, commit 7097c3d)
+
+Goal: switching the public domain (currently `itsazhar-portfolio.vercel.app`)
+to `itsazhar.com` requires **zero code/deploy changes** — it is a settings
+edit in the admin panel. Domain + monitoring endpoint overrides + failure
+webhooks are stored in the database.
+
+### Migration 00032_monitoring_config.sql (applied + verified)
+
+- Adds `monitoring_config jsonb not null default '{}'` to `site_settings`
+  (ALTER on an existing table — column grants inherited from 00031, no new
+  GRANT statements needed).
+- Verified live: `site_settings.monitoring_config` readable via Data API,
+  default `{}`.
+
+### Domain-configurable URL resolution (`src/lib/site/urls.ts`, NEW)
+
+- `getSiteUrl()` resolves: `monitoring_config.siteUrl` → `NEXT_PUBLIC_SITE_URL`
+  env → `SITE_URL_DEFAULT` (`https://itsazhar-portfolio.vercel.app`).
+- `getHealthCheckUrl()` / `getBackupUrl()` resolve override → `<siteUrl>/api/*`.
+- Server-only, never throws (falls back to defaults). All consumers converted:
+  - `src/app/layout.tsx` — `metadataBase` + JSON-LD `@id`/`url` (was hardcoded `SITE_URL`)
+  - `src/app/(public)/about/layout.tsx` — OG/JSON-LD URLs (now `generateMetadata`)
+  - `src/app/(public)/blog/[slug]/page.tsx` — share/OG URL
+  - `src/app/robots.ts`, `src/app/sitemap.ts` — now async, use `getSiteUrl()`
+  - `src/lib/seo/metadata.ts` — `effectiveCanonical()` rebases canonical default
+  - `src/lib/dx/actions.ts`, `src/lib/dashboard/actions.ts` — Site URL status/overview
+
+### Monitoring config model (`src/types/settings.ts`, `src/database.types.ts`)
+
+- `MonitoringConfig { siteUrl, healthCheckUrl, backupUrl, webhooks[] }`,
+  `MonitoringWebhook { id, name, url, enabled }`, `DEFAULT_MONITORING_CONFIG`,
+  `normalizeMonitoringConfig()`.
+- `src/lib/settings/repository.ts` maps `rowToSiteSettings` through the
+  normalizer. `src/database.types.ts` synced (`monitoring_config: unknown`).
+- `src/lib/validation/schemas/settings.ts`: `monitoringConfigSchema` +
+  `monitoringWebhookSchema` (empty-URL allowed, max 10 webhooks), exported
+  via `src/lib/validation/index.ts`.
+
+### Admin UI (Keep-Alive page)
+
+- `src/components/admin/keepalive/monitoring-config-card.tsx` (client):
+  canonical site URL, health/backup URL overrides, webhook editor
+  (add/remove/enable), live effective-URL hints, dirty-state, save via
+  `saveMonitoringConfigAction`.
+- `src/app/admin/keepalive/page.tsx` loads config + effective URLs in
+  parallel, renders the card. Help entries added: `monitoring-config`,
+  `monitoring-site-url`, `monitoring-health-url`, `monitoring-backup-url`,
+  `monitoring-webhooks`.
+
+### Failure webhooks (`src/lib/monitoring/actions.ts`, NEW)
+
+- `fireMonitoringWebhooks(event, payload)` POSTs
+  `{ event, ok:false, detail, timestamp, source }` to every enabled webhook
+  with a 5s abort timeout; best-effort, never throws, never affects the
+  endpoint response. Fired from `/api/health` and `/api/backup` on failure.
+- `saveMonitoringConfigAction` (auth + Zod + `saveSettings` + revalidate),
+  `getMonitoringConfigAction`.
+
+### GitHub keepalive URL configurable
+
+- `.github/workflows/keepalive.yml` now resolves the ping target from
+  `vars.HEALTH_URL` with a fallback to the current platform domain — when
+  the domain moves, set the repo variable, no workflow edits.
+
+### Verified live (post-deploy, commit 7097c3d)
+
+- Public `/api/health` 200 ok; robots.txt + sitemap.xml show the current
+  default domain.
+- Authenticated headless-browser check of `/admin/keepalive`: card renders
+  ("Canonical site URL", "Health check URL", "Backup URL", "Failure
+  webhooks", "No webhooks configured", "All changes saved"), effective URLs
+  shown.
+- End-to-end save: set `siteUrl=https://itsazhar.com` → saved → effective
+  URLs resolved to `https://itsazhar.com` → reverted to empty → effective
+  URLs back to `https://itsazhar-portfolio.vercel.app`. DB
+  `monitoring_config` reset to empty object (verified via REST probe).
+
+### Rule (update AGENTS.md)
+
+- Site URL / domain and monitoring endpoints are resolved at render time
+  from `monitoring_config` (DB → env → default). Never hardcode the domain
+  in consumers — use `getSiteUrl()` / `getHealthCheckUrl()` /
+  `getBackupUrl()` from `@/lib/site/urls`.
