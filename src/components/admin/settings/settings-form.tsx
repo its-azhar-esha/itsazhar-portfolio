@@ -190,7 +190,7 @@ function NavigationManager({
 }
 
 export function SettingsForm({ initial }: SettingsFormProps) {
-  const defaultValues = React.useMemo(() => toFormValues(initial), [initial]);
+  const [defaultValues, setDefaultValues] = React.useState<FormValues>(() => toFormValues(initial));
   const [fields, setFields] = React.useState<FormValues>(defaultValues);
   const [saving, setSaving] = React.useState(false);
   const toast = useToast();
@@ -217,6 +217,9 @@ export function SettingsForm({ initial }: SettingsFormProps) {
         toast.error(result.error);
         return;
       }
+      const saved = toFormValues(result.data);
+      setFields(saved);
+      setDefaultValues(saved);
       toast.success("Site settings saved successfully.");
     } finally {
       setSaving(false);
