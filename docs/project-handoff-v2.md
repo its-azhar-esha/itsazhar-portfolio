@@ -2207,6 +2207,75 @@ admin page sweeps, live API calls, Vercel/GitHub/UptimeRobot APIs.
   UptimeRobot monitors 803645358 + 803645542 both UP. GitHub Actions: keepalive
   runs 1–4 success, nightly-backup runs 2+4 success.
 
+## 38. Admin "Invalid input" Save Bug + Full Admin Save Audit (2026-08-02, commits `07c6c96` + `7767eb2`)
+
+Goal: fix the reported "Invalid input / Invalid input" error when saving any
+setting, and audit the entire admin panel for the same class of validation
+bugs. Root cause and fixes below.
+
+### Root cause
+
+`src/lib/validation/schemas/media.ts`'s `mediaUrlOrReferenceSchema`
+(`z.string().url()` OR `media:<uuid>` regex) rejects empty strings. The
+Settings form's `toFormValues` converts nullable DB values to `""`
+(`logo: settings.logo ?? ""`), and `.nullish()` only allows `null`/`undefined`
+— not `""`. So with `logo: null` in the DB, every settings save failed with
+Zod's default "Invalid input" (once per union branch = the doubled message).
+The testimonials form had the reverse bug: it sent `avatar: null` while
+`avatar: mediaUrlOrReferenceSchema` required a string.
+
+### Fix: shared optional media schema
+
+- New `optionalMediaUrlOrReferenceSchema` in `media.ts`: accepts URL,
+  `media:<uuid>`, `""`, `null`, or `undefined` and transforms empty → `null`.
+- Applied to every optional media field: `settings.ts` `logo`,
+  `testimonial.ts` `avatar`, `blog.ts` `cover_image`/`og_image`, `hub.ts`
+  `cover_image` (collection+resource) / `og_image` / `thumbnail`, `seo.ts`
+  `og_image`. The required `file_ref` in hub resources stays strict.
+- Exported from `@/lib/validation`.
+
+### Fix: `show_hub` / `show_playground` toggles silently did nothing
+
+`siteSettingsSchema` was missing `show_hub` and `show_playground` (both real
+DB columns, both sent by the form). Zod silently stripped them, so the two
+"Automation Hub"/"Workflow Playground" toggles saved with no effect. Added
+both keys to the schema — verified the toggles now persist.
+
+### Fix: project "Save Draft" could not save an incomplete project
+
+The project form's `handleSaveDraft` intentionally skips client-side
+validation, but `createProjectAction` ran the strict `createProjectSchema`
+(requires `short_description` min(1) and `industry` min(1)). A bare new
+project could never be drafted. Added `createProjectDraftSchema` (extends the
+strict schema, relaxes `short_description` + `industry`) and
+`updateProjectDraftSchema`; the create/update actions select draft vs strict
+schema by `input.status`. Publishing still enforces the full schema.
+
+### Fix: settings form now reflects saved state
+
+`settings-form.tsx` updated its saved values into local state and cleared the
+"Unsaved changes" indicator after a successful save (previously the form kept
+showing unsaved-changes after the toast).
+
+### Verified
+
+- Exact deployed schema logic tested against the live DB row: the form payload
+  (with `logo: ""`) now passes; parsed output stores `logo: null`, and
+  `show_hub`/`show_playground` survive the round-trip.
+- Live authenticated upsert of the schema-parsed settings payload succeeded,
+  values persisted, and `show_playground` toggle was written then restored.
+- Project draft schema: incomplete draft parses; the same payload as
+  `status: "active"` still fails strict validation (publish is safe).
+- Testimonial `avatar: null` now parses.
+- `tsc --noEmit` exit 0, `npm run lint` clean (1 pre-existing `<img>` warning),
+  `npm run build` green (70 routes).
+- All 20 admin pages + 9 new/edit sub-routes render 200 authenticated;
+  `/admin/login` → 307.
+- Full subagent audit of all 12 form↔schema pairs (settings, testimonial,
+  project, service, case-study, seo, about, hero, resource, template,
+  media-edit-dialog, monitoring-config-card): no remaining `""`/`null`
+  mismatches, no client/server schema drift, all enums match constants.
+
 ## 35. External Keep-Alive & Backup Provisioning (2026-08-02)
 
 Goal: activate the two remaining keep-alive/backup layers that were blocked
