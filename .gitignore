@@ -50,3 +50,6 @@ next-env.d.ts
 
 # supabase CLI
 supabase/.temp/
+
+# generated offsite backups (only tracked on the `backups` branch)
+/backups/

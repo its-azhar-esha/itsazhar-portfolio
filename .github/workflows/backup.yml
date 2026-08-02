@@ -26,19 +26,23 @@ jobs:
         with:
           node-version: 22
 
-      - name: Export tables + storage
+      - name: Export tables + storage, commit and push to backups branch
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/backup-to-branch.mjs
-
-      - name: Commit and push to backups branch
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "backup-bot"
           git config user.email "backup-bot@users.noreply.github.com"
-          git switch -c backups 2>/dev/null || git switch backups
+          # Base the new commit on the existing remote backups branch so the
+          # push stays fast-forward (recreating from main every run was
+          # rejected as non-fast-forward and lost the offsite copy).
+          git fetch origin backups || true
+          git switch -c backups origin/backups 2>/dev/null || git switch backups 2>/dev/null || git switch -c backups
+          # Always run the latest export script without staging the script
+          # change itself (backups branch stays data-only).
+          git show origin/main:scripts/backup-to-branch.mjs > scripts/backup-to-branch.mjs
+          node scripts/backup-to-branch.mjs
           git add backups/
           if git diff --cached --quiet; then
             echo "No backup changes — nothing to commit."
