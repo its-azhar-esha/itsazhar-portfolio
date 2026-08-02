@@ -2060,7 +2060,7 @@ manual upkeep, even after months/years of sporadic traffic.
   third keep-alive layer.~~
 - **Done in Phase 35** — see below.
 
-- **Last Updated:** 2026-08-02 (Phase 36 — BD-time admin timestamps, real-data status fixes, scheduler source attribution, chat rate limit)
+- **Last Updated:** 2026-08-02 (Phase 39 — public settings propagation: footer + contact social links + JSON-LD sameAs read social_github/social_twitter)
 
 ## 36. BD-Time Admin Timestamps, Real-Data Status, Source Attribution & Chat Rate Limit (2026-08-02, commit `0c02565`)
 
@@ -2275,6 +2275,60 @@ showing unsaved-changes after the toast).
   project, service, case-study, seo, about, hero, resource, template,
   media-edit-dialog, monitoring-config-card): no remaining `""`/`null`
   mismatches, no client/server schema drift, all enums match constants.
+
+## 39. Public Settings Propagation Fix — social_github / social_twitter (2026-08-02, commit `c18af02`)
+
+Goal: fix "Settings save succeeds but the public website doesn't reflect the
+change" — reported with the GitHub link. Root cause was NOT the save pipeline
+(which was correct end-to-end); it was that several public consumers ignored
+`social_github` / `social_twitter` entirely.
+
+### Root cause
+
+Verified live before the fix: the DB row already held the new value
+(`social_github = https://github.com/its-azhar-esha`), and
+`saveSiteSettingsAction` correctly revalidates (`revalidatePath("/", "layout")`).
+But the rendered contact page still showed the hardcoded
+`https://github.com/azharmahmudalif`. Three public consumers were broken:
+
+- `src/components/social-links.tsx` (contact page "Find me on"): the
+  `settingsOverrides` map only overrode **LinkedIn, Fiverr, YouTube** from
+  settings; GitHub and X/Twitter URLs were hardcoded in the `socials` array
+  and never read settings.
+- `src/components/footer.tsx`: the footer social icon row rendered LinkedIn,
+  Fiverr, Instagram, YouTube, Email — but **omitted GitHub and X/Twitter**
+  entirely, so those two editable fields had no visible effect anywhere.
+- `src/app/layout.tsx`: JSON-LD `sameAs` was a hardcoded array
+  (linkedin/github/x URLs) instead of deriving from settings.
+
+### Fixes
+
+- `social-links.tsx`: added `GitHub` and `"X / Twitter"` overrides to
+  `settingsOverrides` so both URLs come from settings (empty settings still
+  fall back to the component's default URLs, matching existing behavior).
+- `footer.tsx`: added `settings.social_github` → GitHub (FolderGit icon) and
+  `settings.social_twitter` → X / Twitter (X icon) to the social icon row,
+  each rendered only when set (same pattern as the existing socials).
+- `layout.tsx`: JSON-LD `sameAs` now built from `settings.social_linkedin`,
+  `settings.social_github`, `settings.social_twitter` filtered to non-empty.
+  Note lucide-react in this project has no brand icons, so generic icons are
+  used for the footer row (consistent with the existing Globe/ExternalLink
+  approach).
+
+### Verified end-to-end (production, deploy `dpl_FLFkDCLmEpcuDjX584JGxB9PypqV`)
+
+- Pre-fix live check: contact page anchor href was
+  `https://github.com/azharmahmudalif` (hardcoded); the new value existed
+  only in the RSC flight payload.
+- Post-deploy: contact page GitHub anchor + footer GitHub anchor both =
+  `https://github.com/its-azhar-esha` (from DB settings). Footer shows GitHub
+  and Fiverr (null socials correctly hidden). Contact SocialLinks shows
+  GitHub from settings; X/Twitter falls back to the default URL while the DB
+  value is null.
+- Homepage JSON-LD `sameAs` = `["https://github.com/its-azhar-esha"]`
+  (LinkedIn/Twitter null → omitted).
+- `tsc --noEmit` exit 0, `npm run lint` clean (1 pre-existing `<img>`
+  warning), `npm run build` green (70 routes).
 
 ## 35. External Keep-Alive & Backup Provisioning (2026-08-02)
 
