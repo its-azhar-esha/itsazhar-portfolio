@@ -20,7 +20,7 @@ import { fail, ok } from "@/lib/result";
 import type { Result } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
 import { env } from "@/lib/env";
-import { SITE_URL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/site/urls";
 import { formatBytes } from "@/lib/dashboard/format";
 import { getIntegrationList } from "@/lib/integrations/repository";
 import { hoursSince, humanAge, statusFromAge } from "@/lib/keepalive/freshness";
@@ -445,6 +445,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
     const now = new Date();
     const since30d = new Date(now.getTime() - WINDOW_DAYS * 86_400_000).toISOString();
     const since24h = new Date(now.getTime() - 86_400_000).toISOString();
+    const siteUrl = await getSiteUrl();
 
     /* Health: database + storage reachability */
     const health: DashboardOverview["health"] = {
@@ -942,7 +943,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       operational: checks.every((c) => c.status === "ok"),
       checks,
       deployedAt,
-      siteUrl: SITE_URL,
+      siteUrl,
     };
 
     /* Recommendations (Action Center) */

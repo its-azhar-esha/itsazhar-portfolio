@@ -1165,6 +1165,111 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
     ],
   ),
 
+  /* ─────────────────────── Monitoring / domain ─────────────────────── */
+
+  "monitoring-config": entry(
+    "monitoring-config",
+    "Domain & monitoring settings",
+    "Set the canonical site URL, keep-alive endpoint overrides and failure webhooks — so switching your public domain later needs no code changes.",
+    [
+      s("what", "What this does", [
+        "A single admin-editable block on the Keep-Alive page holding the canonical site URL, optional overrides for the health-check and backup endpoints, and a list of webhooks that receive failure notifications.",
+      ]),
+      s("why", "Why it exists", [
+        "The site currently runs on the temporary Vercel domain (itsazhar-portfolio.vercel.app) and will move to itsazhar.com. Storing these values in the database — instead of in code — means the move is a settings edit in the admin, not a code change, rebuild and redeploy.",
+      ]),
+      s("how", "How it works", [
+        "The canonical URL resolution order is: the value you save here, then the NEXT_PUBLIC_SITE_URL environment variable, then the project default. Health/backup URLs default to <siteUrl>/api/health and <siteUrl>/api/backup unless you override them. The resolved values are shown live below the inputs.",
+      ]),
+      s("effects", "What changing the site URL affects", [
+        "SEO canonical tags, sitemap.xml, robots.txt and any code that builds absolute URLs from the site base. Keep-alive (Vercel cron) and backups are unaffected because they run on the platform domain.",
+      ]),
+      s("notes", "Failure webhooks", [
+        "Webhooks receive a POST when /api/health or /api/backup reports a failure. Each webhook can be named, enabled/disabled, added or removed. Perfect for Slack or Discord channels so you learn of outages without visiting the dashboard.",
+      ]),
+      s("best", "Best practices", [
+        "Keep the URL field empty to inherit the current default until the permanent domain is live.",
+        "Point your third-party uptime monitor at the resolved health-check URL shown here.",
+        "When switching to itsazhar.com: update this field, then point monitors and external schedulers at the new URL. No code changes required.",
+      ]),
+    ],
+  ),
+
+  "monitoring-site-url": entry(
+    "monitoring-site-url",
+    "Canonical site URL",
+    "The base URL used for SEO canonicals, sitemap and robots. Empty inherits the current default.",
+    [
+      s("what", "What this is", [
+        "The public base URL of the site. When empty, the platform default (or NEXT_PUBLIC_SITE_URL env var) is used. This field lets you take control without touching code.",
+      ]),
+      s("why", "Why it matters", [
+        "Search engines use canonicals to know which domain is authoritative. Moving domains without updating this would leave canonicals pointing at the old one.",
+      ]),
+      s("how", "When to set it", [
+        "Once itsazhar.com is attached to the deployment and serving traffic, save it here (e.g. https://itsazhar.com). The change takes effect on the next render — no rebuild required.",
+      ]),
+      s("best", "Best practices", [
+        "Leave empty while on the temporary domain to avoid drift.",
+        "Include the scheme (https://) and no trailing slash.",
+      ]),
+    ],
+  ),
+
+  "monitoring-health-url": entry(
+    "monitoring-health-url",
+    "Health check URL",
+    "Override for the liveness endpoint. Defaults to <siteUrl>/api/health.",
+    [
+      s("what", "What this is", [
+        "The exact URL uptime monitors should watch. It normally resolves to <canonical>/api/health and only needs an override in unusual hosting setups.",
+      ]),
+      s("why", "Why configurable", [
+        "If the final domain routes /api/health differently (e.g. behind a proxy or CDN path), you can point monitors at the real address without changing code.",
+      ]),
+      s("how", "How to use", [
+        "Leave empty for the default, or enter the full URL (e.g. https://itsazhar.com/api/health) once the permanent domain is live.",
+      ]),
+    ],
+  ),
+
+  "monitoring-backup-url": entry(
+    "monitoring-backup-url",
+    "Backup URL",
+    "Override for the backup endpoint. Defaults to <siteUrl>/api/backup.",
+    [
+      s("what", "What this is", [
+        "The URL external schedulers can call to trigger a manual backup. It normally resolves to <canonical>/api/backup.",
+      ]),
+      s("why", "Why configurable", [
+        "Keeps external backup triggers working after a domain move without editing any workflow or script.",
+      ]),
+      s("how", "How to use", [
+        "Leave empty for the default. Enter a full URL override only if the endpoint lives somewhere non-standard.",
+      ]),
+    ],
+  ),
+
+  "monitoring-webhooks": entry(
+    "monitoring-webhooks",
+    "Failure webhooks",
+    "Endpoints notified when the health check or nightly backup fails.",
+    [
+      s("what", "What this is", [
+        "A list of URLs that receive a JSON POST whenever /api/health or /api/backup reports a failure.",
+      ]),
+      s("why", "Why it matters", [
+        "You shouldn't have to open the dashboard to learn the backup failed. A Slack/Discord webhook makes outages visible immediately.",
+      ]),
+      s("how", "How it works", [
+        "On failure, the app POSTs { event, ok:false, detail, timestamp, source } to every enabled webhook with a 5-second timeout. Delivery is best-effort and never affects the endpoint's own response.",
+      ]),
+      s("how", "Example payload", [
+        '{"event":"backup","ok":false,"detail":"Backup failed","timestamp":"2026-08-02T00:00:00Z","source":"api/backup"}',
+      ]),
+    ],
+  ),
+
   /* ───────────────────────────── Security ───────────────────────────── */
 
   "security-page": entry(

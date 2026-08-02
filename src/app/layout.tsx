@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 import { getPublicSiteSettings } from "@/lib/settings";
-import { SITE_URL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/site/urls";
 
 const Analytics = dynamic(() =>
   import("@/components/analytics").then((m) => ({ default: m.Analytics })),
@@ -24,8 +24,6 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const baseUrl = SITE_URL;
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -41,6 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteTitle = settings.site_title || FALLBACK_TITLE;
   const siteDescription = settings.site_description || FALLBACK_DESCRIPTION;
   const siteName = settings.site_name || "Azhar";
+  const baseUrl = await getSiteUrl();
 
   return {
     metadataBase: new URL(baseUrl),
@@ -102,6 +101,7 @@ export default async function RootLayout({
   const ga4Id = settings.ga4_measurement_id?.trim();
   const gtmId = settings.gtm_id?.trim();
   const clarityId = settings.clarity_project_id?.trim();
+  const baseUrl = await getSiteUrl();
 
   const jsonLd = {
     "@context": "https://schema.org",

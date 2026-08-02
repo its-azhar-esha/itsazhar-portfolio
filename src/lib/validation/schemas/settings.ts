@@ -33,6 +33,30 @@ export const dxConfigSchema = z.object({
   seoDescMax: z.number().int().min(80).max(400),
 });
 
+const urlOrEmpty = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (v) => v === "" || /^https?:\/\/[^\s]+$/i.test(v),
+    "Enter a valid http(s) URL or leave empty",
+  )
+  .transform((v) => v.replace(/\/+$/, ""));
+
+export const monitoringWebhookSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(40),
+  url: urlOrEmpty,
+  enabled: z.boolean(),
+});
+
+export const monitoringConfigSchema = z.object({
+  siteUrl: urlOrEmpty,
+  healthCheckUrl: urlOrEmpty,
+  backupUrl: urlOrEmpty,
+  webhooks: z.array(monitoringWebhookSchema).max(10),
+});
+
 export const siteSettingsSchema = z.object({
   site_name: z.string().trim().min(1, "Site name is required").max(80),
   site_title: z.string().trim().min(1, "Site title is required").max(100),

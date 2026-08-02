@@ -13,7 +13,7 @@ import { getPublicPageContent } from "@/lib/content";
 import { DEFAULT_BLOG_CONTENT, type BlogPageContent } from "@/lib/content/defaults/blog";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
-import { SITE_URL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/site/urls";
 import type { PublicBlogPost } from "@/types/blog";
 
 function humanizeCategory(slug: string): string {
@@ -103,7 +103,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const related = rankRelated(post, allPosts);
   const readTime = estimateReadTime(post.content);
-  const postUrl = `${SITE_URL}/blog/${post.slug}`;
+  const siteUrl = await getSiteUrl();
+  const postUrl = `${siteUrl}/blog/${post.slug}`;
   const shareText = encodeURIComponent(`${post.title} — by ${post.author}`);
 
   return (

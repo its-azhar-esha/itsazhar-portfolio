@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getSeoByPageKey } from "./repository";
 import { resolveMediaValue } from "@/lib/media/repository";
 import { DEFAULT_SEO, SITE_NAME } from "./defaults";
+import { getSiteUrl } from "@/lib/site/urls";
 import type { SeoEntry } from "@/types/seo";
 
 function parseRobots(value: string): Metadata["robots"] {
@@ -10,6 +11,21 @@ function parseRobots(value: string): Metadata["robots"] {
     index: index === "index",
     follow: follow === "follow",
   };
+}
+
+/** Rebuilds a canonical URL against the effective site URL so a DB-driven
+    domain change (admin panel) propagates to metadata without code edits. */
+async function effectiveCanonical(
+  fallbackCanonical: string | null | undefined,
+  rowCanonical: string | null | undefined,
+): Promise<string | null> {
+  if (rowCanonical) return rowCanonical;
+  if (!fallbackCanonical) return null;
+  const siteUrl = await getSiteUrl();
+  const relative = fallbackCanonical.startsWith("http")
+    ? new URL(fallbackCanonical).pathname
+    : fallbackCanonical;
+  return `${siteUrl}${relative === "/" ? "" : relative}`;
 }
 
 export async function getPageMetadata(pageKey: string): Promise<Metadata> {
@@ -27,7 +43,7 @@ export async function getPageMetadata(pageKey: string): Promise<Metadata> {
   const description = row?.description ?? fallback?.description ?? "";
   const keywords = (row?.keywords?.length ? row.keywords : fallback?.keywords) ?? [];
   const ogImage = await resolveMediaValue(row?.og_image ?? fallback?.og_image ?? null);
-  const canonical = row?.canonical_url ?? fallback?.canonical_url ?? null;
+  const canonical = await effectiveCanonical(fallback?.canonical_url, row?.canonical_url);
   const robots = parseRobots(row?.robots ?? fallback?.robots ?? "index,follow");
 
   return {

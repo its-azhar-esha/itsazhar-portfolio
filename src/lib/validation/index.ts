@@ -35,6 +35,7 @@ export {
   navItemSchema,
   analyticsConfigSchema,
   dxConfigSchema,
+  monitoringConfigSchema,
 } from "./schemas/settings";
 
 export { submitLeadSchema, updateLeadStatusSchema } from "./schemas/lead";

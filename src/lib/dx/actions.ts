@@ -9,7 +9,7 @@ import { fail, ok } from "@/lib/result";
 import type { Result } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
 import { env } from "@/lib/env";
-import { SITE_URL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/site/urls";
 import { SETTINGS_ROW_ID, normalizeDxConfig } from "@/types/settings";
 import type { DxConfig } from "@/types/settings";
 import { dxConfigSchema } from "@/lib/validation";
@@ -154,6 +154,8 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     const environment: CheckItem[] = [];
     const health: CheckItem[] = [];
 
+    const siteUrl = await getSiteUrl();
+
     const { data: configRow } = (await admin
       .from("site_settings")
       .select("dx_config")
@@ -188,8 +190,8 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     });
     environment.push({
       label: "Site URL",
-      status: SITE_URL ? "ok" : "warn",
-      detail: SITE_URL || "SITE_URL not set",
+      status: siteUrl ? "ok" : "warn",
+      detail: siteUrl || "SITE_URL not set",
     });
 
     /* Health monitor (database + storage reachability) */

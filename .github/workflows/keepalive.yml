@@ -12,6 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping health endpoint (with retries)
+        env:
+          # Override with a repository variable HEALTH_URL when the public
+          # domain moves (e.g. itsazhar.com); defaults to the current
+          # platform domain. No workflow edits needed for the switch.
+          HEALTH_URL: ${{ vars.HEALTH_URL || 'https://itsazhar-portfolio.vercel.app/api/health' }}
         run: |
           set +e
           STATUS=0
@@ -27,7 +32,7 @@ jobs:
             echo "attempt $attempt..."
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 \
               "${HEADER_ARGS[@]}" \
-              https://itsazhar-portfolio.vercel.app/api/health)
+              "${HEALTH_URL}")
             echo "health status: $STATUS"
             # 200 = ok, 429/5xx = transient -> retry with backoff
             if [ "$STATUS" = "200" ]; then

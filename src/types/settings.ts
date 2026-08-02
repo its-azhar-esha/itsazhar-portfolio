@@ -20,6 +20,24 @@ export interface DxConfig {
   seoDescMax: number;
 }
 
+export interface MonitoringWebhook {
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
+}
+
+export interface MonitoringConfig {
+  /** Canonical site URL ("" = derive from NEXT_PUBLIC_SITE_URL / default). */
+  siteUrl: string;
+  /** Keep-alive endpoint override ("" = derive from siteUrl). */
+  healthCheckUrl: string;
+  /** Backup endpoint override ("" = derive from siteUrl). */
+  backupUrl: string;
+  /** Endpoints notified on health/backup failure. */
+  webhooks: MonitoringWebhook[];
+}
+
 export interface SiteSettings {
   id: string;
   site_name: string;
@@ -58,6 +76,7 @@ export interface SiteSettings {
   nav_order: NavItemConfig[];
   analytics_config: AnalyticsConfig;
   dx_config: DxConfig;
+  monitoring_config: MonitoringConfig;
   created_at: string;
   updated_at: string;
 }
@@ -91,6 +110,13 @@ export const DEFAULT_DX_CONFIG: DxConfig = {
   seoTitleMax: 70,
   seoDescMin: 120,
   seoDescMax: 160,
+};
+
+export const DEFAULT_MONITORING_CONFIG: MonitoringConfig = {
+  siteUrl: "",
+  healthCheckUrl: "",
+  backupUrl: "",
+  webhooks: [],
 };
 
 /** Coerce a stored nav_order value into a clean NavItemConfig[]. */
@@ -152,6 +178,39 @@ function numberOr(value: unknown, fallback: number, min: number, max: number): n
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
+/** Coerce a stored monitoring_config value into MonitoringConfig. */
+export function normalizeMonitoringConfig(value: unknown): MonitoringConfig {
+  if (typeof value !== "object" || value === null) return DEFAULT_MONITORING_CONFIG;
+  const candidate = value as Record<string, unknown>;
+  const siteUrl = typeof candidate.siteUrl === "string" ? candidate.siteUrl.trim() : "";
+  const healthCheckUrl =
+    typeof candidate.healthCheckUrl === "string" ? candidate.healthCheckUrl.trim() : "";
+  const backupUrl = typeof candidate.backupUrl === "string" ? candidate.backupUrl.trim() : "";
+  const webhooks: MonitoringWebhook[] = [];
+  if (Array.isArray(candidate.webhooks)) {
+    for (const entry of candidate.webhooks) {
+      if (typeof entry !== "object" || entry === null) continue;
+      const hook = entry as Record<string, unknown>;
+      if (typeof hook.url !== "string" || hook.url.trim() === "") continue;
+      webhooks.push({
+        id: typeof hook.id === "string" && hook.id !== "" ? hook.id : crypto.randomUUID(),
+        name:
+          typeof hook.name === "string" && hook.name.trim() !== ""
+            ? hook.name.trim().slice(0, 40)
+            : "Webhook",
+        url: hook.url.trim().slice(0, 500),
+        enabled: hook.enabled !== false,
+      });
+    }
+  }
+  return {
+    siteUrl: siteUrl.slice(0, 200),
+    healthCheckUrl: healthCheckUrl.slice(0, 300),
+    backupUrl: backupUrl.slice(0, 300),
+    webhooks,
+  };
+}
+
 export const DEFAULT_SITE_SETTINGS: Omit<SiteSettings, "id" | "created_at" | "updated_at"> = {
   site_name: "Azhar",
   site_title: "Azhar",
@@ -190,4 +249,5 @@ export const DEFAULT_SITE_SETTINGS: Omit<SiteSettings, "id" | "created_at" | "up
   nav_order: DEFAULT_NAV_ORDER,
   analytics_config: DEFAULT_ANALYTICS_CONFIG,
   dx_config: DEFAULT_DX_CONFIG,
+  monitoring_config: DEFAULT_MONITORING_CONFIG,
 };

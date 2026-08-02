@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SETTINGS_ROW_ID, normalizeDxConfig } from "@/types/settings";
+import { fireMonitoringWebhooks } from "@/lib/monitoring/actions";
 
 /**
  * Lightweight liveness endpoint.
@@ -78,6 +79,15 @@ export async function GET(request: Request) {
     }
   } catch {
     // Ledger write must never flip the health status.
+  }
+
+  // Notify configured webhooks when the health check fails (best-effort).
+  if (db !== "ok") {
+    await fireMonitoringWebhooks("health", {
+      detail: detail || "Health check failed",
+      source: "api/health",
+      latencyMs: dbLatencyMs,
+    });
   }
 
   return NextResponse.json(

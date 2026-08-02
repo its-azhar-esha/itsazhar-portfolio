@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SETTINGS_ROW_ID, normalizeAnalyticsConfig } from "@/types/settings";
+import { fireMonitoringWebhooks } from "@/lib/monitoring/actions";
 
 /**
  * Nightly automated backup (Vercel cron 00:00 UTC, and optionally
@@ -242,6 +243,12 @@ export async function GET(request: Request) {
     } catch {
       // Ledger write failure must not mask the original error.
     }
+    // Notify configured webhooks (best-effort) so the admin knows the
+    // nightly backup failed even if nobody visits the dashboard.
+    await fireMonitoringWebhooks("backup", {
+      detail: err instanceof Error ? err.message : "Backup failed",
+      source: "api/backup",
+    });
     return NextResponse.json(
       {
         ok: false,

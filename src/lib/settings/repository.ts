@@ -7,6 +7,7 @@ import {
   normalizeNavOrder,
   normalizeAnalyticsConfig,
   normalizeDxConfig,
+  normalizeMonitoringConfig,
 } from "@/types/settings";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
@@ -54,6 +55,7 @@ function rowToSiteSettings(
     nav_order: normalizeNavOrder(row.nav_order),
     analytics_config: normalizeAnalyticsConfig(row.analytics_config),
     dx_config: normalizeDxConfig(row.dx_config),
+    monitoring_config: normalizeMonitoringConfig(row.monitoring_config),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

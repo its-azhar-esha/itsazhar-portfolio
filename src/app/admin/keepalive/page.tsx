@@ -3,8 +3,10 @@ import { AlertTriangle, Activity, CheckCircle2, Info, ShieldCheck } from "lucide
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getKeepAliveReportAction, type KeepAliveComponent } from "@/lib/keepalive/actions";
 import { KeepAliveCard, InfoNote } from "@/components/admin/keepalive/keepalive-card";
+import { MonitoringConfigCard } from "@/components/admin/keepalive/monitoring-config-card";
 import { STATUS_META } from "@/lib/keepalive/status-meta";
 import { humanAge } from "@/lib/keepalive/freshness";
+import { getMonitoringConfig, getSiteUrl, getHealthCheckUrl, getBackupUrl } from "@/lib/site/urls";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +24,14 @@ const GROUP_ORDER: KeepAliveComponent["group"][] = [
 ];
 
 export default async function KeepAlivePage() {
-  const result = await getKeepAliveReportAction();
+  const [result, monitoringConfig, effectiveSiteUrl, effectiveHealthUrl, effectiveBackupUrl] =
+    await Promise.all([
+      getKeepAliveReportAction(),
+      getMonitoringConfig(),
+      getSiteUrl(),
+      getHealthCheckUrl(),
+      getBackupUrl(),
+    ]);
 
   if (!result.success) {
     return (
@@ -131,6 +140,13 @@ export default async function KeepAlivePage() {
           to restore monitoring.
         </InfoNote>
       )}
+
+      <MonitoringConfigCard
+        initial={monitoringConfig}
+        effectiveSiteUrl={effectiveSiteUrl}
+        effectiveHealthUrl={effectiveHealthUrl}
+        effectiveBackupUrl={effectiveBackupUrl}
+      />
 
       {groups.map(({ group, items }) => (
         <section key={group}>

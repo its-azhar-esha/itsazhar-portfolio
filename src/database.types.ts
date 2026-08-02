@@ -369,6 +369,7 @@ export interface Database {
           nav_order: unknown;
           analytics_config: unknown;
           dx_config: unknown;
+          monitoring_config: unknown;
           created_at: string;
           updated_at: string;
         };
@@ -410,6 +411,7 @@ export interface Database {
           nav_order?: unknown;
           analytics_config?: unknown;
           dx_config?: unknown;
+          monitoring_config?: unknown;
           created_at?: string;
           updated_at?: string;
         };
@@ -451,6 +453,7 @@ export interface Database {
           nav_order?: unknown;
           analytics_config?: unknown;
           dx_config?: unknown;
+          monitoring_config?: unknown;
           created_at?: string;
           updated_at?: string;
         };

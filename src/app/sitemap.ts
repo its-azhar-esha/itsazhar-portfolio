@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 import { getProjectSlugs } from "@/lib/projects-data";
 import { getPublicBlogPostsAction } from "@/lib/blog/actions";
 import { getPublicResourcesAction, getPublicTemplatesAction } from "@/lib/hub/actions";
-import { SITE_URL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/site/urls";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = SITE_URL;
+  const baseUrl = await getSiteUrl();
 
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 1.0 },
