@@ -2053,13 +2053,90 @@ manual upkeep, even after months/years of sporadic traffic.
 
 ### Pending (needs credentials from the user)
 
-- GitHub PAT to provision `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` /
+- ~~GitHub PAT to provision `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` /
   `HEALTH_CRON_SECRET` repo secrets and seed the (currently 0-run)
-  `nightly-backup` workflow.
-- Third-party uptime monitor (e.g. UptimeRobot) for an independent
-  third keep-alive layer.
+  `nightly-backup` workflow.~~
+- ~~Third-party uptime monitor (e.g. UptimeRobot) for an independent
+  third keep-alive layer.~~
+- **Done in Phase 35** — see below.
 
-- **Last Updated:** 2026-08-02 (Phase 34 — admin-configurable domain & monitoring)
+- **Last Updated:** 2026-08-02 (Phase 35 — external keep-alive & backup provisioning)
+
+## 35. External Keep-Alive & Backup Provisioning (2026-08-02)
+
+Goal: activate the two remaining keep-alive/backup layers that were blocked
+on user credentials — GitHub Actions with real repo secrets, and an
+independent UptimeRobot monitor.
+
+### GitHub repo provisioning (fine-grained PAT)
+
+- User provided a **fine-grained PAT** with Read/Write on `actions`, `code`,
+  `secrets`, `workflows` (metadata read). Verified working against
+  `its-azhar-esha/itsazhar-portfolio`.
+- Repo **secrets** set via the REST API (sealed-box encrypted with the repo
+  public key, `tweetnacl-sealedbox-js`):
+  - `SUPABASE_URL` = `https://quekecvmdbzpxqglztsa.supabase.co`
+  - `SUPABASE_SERVICE_ROLE_KEY` (service-role JWT, verified against Data API)
+  - `HEALTH_CRON_SECRET` (authoritative `/api/health` ledger header)
+  - `BACKUP_CRON_SECRET` (out-of-band `/api/backup` trigger header)
+  - `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` already existed (2026-08-01);
+    re-set to current values to guarantee consistency.
+- **Note:** the PAT lacks `variables` permission (403 on repo variables), so
+  the `HEALTH_URL` repo variable could not be set. Non-critical: the
+  keepalive/backup API endpoints stay on the Vercel platform domain regardless
+  of any custom-domain switch, and the workflow's hardcoded fallback already
+  matches the current domain. If the domain ever changes to a custom domain
+  that hosts `/api/health` too, set the `HEALTH_URL` variable via the GitHub
+  UI (Settings → Secrets and variables → Actions → Variables).
+
+### nightly-backup workflow seeded (first real run)
+
+- Dispatched `nightly-backup` (`workflow_dispatch`, ref main). **Success** —
+  first recorded run ever. Backups branch `backups` now contains
+  `backups/2026-08-02/` with `manifest.json`, `tables/*.json` and
+  `storage/media/*`.
+
+### keepalive workflow verified with secrets
+
+- Dispatched `keepalive` (`workflow_dispatch`). **Success**. Because
+  `HEALTH_CRON_SECRET` is now a repo secret, the workflow sent `x-health-key`
+  and the authoritative health ledger row was written: `2026-08-02 ok=True
+db ok (313ms)` (verified via service-role REST probe; anon key cannot read
+  `health_checks` — RLS keeps it admin-only, which is correct).
+
+### UptimeRobot monitoring (v3 API, Bearer auth)
+
+- Account registered 2026-08-02, Free plan (50 monitors, 5-min interval, 10
+  req/min).
+- **Important:** the legacy v2 `newMonitor` endpoint rejects creation with
+  `access_denied: "You are not allowed to use some settings with your current
+plan"` even with the documented minimal payload. The **v3 REST API**
+  (`https://api.uptimerobot.com/v3/monitors`, `Authorization: Bearer
+<api-key>`) works. v3 requires `timeout` for HTTP monitors or it returns a 400.
+- Created monitor **803645542 `itsazhar-health-db`** — HTTP GET on
+  `https://itsazhar-portfolio.vercel.app/api/health`, 300s interval, 30s
+  timeout, region `as`. Assigned alert contact `8682508` (same as the
+  pre-existing monitor). Status **UP**.
+- Pre-existing monitor **803645358 `itsazhar-portfolio.vercel.app`** — HTTP on
+  the site root, also UP.
+- Read-only key (`ur3684980-…`) verified listing both monitors.
+- UptimeRobot keys stored in the temp secrets file (outside repo).
+
+### Resulting keep-alive/backup redundancy (all verified 2026-08-02)
+
+1. **Vercel cron** → `/api/health` (12:00 UTC) + `/api/backup` (00:00 UTC),
+   with `BACKUP_CRON_SECRET`/`HEALTH_CRON_SECRET` env vars.
+2. **GitHub Actions** `keepalive` (12:00 UTC, `HEALTH_CRON_SECRET` repo secret,
+   `vars.HEALTH_URL` override) + `nightly-backup` (03:00 UTC) → `backups`
+   branch offsite copy.
+3. **UptimeRobot** independent external probes: site root + `/api/health`.
+
+### Secrets hygiene
+
+- All secrets live in `.env.local` (gitignored) and/or
+  `C:\Users\Alif\AppData\Local\Temp\opencode\reliability-secrets.txt`
+  (outside the repo). No secret is committed. Do not paste these into chat or
+  docs.
 
 ## 34. Admin-Configurable Domain & Monitoring Webhooks (2026-08-02, commit 7097c3d)
 

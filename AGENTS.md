@@ -64,5 +64,12 @@ Nothing is off-limits; the user prefers being asked over being skipped.
   `supabase db push` / `supabase db query` / `supabase migration repair`.
 - To verify remote state without writing data: REST probes with the anon key
   against `https://quekecvmdbzpxqglztsa.supabase.co/rest/v1/...`.
+- Keep-alive/backup redundancy (3 layers, all verified): Vercel cron
+  (`/api/health` 12:00 UTC, `/api/backup` 00:00 UTC, `BACKUP_CRON_SECRET` /
+  `HEALTH_CRON_SECRET` env); GitHub Actions `keepalive` + `nightly-backup`
+  (repo secrets + `vars.HEALTH_URL` override; `backups` branch is the offsite
+  copy); UptimeRobot monitors 803645358 (root) + 803645542 (`/api/health`).
+  UptimeRobot v3 API requires `timeout` on HTTP monitors; v2 `newMonitor` is
+  rejected on Free plan (`access_denied`).
 - After any schema change: update `supabase/migrations/`, hand-sync
   `src/database.types.ts`, apply to remote, update the handoff.
