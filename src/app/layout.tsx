@@ -112,11 +112,9 @@ export default async function RootLayout({
         name: "Azhar Mahmud Alif",
         jobTitle: "AI Automation Specialist",
         url: baseUrl,
-        sameAs: [
-          "https://linkedin.com/in/azharmahmudalif",
-          "https://github.com/azharmahmudalif",
-          "https://x.com/azhar_m_alif",
-        ],
+        sameAs: [settings.social_linkedin, settings.social_github, settings.social_twitter].filter(
+          (url): url is string => Boolean(url),
+        ),
         knowsAbout: [
           "AI Agents",
           "Workflow Automation",

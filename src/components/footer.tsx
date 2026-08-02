@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Globe, Mail, ExternalLink, Camera, Video } from "lucide-react";
+import { ArrowRight, Globe, Mail, ExternalLink, Camera, Video, FolderGit, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -46,6 +46,16 @@ export function Footer({ settings, logoUrl, content }: FooterProps) {
       label: "YouTube",
       href: settings.social_youtube,
       icon: Video,
+    },
+    settings.social_github && {
+      label: "GitHub",
+      href: settings.social_github,
+      icon: FolderGit,
+    },
+    settings.social_twitter && {
+      label: "X / Twitter",
+      href: settings.social_twitter,
+      icon: X,
     },
     settings.contact_email && {
       label: "Email",

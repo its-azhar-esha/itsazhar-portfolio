@@ -81,6 +81,8 @@ export function SocialLinks({ settings }: { settings: SiteSettings }) {
   const settingsOverrides: Record<string, { url?: string; username?: string }> = {
     LinkedIn: { url: settings.social_linkedin ?? undefined },
     Fiverr: { url: settings.social_fiverr ?? undefined },
+    GitHub: { url: settings.social_github ?? undefined },
+    "X / Twitter": { url: settings.social_twitter ?? undefined },
     YouTube: { url: settings.social_youtube ?? undefined },
   };
   const resolved = socials.map((social) => {
