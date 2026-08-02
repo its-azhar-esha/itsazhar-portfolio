@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { mediaUrlOrReferenceSchema } from "./media";
+import { optionalMediaUrlOrReferenceSchema } from "./media";
 
 const optionalUrl = z
   .union([z.string().url(), z.string().email(), z.literal("")])
@@ -62,7 +62,7 @@ export const siteSettingsSchema = z.object({
   site_title: z.string().trim().min(1, "Site title is required").max(100),
   site_description: z.string().trim().max(300).default(""),
   tagline: z.string().trim().min(1, "Tagline is required").max(120),
-  logo: mediaUrlOrReferenceSchema.nullish().transform((v) => (v && v.trim() !== "" ? v : null)),
+  logo: optionalMediaUrlOrReferenceSchema,
   location: z.string().trim().min(1, "Location is required").max(120),
   contact_email: z.string().trim().min(1, "Email is required").email("Enter a valid email"),
   contact_phone: z.string().trim().max(40).nullish(),
@@ -84,6 +84,8 @@ export const siteSettingsSchema = z.object({
   show_testimonials: z.boolean(),
   show_contact: z.boolean(),
   show_blog: z.boolean(),
+  show_hub: z.boolean(),
+  show_playground: z.boolean(),
   featured_projects_enabled: z.boolean(),
   featured_services_enabled: z.boolean(),
   ga4_measurement_id: z.string().trim().max(40).nullish(),

@@ -55,7 +55,28 @@ export const createProjectSchema = z.object({
   keywords: z.array(z.string()).default([]),
 });
 
+/**
+ * Relaxed schema for saving incomplete projects as drafts: only the
+ * database-required fields (title, slug) are enforced; everything else
+ * defaults to empty/null so a new project can be drafted before its content
+ * is written. Publishing still goes through the strict `createProjectSchema`.
+ */
+export const createProjectDraftSchema = createProjectSchema.extend({
+  short_description: z
+    .string()
+    .max(500, "Short description must be 500 characters or fewer")
+    .default(""),
+  industry: z
+    .array(
+      z.enum(PROJECT_INDUSTRIES as unknown as [string, ...string[]], {
+        error: "One or more selected industries are no longer valid options.",
+      }),
+    )
+    .default([]),
+});
+
 export const updateProjectSchema = createProjectSchema.partial();
+export const updateProjectDraftSchema = createProjectDraftSchema.partial();
 
 export const projectFilterSchema = z.object({
   search: z.string().optional(),

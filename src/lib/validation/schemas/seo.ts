@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SEO_ROBOTS } from "@/constants/seo";
-import { mediaUrlOrReferenceSchema } from "./media";
+import { optionalMediaUrlOrReferenceSchema } from "./media";
 
 export const seoPageKeySchema = z
   .string()
@@ -26,7 +26,7 @@ export const createSeoSchema = z.object({
     .default(null)
     .or(z.literal("")),
   keywords: z.array(z.string().trim().min(1)).default([]),
-  og_image: mediaUrlOrReferenceSchema.nullable().default(null).or(z.literal("")),
+  og_image: optionalMediaUrlOrReferenceSchema,
   canonical_url: z.string().url("Must be a valid URL").nullable().default(null).or(z.literal("")),
   robots: seoRobotsSchema.default("index,follow"),
 });

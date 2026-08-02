@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { slugSchema } from "./project";
-import { mediaUrlOrReferenceSchema } from "./media";
+import { optionalMediaUrlOrReferenceSchema } from "./media";
 import { BLOG_POST_STATUSES } from "@/constants/blog";
 
 const blogSlugSchema = slugSchema;
@@ -14,7 +14,7 @@ export const createBlogPostSchema = z.object({
   slug: blogSlugSchema,
   excerpt: z.string().trim().max(500, "Excerpt must be 500 characters or fewer").default(""),
   content: z.string().trim().min(1, "Content is required"),
-  cover_image: mediaUrlOrReferenceSchema.nullish().transform((v) => (v ? v : null)),
+  cover_image: optionalMediaUrlOrReferenceSchema,
   categories: z
     .array(z.string().trim().min(1).max(60))
     .max(10, "Maximum 10 categories")
@@ -31,7 +31,7 @@ export const createBlogPostSchema = z.object({
     .trim()
     .max(160, "SEO description must be 160 characters or fewer")
     .nullish(),
-  og_image: mediaUrlOrReferenceSchema.nullish().transform((v) => (v ? v : null)),
+  og_image: optionalMediaUrlOrReferenceSchema,
   canonical_url: z.string().url("Must be a valid URL").nullish(),
   keywords: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
 });

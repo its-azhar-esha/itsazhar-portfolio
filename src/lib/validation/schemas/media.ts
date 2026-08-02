@@ -150,3 +150,13 @@ export const mediaUrlOrReferenceSchema = z
   .string()
   .url("Must be a valid URL")
   .or(mediaReferenceSchema);
+
+/**
+ * Optional media value: accepts a URL, a `media:<uuid>` reference, an empty
+ * string (forms send `""` for empty optional media fields), `null`, or
+ * `undefined`, and normalizes empty values to `null` for storage.
+ */
+export const optionalMediaUrlOrReferenceSchema = mediaUrlOrReferenceSchema
+  .or(z.literal(""))
+  .nullish()
+  .transform((v) => (v && v.trim() !== "" ? v : null));

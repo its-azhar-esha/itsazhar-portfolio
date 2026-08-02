@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { slugSchema } from "./project";
-import { mediaUrlOrReferenceSchema } from "./media";
+import { mediaUrlOrReferenceSchema, optionalMediaUrlOrReferenceSchema } from "./media";
 import {
   RESOURCE_TYPES,
   RESOURCE_STATUSES,
@@ -31,7 +31,7 @@ export const createResourceCollectionSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   slug: slugSchema,
   description: z.string().trim().max(500).default(""),
-  cover_image: mediaUrlOrReferenceSchema.nullish().transform((v) => (v ? v : null)),
+  cover_image: optionalMediaUrlOrReferenceSchema,
   featured: z.boolean().default(false),
   display_order: z.number().int().default(0),
   status: simpleStatusSchema.default("published"),
@@ -65,8 +65,8 @@ export const createResourceSchema = z.object({
   content: z.string().trim().min(1, "Content is required"),
   category_id: z.string().uuid("Invalid category").nullish(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
-  cover_image: mediaUrlOrReferenceSchema.nullish().transform((v) => (v ? v : null)),
-  og_image: mediaUrlOrReferenceSchema.nullish().transform((v) => (v ? v : null)),
+  cover_image: optionalMediaUrlOrReferenceSchema,
+  og_image: optionalMediaUrlOrReferenceSchema,
   version: z.string().trim().max(40).nullish(),
   changelog: z.array(changelogEntrySchema).max(50).default([]),
   metadata: z.record(z.string(), z.unknown()).default({}),
@@ -156,7 +156,7 @@ export const createWorkflowTemplateSchema = z.object({
   category_id: z.string().uuid("Invalid category").nullish(),
   difficulty: z.enum(DIFFICULTIES as unknown as [string, ...string[]]).default("beginner"),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
-  thumbnail: mediaUrlOrReferenceSchema.nullish().transform((v) => (v ? v : null)),
+  thumbnail: optionalMediaUrlOrReferenceSchema,
   nodes: z.array(workflowNodeSchema).max(200).default([]),
   edges: z.array(workflowEdgeSchema).max(400).default([]),
   canvas: z.record(z.string(), z.unknown()).default({}),

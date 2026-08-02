@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TESTIMONIAL_STATUSES } from "@/types/testimonial";
-import { mediaUrlOrReferenceSchema } from "./media";
+import { optionalMediaUrlOrReferenceSchema } from "./media";
 
 export const createTestimonialSchema = z.object({
   name: z.string().min(1, "Name is required").max(200, "Name must be 200 characters or fewer"),
@@ -13,7 +13,7 @@ export const createTestimonialSchema = z.object({
     .min(1, "Rating must be between 1 and 5")
     .max(5, "Rating must be between 1 and 5")
     .default(5),
-  avatar: mediaUrlOrReferenceSchema,
+  avatar: optionalMediaUrlOrReferenceSchema,
   display_order: z
     .number()
     .int("Display order must be a whole number")

@@ -1,7 +1,9 @@
 export {
   slugSchema,
   createProjectSchema,
+  createProjectDraftSchema,
   updateProjectSchema,
+  updateProjectDraftSchema,
   projectFilterSchema,
 } from "./schemas/project";
 
@@ -26,6 +28,7 @@ export {
   updateMediaMetadataSchema,
   mediaReferenceSchema,
   mediaUrlOrReferenceSchema,
+  optionalMediaUrlOrReferenceSchema,
   bulkUpdateMediaSchema,
   bulkDeleteMediaSchema,
 } from "./schemas/media";

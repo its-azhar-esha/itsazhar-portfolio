@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { createProjectSchema, updateProjectSchema } from "@/lib/validation";
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  createProjectDraftSchema,
+  updateProjectDraftSchema,
+} from "@/lib/validation";
 import type { DbProject, Project } from "@/types/project";
 import {
   toProject,
@@ -30,7 +35,9 @@ export async function createProjectAction(
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
 
-    const parsed = createProjectSchema.safeParse(input);
+    const parsed = (
+      input.status === "draft" ? createProjectDraftSchema : createProjectSchema
+    ).safeParse(input);
     if (!parsed.success) {
       const messages = parsed.error.issues.map((i) => i.message).join("; ");
       return fail(messages);
@@ -64,7 +71,9 @@ export async function updateProjectAction(
     } = await supabase.auth.getUser();
     if (!user) return fail("Authentication required.");
 
-    const parsed = updateProjectSchema.safeParse(input);
+    const parsed = (
+      input.status === "draft" ? updateProjectDraftSchema : updateProjectSchema
+    ).safeParse(input);
     if (!parsed.success) {
       const messages = parsed.error.issues.map((i) => i.message).join("; ");
       return fail(messages);
