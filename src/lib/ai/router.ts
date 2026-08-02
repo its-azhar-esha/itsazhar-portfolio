@@ -28,10 +28,10 @@ export async function routeToAI(
       let response: Response;
       switch (provider) {
         case "groq":
-          response = await streamGroq(messages, signal);
+          response = await streamGroq(messages, signal, modelId);
           break;
         case "openrouter":
-          response = await streamOpenRouter(messages, signal);
+          response = await streamOpenRouter(messages, signal, modelId);
           break;
       }
 

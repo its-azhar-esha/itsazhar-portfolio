@@ -1,5 +1,5 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "meta-llama/llama-3.1-8b-instruct";
+const DEFAULT_MODEL = "meta-llama/llama-3.1-8b-instruct";
 const TIMEOUT_MS = 30000;
 const MAX_RETRIES = 1;
 
@@ -9,6 +9,7 @@ import { resolveApiKey } from "@/lib/integrations/repository";
 export async function streamOpenRouter(
   messages: { role: string; content: string }[],
   signal?: AbortSignal,
+  model?: string,
 ): Promise<Response> {
   const apiKey = await resolveApiKey("openrouter");
   if (!apiKey) {
@@ -35,7 +36,7 @@ export async function streamOpenRouter(
           "X-Title": "Azhar AI",
         },
         body: JSON.stringify({
-          model: MODEL,
+          model: model || DEFAULT_MODEL,
           messages,
           temperature: 0.3,
           max_tokens: 1024,

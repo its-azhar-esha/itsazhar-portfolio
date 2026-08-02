@@ -1,5 +1,5 @@
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 const TIMEOUT_MS = 30000;
 const MAX_RETRIES = 1;
 
@@ -9,6 +9,7 @@ import { resolveApiKey } from "@/lib/integrations/repository";
 export async function streamGroq(
   messages: { role: string; content: string }[],
   signal?: AbortSignal,
+  model?: string,
 ): Promise<Response> {
   const apiKey = await resolveApiKey("groq");
   if (!apiKey) {
@@ -33,7 +34,7 @@ export async function streamGroq(
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: MODEL,
+          model: model || DEFAULT_MODEL,
           messages,
           temperature: 0.3,
           max_tokens: 1024,

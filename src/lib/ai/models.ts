@@ -7,6 +7,9 @@ export interface ModelConfig {
   temperature: number;
 }
 
+// Only models verified reachable with the configured API keys are listed.
+// The router passes the selected model id to the provider so the reported
+// model always matches the one actually used.
 export const models: ModelConfig[] = [
   {
     id: "llama-3.3-70b-versatile",
@@ -17,43 +20,11 @@ export const models: ModelConfig[] = [
     temperature: 0.7,
   },
   {
-    id: "llama-4-scout-17b-16e-instruct",
-    name: "Llama 4 Scout 17B",
-    provider: "groq",
-    tier: "fast",
-    maxTokens: 8192,
-    temperature: 0.7,
-  },
-  {
     id: "deepseek/deepseek-chat",
     name: "DeepSeek V4 Flash",
     provider: "openrouter",
     tier: "accurate",
     maxTokens: 8192,
-    temperature: 0.7,
-  },
-  {
-    id: "google/gemini-2.0-flash-001",
-    name: "Gemini 2.0 Flash",
-    provider: "openrouter",
-    tier: "accurate",
-    maxTokens: 8192,
-    temperature: 0.7,
-  },
-  {
-    id: "anthropic/claude-3.5-haiku",
-    name: "Claude 3.5 Haiku",
-    provider: "openrouter",
-    tier: "accurate",
-    maxTokens: 8192,
-    temperature: 0.7,
-  },
-  {
-    id: "qwen/qwen-2.5-72b-instruct",
-    name: "Qwen 2.5 72B",
-    provider: "openrouter",
-    tier: "fallback",
-    maxTokens: 4096,
     temperature: 0.7,
   },
   {

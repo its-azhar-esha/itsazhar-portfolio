@@ -17,6 +17,7 @@
  * visible error state instead of failing the whole page.
  */
 
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, fail, type Result } from "@/lib/result";
 import type { Database } from "@/database.types";
@@ -205,6 +206,11 @@ async function pingTable(
 /* ─── Report ─── */
 
 export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return fail("Authentication required.");
   const now = new Date();
   const report: Partial<KeepAliveReport> = { generatedAt: now.toISOString(), components: [] };
   const components: KeepAliveComponent[] = [];
