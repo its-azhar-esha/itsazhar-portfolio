@@ -68,7 +68,7 @@ Nothing is off-limits; the user prefers being asked over being skipped.
 ## Workflows
 
 - Lint: `npm run lint` (eslint). Build: `npm run build` (must stay green,
-  31/31 routes). Dev: `npm run dev`.
+  70 routes incl. API + metadata files). Dev: `npm run dev`.
 - Supabase CLI (v2.111.0, globally installed, project linked): read the DB
   password from `.env.local` (`SUPABASE_DB_PASSWORD`) when running
   `supabase db push` / `supabase db query` / `supabase migration repair`.

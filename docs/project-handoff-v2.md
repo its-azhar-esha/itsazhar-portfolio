@@ -2121,7 +2121,7 @@ each check to the scheduler that actually wrote it.
 
 ### Verified (all live, 2026-08-02)
 
-- `tsc --noEmit`, `npm run lint`, `npm run build` (31/31 routes) all pass.
+- `tsc --noEmit`, `npm run lint`, `npm run build` (70 routes incl. API + metadata) all pass.
 - Commit `0c02565` pushed; Vercel deploy READY.
 - Authenticated headless-browser check of `/admin/keepalive`: "Generated Aug
   2, 2026, 7:49 PM", "Last check 51m ago (2/2 OK)", "All keep-alive
@@ -2137,6 +2137,75 @@ each check to the scheduler that actually wrote it.
   formatters; never render raw UTC in admin UI. Never mask a real failure as
   OK; statuses must reflect the actual ledger/probe. Health/backup ledger
   rows carry `source` (`vercel`/`github`); `vercel` is primary.
+
+## 37. Final End-to-End Review + Cleanup (2026-08-02, commits `c9ac85c` + `e089571`)
+
+Goal: a full-project health audit against live infra, fixing everything found.
+Audit pass used real data only — local builds, remote DB probes, authenticated
+admin page sweeps, live API calls, Vercel/GitHub/UptimeRobot APIs.
+
+### Backup branch non-fast-forward bug (commit `c9ac85c`)
+
+- `.github/workflows/backup.yml` re-created `backups` from `main` every run →
+  `git push origin backups` rejected as non-fast-forward (run 3 failed).
+- Fixed: `git fetch origin backups` + `git switch -c backups origin/backups`
+  so commits stack onto the remote branch; config + latest backup script are
+  pulled via `git show origin/main:scripts/backup-to-branch.mjs` each run.
+- Added `/backups/` to `.gitignore`. Re-dispatch run 4 → success; `backups`
+  branch now holds fast-forward commits (`3f065c5`, `56e8b23`). The `backups`
+  branch triggers harmless Vercel preview deploys (2 in last 30).
+
+### AI model consistency fix (commit `e089571`)
+
+- `src/lib/ai/models.ts` was advertising models the providers could not use:
+  router reported `modelId` (deepseek/deepseek-chat) but `groq.ts` /
+  `openrouter.ts` hardcoded different defaults, and `google/gemini-2.0-flash-001`
+  - `anthropic/claude-3.5-haiku` were 404s on OpenRouter (live-tested).
+- Providers now accept a `model?: string` param (`model || DEFAULT_MODEL`);
+  `router.ts` passes the resolved `modelId` through, so the reported model is
+  the model actually called. `models.ts` pruned to the 3 verified-working
+  models (llama-3.3-70b-versatile on Groq; deepseek/deepseek-chat +
+  meta-llama/llama-3.1-8b-instruct on OpenRouter). Live `/api/chat` re-check
+  → 200, `provider:"groq"`, real answer.
+
+### Orphans removed (commit `e089571`)
+
+- Deleted unused `src/components/ai/chat-provider.tsx` (shim), and dead hooks
+  `src/hooks/use-intersection.ts`, `src/hooks/use-mounted.ts`.
+
+### Defense-in-depth auth guard (commit `e089571`)
+
+- `getKeepAliveReportAction()` now calls `supabase.auth.getUser()` and returns
+  `fail("Authentication required.")` when absent, matching the dashboard/dx
+  report actions. Pages already render a graceful failure block on `fail`.
+
+### Environment hygiene (commit `e089571`)
+
+- `.env.example` rewritten with real placeholders for `SECRET_ENCRYPTION_KEY`
+  (documenting the `src/lib/crypto.ts` derivation fallback: when unset the key
+  is derived from `SUPABASE_SERVICE_ROLE_KEY` + URL, so rotation = data loss),
+  `SUPABASE_URL`, `HEALTH_CRON_SECRET`, `BACKUP_CRON_SECRET`,
+  `VERCEL_PROJECT_ID`, `NEXT_PUBLIC_SITE_URL`; removed the unused
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (never referenced in code).
+
+### Verified live (2026-08-02)
+
+- Local: `tsc --noEmit` exit 0, `npm run lint` clean (1 pre-existing
+  `<img>` warning at `src/lib/markdown.tsx:53`), `npm run build` green.
+- Migrations remote = local exactly (00001–00009, 00011–00033; 00010 never
+  existed). RLS deny-all verified on health_checks/backups/integration_settings/
+  login_history/audit_log/analytics_events (anon → 0 rows, service-role → rows);
+  anon reads public tables (projects=5, services=6, blog_posts=4).
+- Public pages all 200 (incl. sitemap 25 locs, robots disallows /api/+/admin/,
+  `/api/health` ok dbLatencyMs 332). Admin: 20 pages + all sub-routes 200
+  authenticated; `/admin` unauth → 307.
+- Ledgers real: health_checks 08-02 vercel(313ms)+github(321ms); backups 08-02
+  vercel + github rows. `/api/backup` w/o secret → 401, with `x-vercel-cron`
+  → 200 (19 tables, 0 failures, 17.4s). Chat rate-limit writes
+  `analytics_events` rows. Security headers verified (CSP, XFO DENY, HSTS).
+- Deploy: production READY at `e089571` (Vercel deploy `dpl_DNbFpHzimzhLXQn4PJLc592DDtUo`).
+  UptimeRobot monitors 803645358 + 803645542 both UP. GitHub Actions: keepalive
+  runs 1–4 success, nightly-backup runs 2+4 success.
 
 ## 35. External Keep-Alive & Backup Provisioning (2026-08-02)
 
