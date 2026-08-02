@@ -179,8 +179,9 @@ async function main() {
   }
 
   // Record in the Supabase ledger so the DX page shows this backup.
+  // Attributed to `github` so it doesn't overwrite the Vercel cron row.
   try {
-    await fetch(`${url}/rest/v1/backups?on_conflict=backup_date`, {
+    await fetch(`${url}/rest/v1/backups?on_conflict=backup_date,source`, {
       method: "POST",
       headers: {
         ...headers,
@@ -195,6 +196,7 @@ async function main() {
         size_bytes: sizeBytes,
         manifest,
         updated_at: new Date().toISOString(),
+        source: "github",
       }),
     });
   } catch {

@@ -24,6 +24,7 @@ import { getSiteUrl } from "@/lib/site/urls";
 import { formatBytes } from "@/lib/dashboard/format";
 import { getIntegrationList } from "@/lib/integrations/repository";
 import { hoursSince, humanAge, statusFromAge } from "@/lib/keepalive/freshness";
+import { formatDateBD, formatDateTimeBD } from "@/lib/format/dates";
 
 export type MetricStatus = "ok" | "warn" | "error" | "info";
 
@@ -150,11 +151,12 @@ function meterStatus(percent: number | null): MetricStatus {
 
 async function ping(admin: ReturnType<typeof createAdminClient>, table: string): Promise<number> {
   const start = Date.now();
-  await admin
+  const { error } = await admin
     .from(table as never)
     .select("id")
     .limit(1)
     .maybeSingle();
+  if (error) throw new Error(error.message);
   return Date.now() - start;
 }
 
@@ -325,11 +327,7 @@ async function collectRecommendations(input: RecommendationInput): Promise<Recom
       push({
         severity: "low",
         category: "Integrations",
-        title: `${i.label} API key expires soon (${new Date(expiry).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })})`,
+        title: `${i.label} API key expires soon (${formatDateBD(expiry)})`,
         why: "The key will stop working when it expires.",
         impact: "Potential disruption to AI features.",
         action: `Rotate the ${i.label} key before it expires.`,
@@ -485,19 +483,21 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       };
     }
 
-    /* Health: keep-alive history */
+    /* Health: keep-alive history (primary = Vercel cron rows) */
     try {
       const { data: checkRows } = await admin
         .from("health_checks")
-        .select("checked_on,ok,updated_at,created_at")
+        .select("checked_on,ok,updated_at,created_at,source")
         .order("checked_on", { ascending: false })
-        .limit(30);
-      const checks = (checkRows ?? []) as {
+        .limit(60);
+      const allChecks = (checkRows ?? []) as {
         checked_on: string;
         ok: boolean;
         updated_at: string | null;
         created_at: string;
+        source?: string;
       }[];
+      const checks = allChecks.filter((c) => c.source !== "github");
       let streak = 0;
       for (const c of checks) {
         if (c.ok) streak += 1;
@@ -523,21 +523,23 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       };
     }
 
-    /* Health: latest backup */
+    /* Health: latest backup (prefer the primary Vercel cron row) */
     try {
       const { data: backupRows } = await admin
         .from("backups")
-        .select("backup_date,status,created_at,updated_at")
+        .select("backup_date,status,created_at,updated_at,source")
         .order("backup_date", { ascending: false })
-        .limit(1);
-      const latest = (backupRows ?? [])[0] as
+        .limit(4);
+      const allRows = (backupRows ?? []) as
         | {
             backup_date: string;
             status: string;
             created_at: string;
             updated_at: string | null;
-          }
+            source?: string;
+          }[]
         | undefined;
+      const latest = (allRows ?? []).find((r) => r.source !== "github") ?? (allRows ?? [])[0];
       if (!latest) {
         health.backups = { status: "info", label: "Backups", detail: "No backup recorded yet" };
       } else {
@@ -647,7 +649,8 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       topTables: [],
     };
     try {
-      const { data: dbUsage } = await admin.rpc("get_db_usage" as never);
+      const { data: dbUsage, error: dbUsageError } = await admin.rpc("get_db_usage" as never);
+      if (dbUsageError) throw new Error(dbUsageError.message);
       const usage = (dbUsage ?? {}) as {
         db_size_bytes?: number;
         tables?: { name: string; rows: number; size_bytes: number }[];
@@ -720,7 +723,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
       adminActions30d: adminActions30d ?? 0,
       leads30d: leads30d ?? 0,
       perDayAvg: Math.round((events30d ?? 0) / WINDOW_DAYS),
-      status: "info" as MetricStatus,
+      status: (events30d === null ? "warn" : "ok") as MetricStatus,
       detail:
         events30d === null
           ? "Event tracking unavailable"
@@ -730,7 +733,11 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
     /* Rate-limit posture: measured tracked traffic vs Supabase per-minute limits */
     const measuredPerMinute = Math.round(((events24h ?? 0) / 1440) * 100) / 100;
     const rateLimit = {
-      status: (measuredPerMinute >= 30 ? "warn" : "ok") as MetricStatus,
+      status: (events24h === null
+        ? "info"
+        : measuredPerMinute >= 30
+          ? "warn"
+          : "ok") as MetricStatus,
       detail:
         events24h === null
           ? "Rate limit status unknown — tracking unavailable"
@@ -775,7 +782,10 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
     };
     try {
       const authStart = Date.now();
-      const authRes = await admin.auth.getUser("not-a-real-token");
+      // Real Auth reachability probe: list a single page of users with the
+      // service-role client (no user token required). A network/API failure
+      // surfaces as an error; a successful response proves Auth is up.
+      const authRes = await admin.auth.admin.listUsers({ page: 1, perPage: 1 });
       const authMs = Date.now() - authStart;
       if (authRes.error) {
         authCheck = {
@@ -789,7 +799,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
         authCheck = {
           status: "ok",
           label: "Auth",
-          detail: `Reachable in ${authMs}ms (session validation OK)`,
+          detail: `Reachable in ${authMs}ms (user list API OK)`,
         };
       }
     } catch (err) {
@@ -868,12 +878,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
             deployCheck = {
               status: "ok",
               label: "Deployments (Vercel)",
-              detail: `Latest production deploy ${new Date(deployedAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}`,
+              detail: `Latest production deploy ${formatDateTimeBD(deployedAt)}`,
             };
           }
         } else {
@@ -910,14 +915,7 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
         return {
           status: "warn",
           label: `AI · ${i.label}`,
-          detail: `Configured key expired ${new Date(i.expiresAt as string).toLocaleDateString(
-            "en-US",
-            {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            },
-          )}.`,
+          detail: `Configured key expired ${formatDateBD(i.expiresAt as string)}.`,
           recommendedAction: `Rotate the ${i.label} key in /admin/integrations.`,
         };
       }

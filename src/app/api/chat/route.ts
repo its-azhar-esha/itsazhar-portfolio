@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { routeToAI, buildSystemPrompt } from "@/lib/ai/router";
 import { findRelevantKnowledge, detectIntent } from "@/lib/ai/knowledge";
 import { buildCmsKnowledge, captureChatLead } from "@/lib/ai/cms-context";
+import { checkChatRateLimit } from "@/lib/ai/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +62,25 @@ async function buildKnowledgeResponse(message: string): Promise<{
 
 export async function POST(req: NextRequest) {
   try {
+    // Protect the public AI endpoint from credit-burn abuse: budget per IP
+    // (sliding window, DB-backed). 429 when exhausted.
+    const limit = await checkChatRateLimit(req);
+    if (!limit.allowed) {
+      return Response.json(
+        {
+          content:
+            limit.status === "daily"
+              ? "You've reached today's message limit. Come back tomorrow or book a free audit."
+              : "You're sending messages too quickly. Please wait a bit and try again.",
+          intent: "general",
+          suggestions: ["Book a free audit", "What services do you offer?"],
+          rateLimited: true,
+          retryAfterSeconds: limit.retryAfterSeconds,
+        },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds ?? 60) } },
+      );
+    }
+
     const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
+import { formatDateTimeBD } from "@/lib/format/dates";
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
   new: "text-blue-500 bg-blue-500/10 border-blue-500/20",
@@ -84,7 +85,7 @@ function LeadDetailDialog({
                 <div>
                   <h3 className="text-base font-semibold">{lead.name}</h3>
                   <p className="text-muted-foreground text-xs">
-                    Received {new Date(lead.created_at).toLocaleString()}
+                    Received {formatDateTimeBD(lead.created_at)}
                   </p>
                 </div>
               </div>
@@ -131,7 +132,7 @@ function LeadDetailDialog({
                 </div>
               )}
               <div className="text-muted-foreground text-xs">
-                Last updated {new Date(lead.updated_at).toLocaleString()}
+                Last updated {formatDateTimeBD(lead.updated_at)}
               </div>
             </div>
 
@@ -340,7 +341,7 @@ export function LeadsManager() {
                     {lead.status}
                   </Badge>
                   <span className="text-muted-foreground text-[11px]">
-                    {new Date(lead.created_at).toLocaleString()}
+                    {formatDateTimeBD(lead.created_at)}
                   </span>
                 </div>
                 <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">

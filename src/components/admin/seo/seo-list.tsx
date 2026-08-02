@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
+import { formatDateBD } from "@/lib/format/dates";
 
 interface SeoListProps {
   entries: SeoEntry[];
@@ -127,11 +128,7 @@ export function SeoList({ entries, error }: SeoListProps) {
                   <div className="hidden shrink-0 text-right sm:block">
                     <p className="text-muted-foreground text-[10px]">Updated</p>
                     <p className="text-muted-foreground text-[10px]">
-                      {new Date(entry.updated_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {formatDateBD(entry.updated_at)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">

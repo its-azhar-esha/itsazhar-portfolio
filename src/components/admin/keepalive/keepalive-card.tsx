@@ -6,15 +6,10 @@ import { AlertTriangle, CheckCircle2, ChevronDown, Info, XCircle } from "lucide-
 import { cn } from "@/lib/utils";
 import type { KeepAliveComponent, KeepAliveStatus } from "@/lib/keepalive/actions";
 import { STATUS_META } from "@/lib/keepalive/status-meta";
+import { formatDateTimeBD } from "@/lib/format/dates";
 
 function fmt(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTimeBD(iso);
 }
 
 function getStatusMeta(status: KeepAliveStatus) {
@@ -178,12 +173,7 @@ export function KeepAliveCard({ component }: { component: KeepAliveComponent }) 
                           <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
                         )}
                         <span className="text-muted-foreground shrink-0">
-                          {new Date(log.at).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
+                          {formatDateTimeBD(log.at)}
                         </span>
                         <span className="truncate">{log.detail || (log.ok ? "ok" : "failed")}</span>
                         {log.latencyMs !== null && (

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
 import { listContentVersionsAction, restoreContentVersionAction } from "@/lib/versions/actions";
 import type { ContentVersion } from "@/lib/versions/repository";
+import { formatDateTimeBD } from "@/lib/format/dates";
 
 interface VersionHistoryProps {
   entity: string;
@@ -15,10 +16,7 @@ interface VersionHistoryProps {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return formatDateTimeBD(iso);
 }
 
 function summarize(data: Record<string, unknown>): string {
@@ -100,9 +98,7 @@ export function VersionHistory({ entity, entityId, onRestored }: VersionHistoryP
 
       {message && (
         <p
-          className={`text-xs ${
-            message.type === "success" ? "text-emerald-500" : "text-red-500"
-          }`}
+          className={`text-xs ${message.type === "success" ? "text-emerald-500" : "text-red-500"}`}
         >
           {message.text}
         </p>
@@ -161,7 +157,7 @@ export function VersionHistory({ entity, entityId, onRestored }: VersionHistoryP
                   />
                 </button>
                 {isOpen && (
-                  <pre className="text-muted-foreground border-border/40 border-t bg-muted/30 max-h-72 overflow-auto rounded-b-lg p-3 text-[11px] leading-relaxed whitespace-pre-wrap">
+                  <pre className="text-muted-foreground border-border/40 bg-muted/30 max-h-72 overflow-auto rounded-b-lg border-t p-3 text-[11px] leading-relaxed whitespace-pre-wrap">
                     {JSON.stringify(v.data, null, 2)}
                   </pre>
                 )}

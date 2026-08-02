@@ -6,6 +6,7 @@ import { KeepAliveCard, InfoNote } from "@/components/admin/keepalive/keepalive-
 import { MonitoringConfigCard } from "@/components/admin/keepalive/monitoring-config-card";
 import { STATUS_META } from "@/lib/keepalive/status-meta";
 import { humanAge } from "@/lib/keepalive/freshness";
+import { formatDateTimeBD } from "@/lib/format/dates";
 import { getMonitoringConfig, getSiteUrl, getHealthCheckUrl, getBackupUrl } from "@/lib/site/urls";
 
 export const dynamic = "force-dynamic";
@@ -48,12 +49,7 @@ export default async function KeepAlivePage() {
   }
 
   const r = result.data;
-  const generated = new Date(r.generatedAt).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const generated = formatDateTimeBD(r.generatedAt);
 
   const groups = GROUP_ORDER.map((g) => ({
     group: g,
@@ -118,7 +114,12 @@ export default async function KeepAlivePage() {
             </span>
             <span className="text-muted-foreground flex items-center gap-1.5">
               <Info className="h-3 w-3" />
-              Record checks: {r.summary.recordEnabled ? "enabled" : "disabled"}
+              Record checks:{" "}
+              {r.summary.settingsUnreadable
+                ? "unknown (settings unreadable)"
+                : r.summary.recordEnabled
+                  ? "enabled"
+                  : "disabled"}
             </span>
           </div>
         </CardHeader>
@@ -138,6 +139,14 @@ export default async function KeepAlivePage() {
           <code className="bg-accent/50 rounded px-1">/api/health</code> run will not write ledger
           rows and uptime/streak cannot be tracked. Re-enable &ldquo;Record keep-alive checks&rdquo;
           to restore monitoring.
+        </InfoNote>
+      )}
+
+      {r.summary.settingsUnreadable && (
+        <InfoNote>
+          The recording setting could not be read from site settings, so &ldquo;Record checks&rdquo;
+          is shown as the default (enabled) without confirmation. Verify the{" "}
+          <code className="bg-accent/50 rounded px-1">site_settings</code> row is readable.
         </InfoNote>
       )}
 

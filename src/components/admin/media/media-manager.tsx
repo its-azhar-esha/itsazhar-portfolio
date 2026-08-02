@@ -31,6 +31,7 @@ import {
 import { MEDIA_DEFAULT_PAGE_SIZE, MEDIA_SORT_OPTIONS } from "@/constants/media";
 import { formatBytes, formatDimensions } from "@/lib/media/utils";
 import type { MediaFile, MediaFolder, MediaSort } from "@/types/media";
+import { formatDateBD } from "@/lib/format/dates";
 import { MediaCard } from "@/components/media/media-card";
 import { MediaThumbnail } from "@/components/media/media-thumbnail";
 import { MediaUploader } from "@/components/media/media-uploader";
@@ -464,7 +465,11 @@ export function MediaManager({ initialError }: MediaManagerProps) {
               <Button
                 size="sm"
                 onClick={handleBulkUpdate}
-                disabled={bulkBusy || selected.size === 0 || (bulkFolder.trim() === "" && bulkTags.trim() === "")}
+                disabled={
+                  bulkBusy ||
+                  selected.size === 0 ||
+                  (bulkFolder.trim() === "" && bulkTags.trim() === "")
+                }
               >
                 {bulkBusy ? "Applying…" : "Apply"}
               </Button>
@@ -579,8 +584,7 @@ export function MediaManager({ initialError }: MediaManagerProps) {
                 </p>
                 <p className="text-muted-foreground text-[11px]">
                   {media.mime_type} · {formatBytes(media.size_bytes)} ·{" "}
-                  {formatDimensions(media.width, media.height)} ·{" "}
-                  {new Date(media.created_at).toLocaleDateString()}
+                  {formatDimensions(media.width, media.height)} · {formatDateBD(media.created_at)}
                   {media.folder !== "media" && (
                     <span className="text-primary ml-1 inline-flex items-center gap-0.5">
                       <FolderOpen className="h-3 w-3" />
@@ -668,7 +672,10 @@ export function MediaManager({ initialError }: MediaManagerProps) {
             )}
           </span>
           <ChevronRight
-            className={cn("text-muted-foreground h-4 w-4 transition-transform", unusedOpen && "rotate-90")}
+            className={cn(
+              "text-muted-foreground h-4 w-4 transition-transform",
+              unusedOpen && "rotate-90",
+            )}
           />
         </button>
         {unusedOpen && (
@@ -697,8 +704,7 @@ export function MediaManager({ initialError }: MediaManagerProps) {
                             {media.original_name}
                           </p>
                           <p className="text-muted-foreground text-[10px]">
-                            {formatBytes(media.size_bytes)} ·{" "}
-                            {new Date(media.created_at).toLocaleDateString()}
+                            {formatBytes(media.size_bytes)} · {formatDateBD(media.created_at)}
                             {media.folder !== "media" && ` · ${media.folder}`}
                           </p>
                         </div>

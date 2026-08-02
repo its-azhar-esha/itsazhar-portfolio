@@ -28,6 +28,7 @@ import {
   type UsageMeter,
 } from "@/lib/dashboard/actions";
 import { formatBytes, formatCount } from "@/lib/dashboard/format";
+import { formatDateBD } from "@/lib/format/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -300,12 +301,7 @@ export default async function AdminDashboard() {
 
   const d: DashboardOverview = result.data;
   const systemOperational = d.system.operational;
-  const generated = new Date(d.generatedAt).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const generated = formatDateBD(d.generatedAt);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
@@ -346,12 +342,7 @@ export default async function AdminDashboard() {
             <span className="text-muted-foreground flex items-center gap-1.5">
               <Rocket className="h-3 w-3" />
               {d.system.deployedAt
-                ? `Deployed ${new Date(d.system.deployedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}`
+                ? `Deployed ${formatDateBD(d.system.deployedAt)}`
                 : "Deploy info not available (set VERCEL_TOKEN to enable)"}
             </span>
             <Link

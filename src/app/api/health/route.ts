@@ -13,22 +13,27 @@ import { fireMonitoringWebhooks } from "@/lib/monitoring/actions";
  * endpoint daily so the Supabase project never goes a full week without
  * API requests — the Free plan pauses projects after ~7 days of
  * inactivity. Any request to Supabase resets that timer.
- * Purpose 3: each Vercel-cron check is upserted into the health_checks
- * ledger (one row per day, service-role write) so the DX page can show
- * keep-alive history. Ledger writes are gated to authoritative cron
- * invocations (`x-vercel-cron: 1`, or a `HEALTH_CRON_SECRET` header) so
- * random public traffic cannot write fake "healthy" rows into the ledger.
+ * Purpose 3: each authoritative cron check is upserted into the
+ * health_checks ledger (one row per day per source, service-role write)
+ * so the DX page can show keep-alive history attributed to the real
+ * scheduler. Ledger writes are gated to authoritative cron invocations
+ * (`x-vercel-cron: 1`, or a `HEALTH_CRON_SECRET` header) so random
+ * public traffic cannot write fake "healthy" rows into the ledger.
  * Public probes still run the real DB query (resetting the pause timer);
  * they just do not write the ledger.
  */
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-/** True when the request is an authoritative keep-alive invocation. */
-function isAuthoritativeCron(request: Request): boolean {
-  if (request.headers.get("x-vercel-cron") === "1") return true;
+/**
+ * Returns the authoritative scheduler source for this request, or null
+ * when the request is not an authoritative keep-alive invocation.
+ */
+function authoritativeSource(request: Request): "vercel" | "github" | null {
+  if (request.headers.get("x-vercel-cron") === "1") return "vercel";
   const secret = process.env.HEALTH_CRON_SECRET;
-  return Boolean(secret && request.headers.get("x-health-key") === secret);
+  if (secret && request.headers.get("x-health-key") === secret) return "github";
+  return null;
 }
 
 export async function GET(request: Request) {
@@ -61,8 +66,10 @@ export async function GET(request: Request) {
     const dxConfig = normalizeDxConfig(settingsRow?.dx_config);
     // Only authoritative cron invocations write the ledger, so the
     // "last check" freshness reflects the real daily run, and public
-    // traffic cannot forge healthy rows.
-    if (dxConfig.recordHealthChecks && isAuthoritativeCron(request)) {
+    // traffic cannot forge healthy rows. The source is attributed so the
+    // keep-alive report can distinguish Vercel cron from GitHub Actions.
+    const source = authoritativeSource(request);
+    if (dxConfig.recordHealthChecks && source) {
       // Always record a row — success AND failure — so the ledger shows the
       // last actual run time (updated_at) and failure detail, and the
       // dashboard can distinguish "ran and failed" from "never ran".
@@ -73,8 +80,9 @@ export async function GET(request: Request) {
           latency_ms: dbLatencyMs || null,
           detail: db === "ok" ? `db ok (${dbLatencyMs}ms)` : `db ${db}: ${detail || "unreachable"}`,
           updated_at: new Date().toISOString(),
+          source,
         } as never,
-        { onConflict: "checked_on" },
+        { onConflict: "checked_on,source" },
       );
     }
   } catch {

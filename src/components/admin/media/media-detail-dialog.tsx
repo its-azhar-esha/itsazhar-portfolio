@@ -25,13 +25,8 @@ import {
 } from "@/lib/media/actions";
 import { replaceMediaFile } from "@/lib/media/upload";
 import { toMediaReference } from "@/lib/media/reference";
-import {
-  formatBytes,
-  formatDate,
-  formatDimensions,
-  getMediaKind,
-  kindLabel,
-} from "@/lib/media/utils";
+import { formatBytes, formatDimensions, getMediaKind, kindLabel } from "@/lib/media/utils";
+import { formatDateBD } from "@/lib/format/dates";
 import { MEDIA_VALIDATION } from "@/constants/media";
 import type { MediaFile, MediaUsageItem } from "@/types/media";
 import { MediaImage } from "@/components/media/media-image";
@@ -322,11 +317,11 @@ function MediaDetailForm({
               </p>
               <p className="flex justify-between gap-3">
                 <span className="text-muted-foreground">Uploaded</span>
-                <span className="font-medium">{formatDate(media.created_at)}</span>
+                <span className="font-medium">{formatDateBD(media.created_at)}</span>
               </p>
               <p className="flex justify-between gap-3">
                 <span className="text-muted-foreground">Updated</span>
-                <span className="font-medium">{formatDate(media.updated_at)}</span>
+                <span className="font-medium">{formatDateBD(media.updated_at)}</span>
               </p>
               <div className="space-y-1 pt-1">
                 <div className="flex items-center justify-between gap-3">

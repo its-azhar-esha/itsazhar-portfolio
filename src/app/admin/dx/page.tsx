@@ -22,6 +22,7 @@ import { DxConfigCard } from "@/components/admin/dx/config-card";
 import { SectionCard } from "@/components/admin/section-card";
 import { HelpButton } from "@/components/ui/help-dialog";
 import { cn } from "@/lib/utils";
+import { formatDateKeyBD } from "@/lib/format/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -195,7 +196,7 @@ export default async function DxPage() {
               <Dot
                 key={c.checked_on}
                 ok={c.ok}
-                title={`${c.checked_on}: ${c.ok ? "ok" : "failed"}${c.latency_ms != null ? ` (${c.latency_ms}ms)` : ""}`}
+                title={`${formatDateKeyBD(c.checked_on)}: ${c.ok ? "ok" : "failed"}${c.latency_ms != null ? ` (${c.latency_ms}ms)` : ""}`}
               />
             ))}
             {r.keepAlive.recent.length === 0 && (
@@ -221,7 +222,7 @@ export default async function DxPage() {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <StatTile
-                  label={`Backup ${r.backups.latest.backup_date}`}
+                  label={`Backup ${formatDateKeyBD(r.backups.latest.backup_date)}`}
                   value={r.backups.ageDays === 0 ? "today" : `${r.backups.ageDays}d ago`}
                   help="dx-backup"
                   tone={r.backups.ok ? "ok" : backupStale ? "bad" : undefined}

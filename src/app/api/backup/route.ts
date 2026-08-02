@@ -83,6 +83,12 @@ function isAuthorized(request: Request): boolean {
   return false;
 }
 
+/** Scheduler source for attribution (vercel cron vs github workflow). */
+function backupSource(request: Request): "vercel" | "github" {
+  if (request.headers.get("x-vercel-cron") === "1") return "vercel";
+  return "github";
+}
+
 async function listAllFiles(
   admin: ReturnType<typeof createAdminClient>,
   bucket: string,
@@ -129,12 +135,17 @@ export async function GET(request: Request) {
     let tableCount = 0;
     let sizeBytes = 0;
     const tableNames: string[] = [];
+    const tableFailures: { table: string; error: string }[] = [];
 
     // 1) Table exports (paginated — a table larger than one page is fully
-    //    backed up instead of silently truncated).
+    //    backed up instead of silently truncated). Failures are recorded so
+    //    the ledger/manifest reflects a partial export instead of masking it.
     for (const table of CONTENT_TABLES) {
       const { rows, error } = await fetchAllRows(admin, table);
-      if (error) continue;
+      if (error) {
+        tableFailures.push({ table, error });
+        continue;
+      }
       const json = JSON.stringify(rows, null, 2);
       const uploadRes = await admin.storage
         .from(BACKUP_BUCKET)
@@ -142,7 +153,9 @@ export async function GET(request: Request) {
           contentType: "application/json",
           upsert: true,
         });
-      if (!uploadRes.error) {
+      if (uploadRes.error) {
+        tableFailures.push({ table, error: uploadRes.error.message });
+      } else {
         tableCount += 1;
         sizeBytes += Buffer.byteLength(json);
         tableNames.push(table);
@@ -151,18 +164,30 @@ export async function GET(request: Request) {
 
     // 2) Storage catalog (everything except the backups bucket itself).
     const catalog: CatalogFile[] = [];
-    for (const bucket of buckets ?? []) {
-      if (bucket.name === BACKUP_BUCKET) continue;
-      await listAllFiles(admin, bucket.name, "", catalog);
-    }
+    const catalogError: string | null = await (async () => {
+      for (const bucket of buckets ?? []) {
+        if (bucket.name === BACKUP_BUCKET) continue;
+        const before = catalog.length;
+        await listAllFiles(admin, bucket.name, "", catalog);
+        if (catalog.length === before) {
+          const probe = await admin.storage.from(bucket.name).list("", { limit: 1, offset: 0 });
+          if (probe.error) return probe.error.message;
+        }
+      }
+      return null;
+    })();
     const catalogJson = JSON.stringify(catalog, null, 2);
-    await admin.storage
+    const catalogUpload = await admin.storage
       .from(BACKUP_BUCKET)
       .upload(`${basePrefix}storage-catalog.json`, catalogJson, {
         contentType: "application/json",
         upsert: true,
       });
-    sizeBytes += Buffer.byteLength(catalogJson);
+    if (catalogUpload.error) {
+      tableFailures.push({ table: "storage-catalog.json", error: catalogUpload.error.message });
+    } else {
+      sizeBytes += Buffer.byteLength(catalogJson);
+    }
 
     // 3) Prune analytics_events beyond the configured retention.
     const { data: settingsRow } = (await admin
@@ -197,31 +222,53 @@ export async function GET(request: Request) {
       }
     }
 
-    // 5) Ledger row for the DX page.
-    const manifest = { tables: tableNames, catalogFiles: catalog.length };
+    // 5) Ledger row for the DX page. A partial export is recorded honestly:
+    //    status reflects any failures and the manifest lists them.
+    const allFailed = tableFailures.length === CONTENT_TABLES.length;
+    const status = allFailed ? "error" : tableFailures.length > 0 ? "partial" : "ok";
+    const manifest = {
+      tables: tableNames,
+      catalogFiles: catalog.length,
+      catalogError: catalogError ?? undefined,
+      failures: tableFailures,
+    };
     await admin.from("backups").upsert(
       {
         backup_date: today,
-        status: "ok",
+        status,
         table_count: tableCount,
         file_count: catalog.length,
         size_bytes: sizeBytes,
         manifest,
         updated_at: new Date().toISOString(),
+        source: backupSource(request),
       } as never,
-      { onConflict: "backup_date" },
+      { onConflict: "backup_date,source" },
     );
+
+    // Notify configured webhooks on partial/failed backups so the admin
+    // knows even if nobody visits the dashboard.
+    if (status !== "ok") {
+      await fireMonitoringWebhooks("backup", {
+        detail:
+          status === "error"
+            ? `Backup failed: ${tableFailures[0]?.error ?? "unknown error"}`
+            : `Backup partially completed (${tableFailures.length} of ${CONTENT_TABLES.length} exports failed).`,
+        source: backupSource(request),
+      });
+    }
 
     return NextResponse.json(
       {
-        ok: true,
+        ok: allFailed ? false : true,
         backupDate: today,
         tables: tableCount,
         catalogFiles: catalog.length,
         sizeBytes,
+        failures: tableFailures,
         totalMs: Date.now() - startedAt,
       },
-      { headers: { "Cache-Control": "no-store" } },
+      { headers: { "Cache-Control": "no-store" }, status: allFailed ? 500 : 200 },
     );
   } catch (err) {
     // Record the failure so the dashboard can show a real error instead of
@@ -237,8 +284,9 @@ export async function GET(request: Request) {
           size_bytes: 0,
           manifest: { error: err instanceof Error ? err.message : "Backup failed" },
           updated_at: new Date().toISOString(),
+          source: backupSource(request),
         } as never,
-        { onConflict: "backup_date" },
+        { onConflict: "backup_date,source" },
       );
     } catch {
       // Ledger write failure must not mask the original error.

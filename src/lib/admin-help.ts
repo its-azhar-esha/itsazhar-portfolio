@@ -116,7 +116,7 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
         "Leave it enabled unless you are on a paid Supabase plan, do not care about downtime of the database, or want to avoid the tiny amount of extra rows.",
       ]),
       s("how", "How it works", [
-        "The cron fires GET /api/health. If recordHealthChecks is true, the route upserts one row per calendar date (checked_on is unique), so at most one row per day is stored. The keep-alive card reads the last 30 rows.",
+        "The cron fires GET /api/health. If recordHealthChecks is true, the route upserts one row per calendar date and scheduler (checked_on + source are unique together), so at most one row per day per scheduler is stored. The keep-alive card reads the last 60 rows.",
       ]),
       s("effects", "What happens if you change it", [
         "Enabled: one small row per day is written; the keep-alive history, streak and the DX stat pill work, and the project stays warm.",
@@ -124,7 +124,7 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
       ]),
       s("best", "Best practices", [
         "Keep it enabled while on the Supabase free tier.",
-        "If the streak shows a gap, check the Vercel cron logs first — that is the only writer.",
+        "If the streak shows a gap, check the Vercel cron logs first — that is the primary writer.",
       ]),
       s("notes", "Important notes", [
         "The health_checks table has no RLS policies (service role only), so it is not readable by the public — it only appears in admin tools.",

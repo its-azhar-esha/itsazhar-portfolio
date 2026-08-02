@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { HelpButton } from "@/components/ui/help-dialog";
 import { getLoginHistoryAction } from "@/lib/security/actions";
+import { formatDateTimeBD } from "@/lib/format/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -97,8 +98,7 @@ export default async function SecurityPage() {
         <CardContent className="px-4 pt-3 pb-4">
           {entries.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No sign-in attempts recorded yet. They appear here automatically after the next
-              login.
+              No sign-in attempts recorded yet. They appear here automatically after the next login.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -115,14 +115,8 @@ export default async function SecurityPage() {
                 <tbody>
                   {entries.map((e) => (
                     <tr key={e.id} className="border-border/40 hover:bg-accent/30 border-b">
-                      <td className="text-muted-foreground px-3 py-2 whitespace-nowrap text-xs">
-                        {new Date(e.createdAt).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                      <td className="text-muted-foreground px-3 py-2 text-xs whitespace-nowrap">
+                        {formatDateTimeBD(e.createdAt)}
                       </td>
                       <td className="px-3 py-2">{e.email}</td>
                       <td className="px-3 py-2">

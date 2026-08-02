@@ -3,6 +3,7 @@
 import type { DbProject } from "@/types/project";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatDateBD } from "@/lib/format/dates";
 
 interface ProjectCardProps {
   project: DbProject;
@@ -45,13 +46,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-muted-foreground text-[10px]">
-            {new Date(project.created_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
+          <p className="text-muted-foreground text-[10px]">{formatDateBD(project.created_at)}</p>
         </div>
       </CardContent>
     </Card>

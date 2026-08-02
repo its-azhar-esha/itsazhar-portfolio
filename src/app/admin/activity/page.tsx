@@ -3,6 +3,7 @@ import { Activity as ActivityIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HelpButton } from "@/components/ui/help-dialog";
 import { getAuditLogAction } from "@/lib/security/actions";
+import { formatDateTimeShortBD } from "@/lib/format/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -39,18 +40,15 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
           <p className="text-muted-foreground mt-1 max-w-xl text-sm">
-            Every important change made in the admin panel, recorded automatically. Entries are
-            kept in chronological order with the person who made them.
+            Every important change made in the admin panel, recorded automatically. Entries are kept
+            in chronological order with the person who made them.
           </p>
         </div>
         <HelpButton helpId="activity-page" label="Help about the Activity page" align="left" />
       </div>
 
       <form method="get" className="flex items-center gap-2">
-        <label
-          htmlFor="entity-filter"
-          className="text-muted-foreground text-sm font-medium"
-        >
+        <label htmlFor="entity-filter" className="text-muted-foreground text-sm font-medium">
           Filter by section
         </label>
         <select
@@ -121,12 +119,7 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
                     </span>
                   )}
                   <span className="text-muted-foreground ml-auto shrink-0">
-                    {new Date(e.createdAt).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatDateTimeShortBD(e.createdAt)}
                     {e.createdBy ? ` · ${e.createdBy}` : ""}
                   </span>
                 </div>

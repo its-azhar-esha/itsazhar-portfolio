@@ -22,6 +22,7 @@ import { ok, fail, type Result } from "@/lib/result";
 import type { Database } from "@/database.types";
 import { error as logError } from "@/lib/logger";
 import { hoursSince, humanAge, statusFromAge, DAILY_OK_HOURS } from "@/lib/keepalive/freshness";
+import { formatDateKeyBD } from "@/lib/format/dates";
 
 export type KeepAliveStatus = "ok" | "warn" | "error" | "info";
 
@@ -104,6 +105,7 @@ export interface KeepAliveReport {
     okToday: boolean;
     lastOkAt: string | null;
     recordEnabled: boolean;
+    settingsUnreadable: boolean;
   };
 }
 
@@ -111,7 +113,7 @@ const HEALTH_WINDOW_DAYS = 60;
 
 type HealthCheckRow = Pick<
   Database["public"]["Tables"]["health_checks"]["Row"],
-  "checked_on" | "ok" | "latency_ms" | "detail" | "created_at" | "updated_at"
+  "checked_on" | "ok" | "latency_ms" | "detail" | "created_at" | "updated_at" | "source"
 >;
 
 /* Actual run time of a ledger row: updated_at when present (set on every
@@ -209,6 +211,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
   let streakDays = 0;
   let okToday = false;
   let recordEnabled = true;
+  let settingsUnreadable = false;
   let lastOkAt: string | null = null;
 
   try {
@@ -219,15 +222,22 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     try {
       const { data } = await admin
         .from("health_checks")
-        .select("checked_on,ok,latency_ms,detail,created_at,updated_at")
+        .select("checked_on,ok,latency_ms,detail,created_at,updated_at,source")
         .order("checked_on", { ascending: false })
-        .limit(HEALTH_WINDOW_DAYS);
+        .limit(HEALTH_WINDOW_DAYS * 2);
       checks = ((data ?? []) as HealthCheckRow[]).slice().reverse();
     } catch (err) {
       logError("keepalive health_checks read failed", {
         message: err instanceof Error ? err.message : err,
       });
     }
+
+    // Ledger rows are one per (day, source). Derive the primary "vercel"
+    // schedule from vercel-source rows, and the GitHub fallback from
+    // github-source rows, so each scheduled job is reported from its own
+    // real ledger data instead of inferred from the aggregate.
+    const vercelChecks = checks.filter((c) => c.source !== "github");
+    const githubChecks = checks.filter((c) => c.source === "github");
 
     const okChecks = checks.filter((c) => c.ok);
     const failedChecks = checks.filter((c) => !c.ok);
@@ -245,18 +255,22 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     const healthComponentStatus: KeepAliveStatus =
       checks.length === 0 ? "info" : statusFromAge(hoursSince(lastOkAt, now));
 
-    /* recordEnabled */
+    /* recordEnabled — real value read from dx_config; never assumed. */
     recordEnabled = true;
     try {
-      const { data: settingsRow } = await admin
+      const { data: settingsRow, error: settingsError } = await admin
         .from("site_settings")
         .select("dx_config")
         .maybeSingle();
+      if (settingsError) throw new Error(settingsError.message);
       const dxConfig = (settingsRow as { dx_config?: { recordHealthChecks?: boolean } } | null)
         ?.dx_config;
       recordEnabled = dxConfig?.recordHealthChecks !== false;
-    } catch {
-      // Assume enabled if settings unreadable.
+    } catch (err) {
+      settingsUnreadable = true;
+      logError("keepalive dx_config read failed", {
+        message: err instanceof Error ? err.message : err,
+      });
     }
 
     /* ── Infrastructure ── */
@@ -592,35 +606,44 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     }
 
     /* ── Scheduled jobs + keep-alive services ── */
+    // Each scheduler is attributed from ITS OWN ledger rows (real data),
+    // not inferred from the aggregate.
     const jobStatusFor = (
       id: string,
     ): { status: KeepAliveStatus; detail: string; action: string } => {
       switch (id) {
         case "vercel-health":
         case "gh-keepalive": {
-          if (checks.length === 0)
+          const src = id === "vercel-health" ? vercelChecks : githubChecks;
+          if (src.length === 0)
             return {
               status: "info",
-              detail: "No health checks recorded yet",
-              action: "Verify the cron has run at least once.",
+              detail: "No health checks recorded yet for this scheduler",
+              action: "Verify the scheduler has run at least once and hits /api/health.",
             };
-          const age = hoursSince(lastOkAt, now);
+          const srcOk = src.filter((c) => c.ok);
+          const srcLastOk = srcOk[srcOk.length - 1] ?? null;
+          const srcLastOkAt = rowRunAt(srcLastOk);
+          const age = hoursSince(srcLastOkAt, now);
           const status = statusFromAge(age);
           if (status === "ok")
             return {
               status: "ok",
-              detail: `Last check ${humanAge(lastOkAt, now)} (${streakDays}d streak)`,
+              detail: `Last check ${humanAge(srcLastOkAt, now)} (${srcOk.length}/${src.length} OK)`,
               action: "",
             };
           if (status === "warn")
             return {
               status: "warn",
               detail: `No successful check in the last ${Math.round(age as number)}h`,
-              action: "Ensure Vercel cron / GitHub keep-alive is enabled and hitting /api/health.",
+              action:
+                id === "vercel-health"
+                  ? "Ensure Vercel cron is enabled and hitting /api/health."
+                  : "Ensure the GitHub keep-alive workflow is active and hitting /api/health.",
             };
           return {
             status: "error",
-            detail: `Last successful check ${humanAge(lastOkAt, now)}`,
+            detail: `Last successful check ${humanAge(srcLastOkAt, now)}`,
             action: "Wake the project manually — it may be close to Supabase's idle pause.",
           };
         }
@@ -638,8 +661,17 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
 
     for (const job of SCHEDULED_JOBS) {
       const { status, detail, action } = jobStatusFor(job.id);
-      const lastForJob =
-        job.id === "vercel-health" || job.id === "gh-keepalive" ? rowRunAt(lastOk) : null;
+      const src =
+        job.id === "vercel-health" || job.id === "gh-keepalive"
+          ? job.id === "vercel-health"
+            ? vercelChecks
+            : githubChecks
+          : [];
+      const srcOk = src.filter((c) => c.ok);
+      const srcFailed = src.filter((c) => !c.ok);
+      const srcLastOk = srcOk[srcOk.length - 1] ?? null;
+      const srcLastFailed = srcFailed[srcFailed.length - 1] ?? null;
+      const lastForJob = rowRunAt(srcLastOk);
       components.push({
         id: job.id,
         name: job.name,
@@ -649,26 +681,26 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         detail: detail || `${job.description} Runs daily at ${job.hourUtc}:00 UTC.`,
         lastKeepAliveAt: lastForJob,
         nextScheduledAt: nextCronHour(job.hourUtc, now).toISOString(),
-        lastHealthCheckAt: rowRunAt(lastCheckEntry),
+        lastHealthCheckAt: rowRunAt(srcLastFailed ?? srcLastOk ?? null),
         lastSuccessAt: lastForJob,
-        lastErrorAt: rowRunAt(lastFailed),
-        lastError: lastFailed?.detail ?? null,
+        lastErrorAt: rowRunAt(srcLastFailed),
+        lastError: srcLastFailed?.detail ?? null,
         retryStatus: "automatic daily schedule",
-        failureCount: failedChecks.length,
-        successCount: okChecks.length,
-        successRate: overallHealthRate,
-        uptime: checks.length > 0 ? `${streakDays}/${checks.length} checks healthy` : null,
-        responseTimeMs: lastOk?.latency_ms ?? null,
-        relatedLogs: checks
+        failureCount: srcFailed.length,
+        successCount: srcOk.length,
+        successRate: successRate(srcOk.length, src.length),
+        uptime: src.length > 0 ? `${srcOk.length}/${src.length} checks healthy` : null,
+        responseTimeMs: srcLastOk?.latency_ms ?? null,
+        relatedLogs: src
           .slice(-14)
           .map((c) => ({ at: c.created_at, ok: c.ok, detail: c.detail, latencyMs: c.latency_ms })),
         ...(status !== "ok" && status !== "info"
           ? {
               whatHappened:
                 status === "error"
-                  ? `The last successful keep-alive was ${humanAge(lastOkAt, now)} ago.`
+                  ? `The last successful keep-alive was ${humanAge(lastForJob, now)} ago.`
                   : `No successful keep-alive was recorded in the last ${Math.round(
-                      hoursSince(lastOkAt, now) as number,
+                      hoursSince(lastForJob, now) as number,
                     )}h.`,
               why:
                 status === "error"
@@ -745,18 +777,22 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     try {
       const { data } = await admin
         .from("backups")
-        .select("backup_date,status,table_count,file_count,size_bytes,created_at,updated_at")
+        .select("backup_date,status,table_count,file_count,size_bytes,created_at,updated_at,source")
         .order("backup_date", { ascending: false })
-        .limit(1);
-      const latest = (data ?? [])[0] as
+        .limit(2);
+      const rows = (data ?? []) as
         | {
             backup_date: string;
             status: string;
             created_at: string;
             updated_at: string | null;
             table_count: number;
-          }
+            source?: string;
+          }[]
         | undefined;
+      // Prefer the Vercel cron (primary) row for the aggregate; fall back to
+      // the GitHub workflow row when only that exists.
+      const latest = (rows ?? []).find((r) => r.source !== "github") ?? (rows ?? [])[0];
       const lastRunAt = latest?.updated_at ?? latest?.created_at ?? null;
       const ageHours = hoursSince(lastRunAt, now);
       const backupStatus: KeepAliveStatus = latest
@@ -772,7 +808,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         kind: "backup",
         status: backupStatus,
         detail: latest
-          ? `Last backup ${latest.backup_date} · ${latest.status}${ageHours !== null ? ` · ${humanAge(lastRunAt, now)}` : ""}`
+          ? `Last backup ${formatDateKeyBD(latest.backup_date)} · ${latest.status}${ageHours !== null ? ` · ${humanAge(lastRunAt, now)}` : ""}`
           : "No backup recorded yet",
         lastKeepAliveAt: lastRunAt,
         nextScheduledAt: nextCronHour(0, now).toISOString(),
@@ -789,11 +825,17 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         relatedLogs: [],
         ...(latest && latest.status !== "ok"
           ? {
-              whatHappened: `The latest backup (${latest.backup_date}) reported status "${latest.status}".`,
-              why: "The backup export did not complete successfully.",
+              whatHappened: `The latest backup (${formatDateKeyBD(latest.backup_date)}) reported status "${latest.status}".`,
+              why:
+                latest.status === "partial"
+                  ? "Some table exports or the storage catalog did not complete successfully."
+                  : "The backup export did not complete successfully.",
               impact: "Point-in-time recovery data may be missing.",
               autoRecovered: null,
-              recommendedAction: "Review the backup workflow logs and re-run the backup.",
+              recommendedAction:
+                latest.status === "partial"
+                  ? "Review the failures in the backup manifest and re-run the backup."
+                  : "Review the backup workflow logs and re-run the backup.",
             }
           : latest && !backupHealthy && ageHours !== null && ageHours > DAILY_OK_HOURS
             ? {
@@ -852,6 +894,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     okToday,
     lastOkAt,
     recordEnabled,
+    settingsUnreadable,
   } satisfies KeepAliveReport["summary"];
 
   return ok({

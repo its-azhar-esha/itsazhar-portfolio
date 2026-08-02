@@ -574,6 +574,7 @@ export interface Database {
           manifest: unknown;
           created_at: string;
           updated_at: string;
+          source: string;
         };
         Insert: {
           id?: string;
@@ -585,6 +586,7 @@ export interface Database {
           manifest?: unknown;
           created_at?: string;
           updated_at?: string;
+          source?: string;
         };
         Update: {
           id?: string;
@@ -596,6 +598,7 @@ export interface Database {
           manifest?: unknown;
           created_at?: string;
           updated_at?: string;
+          source?: string;
         };
       };
       health_checks: {
@@ -607,6 +610,7 @@ export interface Database {
           detail: string;
           created_at: string;
           updated_at: string;
+          source: string;
         };
         Insert: {
           id?: string;
@@ -616,6 +620,7 @@ export interface Database {
           detail?: string;
           created_at?: string;
           updated_at?: string;
+          source?: string;
         };
         Update: {
           id?: string;
@@ -625,6 +630,7 @@ export interface Database {
           detail?: string;
           created_at?: string;
           updated_at?: string;
+          source?: string;
         };
       };
       blog_posts: {

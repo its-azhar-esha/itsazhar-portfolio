@@ -20,6 +20,7 @@ import { AnalyticsConfigCard } from "@/components/admin/analytics/config-card";
 import { CsvExportButton } from "@/components/admin/analytics/csv-export-button";
 import { SectionCard } from "@/components/admin/section-card";
 import { HelpButton } from "@/components/ui/help-dialog";
+import { formatDateKeyBD, formatDateTimeShortBD } from "@/lib/format/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -82,12 +83,7 @@ function DailyViewsChart({ data }: { data: { date: string; count: number }[] }) 
       <div className="text-muted-foreground mt-2 flex justify-between text-[10px]">
         {data.map((d, i) =>
           i % labelEvery === 0 ? (
-            <span key={d.date}>
-              {new Date(`${d.date}T00:00:00`).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
+            <span key={d.date}>{formatDateKeyBD(d.date)}</span>
           ) : (
             <span key={d.date} />
           ),
@@ -359,12 +355,7 @@ export default async function AnalyticsPage() {
                   <span className="text-muted-foreground truncate">{e.page_path}</span>
                 )}
                 <span className="text-muted-foreground ml-auto shrink-0">
-                  {new Date(e.created_at).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatDateTimeShortBD(e.created_at)}
                 </span>
               </div>
             ))}

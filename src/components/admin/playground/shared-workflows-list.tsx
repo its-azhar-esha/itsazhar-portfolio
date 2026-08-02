@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
+import { formatDateBD } from "@/lib/format/dates";
 
 interface SharedWorkflowsListProps {
   workflows: UserWorkflow[];
@@ -17,11 +18,7 @@ interface SharedWorkflowsListProps {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDateBD(iso);
 }
 
 export function SharedWorkflowsList({ workflows, error }: SharedWorkflowsListProps) {

@@ -201,8 +201,8 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       const dbLatencyMs = Date.now() - start;
       health.push({
         label: "Database",
-        status: dbRes.data ? "ok" : "error",
-        detail: dbRes.data ? `Responded in ${dbLatencyMs}ms` : `No response (${dbLatencyMs}ms)`,
+        status: dbRes.error ? "error" : "ok",
+        detail: dbRes.error ? dbRes.error.message : `Responded in ${dbLatencyMs}ms`,
       });
     } catch (err) {
       health.push({
@@ -253,10 +253,12 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     const buckets: BucketStatus[] = [];
     let totalObjects = 0;
     let totalBytes = 0;
+    let storageReachable = false;
     let bucketList: Awaited<ReturnType<typeof admin.storage.listBuckets>>["data"] = null;
     try {
       const res = await admin.storage.listBuckets();
       bucketList = res.data;
+      storageReachable = res.error === null;
       for (const bucket of bucketList ?? []) {
         let objects = 0;
         let size = 0;
@@ -500,19 +502,22 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       links.push(result);
     }
 
-    /* Keep-alive history (from /api/health daily checks) */
+    /* Keep-alive history (from /api/health daily checks) — use the primary
+       (Vercel cron) rows; github-source rows are the redundant fallback. */
     const { data: checkRows } = await admin
       .from("health_checks")
-      .select("checked_on,ok,latency_ms,created_at,updated_at")
+      .select("checked_on,ok,latency_ms,created_at,updated_at,source")
       .order("checked_on", { ascending: false })
-      .limit(30);
-    const checks = (checkRows ?? []) as {
+      .limit(60);
+    const allChecks = (checkRows ?? []) as {
       checked_on: string;
       ok: boolean;
       latency_ms: number | null;
       created_at: string;
       updated_at: string | null;
+      source?: string;
     }[];
+    const checks = allChecks.filter((c) => c.source !== "github");
     let streakDays = 0;
     for (const c of checks) {
       if (c.ok) streakDays += 1;
@@ -531,13 +536,14 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       recordEnabled: dxConfig.recordHealthChecks,
     };
 
-    /* Latest backup (written by /api/backup or the GitHub backup workflow) */
+    /* Latest backup (written by /api/backup or the GitHub backup workflow).
+       Prefer the Vercel cron (primary) row; github rows are the fallback. */
     const { data: backupRows } = await admin
       .from("backups")
-      .select("backup_date,status,table_count,file_count,size_bytes,created_at,updated_at")
+      .select("backup_date,status,table_count,file_count,size_bytes,created_at,updated_at,source")
       .order("backup_date", { ascending: false })
-      .limit(1);
-    const latestBackup = (backupRows ?? [])[0] as
+      .limit(4);
+    const allBackupRows = (backupRows ?? []) as
       | {
           backup_date: string;
           status: string;
@@ -546,8 +552,11 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
           size_bytes: number;
           created_at: string;
           updated_at: string | null;
-        }
+          source?: string;
+        }[]
       | undefined;
+    const latestBackup =
+      (allBackupRows ?? []).find((r) => r.source !== "github") ?? (allBackupRows ?? [])[0];
     const latestBackupRunAt = latestBackup
       ? (latestBackup.updated_at ?? latestBackup.created_at)
       : null;
@@ -650,7 +659,7 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
         buckets,
         totalObjects,
         totalBytes,
-        ok: totalObjects === 0 && buckets.length === 0 ? false : true,
+        ok: storageReachable,
       },
       database: {
         tables,
