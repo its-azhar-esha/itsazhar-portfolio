@@ -14,6 +14,7 @@ import { SETTINGS_ROW_ID, normalizeDxConfig } from "@/types/settings";
 import type { DxConfig } from "@/types/settings";
 import { dxConfigSchema } from "@/lib/validation";
 import { saveSettings } from "@/lib/settings/repository";
+import { hoursSince } from "@/lib/keepalive/freshness";
 
 /* ─── Types ─── */
 
@@ -492,21 +493,27 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     /* Keep-alive history (from /api/health daily checks) */
     const { data: checkRows } = await admin
       .from("health_checks")
-      .select("checked_on,ok,latency_ms")
+      .select("checked_on,ok,latency_ms,created_at,updated_at")
       .order("checked_on", { ascending: false })
       .limit(30);
     const checks = (checkRows ?? []) as {
       checked_on: string;
       ok: boolean;
       latency_ms: number | null;
+      created_at: string;
+      updated_at: string | null;
     }[];
     let streakDays = 0;
     for (const c of checks) {
       if (c.ok) streakDays += 1;
       else break;
     }
-    const today = new Date().toISOString().slice(0, 10);
-    const okToday = checks.some((c) => c.checked_on === today && c.ok);
+    const lastOk = checks.find((c) => c.ok);
+    const lastOkAt = lastOk ? (lastOk.updated_at ?? lastOk.created_at) : null;
+    // "Checked today" = last successful check happened within the last day.
+    const okToday =
+      hoursSince(lastOkAt, new Date()) !== null &&
+      (hoursSince(lastOkAt, new Date()) as number) <= 24;
     const keepAlive: KeepAliveStatus = {
       recent: checks,
       okToday,
@@ -517,7 +524,7 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
     /* Latest backup (written by /api/backup or the GitHub backup workflow) */
     const { data: backupRows } = await admin
       .from("backups")
-      .select("backup_date,status,table_count,file_count,size_bytes,created_at")
+      .select("backup_date,status,table_count,file_count,size_bytes,created_at,updated_at")
       .order("backup_date", { ascending: false })
       .limit(1);
     const latestBackup = (backupRows ?? [])[0] as
@@ -528,8 +535,12 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
           file_count: number;
           size_bytes: number;
           created_at: string;
+          updated_at: string | null;
         }
       | undefined;
+    const latestBackupRunAt = latestBackup
+      ? (latestBackup.updated_at ?? latestBackup.created_at)
+      : null;
     const backups: BackupStatus = {
       latest: latestBackup
         ? {
@@ -540,14 +551,14 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
             size_bytes: latestBackup.size_bytes,
           }
         : null,
-      ageDays: latestBackup
-        ? Math.max(
-            0,
-            Math.round((Date.now() - new Date(latestBackup.created_at).getTime()) / 86_400_000),
-          )
+      ageDays: latestBackupRunAt
+        ? Math.max(0, Math.round((Date.now() - new Date(latestBackupRunAt).getTime()) / 86_400_000))
         : null,
       ok: Boolean(
-        latestBackup && latestBackup.status === "ok" && latestBackup.backup_date >= today,
+        latestBackup &&
+        latestBackup.status === "ok" &&
+        hoursSince(latestBackupRunAt, new Date()) !== null &&
+        (hoursSince(latestBackupRunAt, new Date()) as number) <= 30,
       ),
     };
 

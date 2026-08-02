@@ -39,29 +39,31 @@ export async function GET() {
     detail = err instanceof Error ? err.message : "Unreachable";
   }
 
-  if (db === "ok") {
-    try {
-      const admin = createAdminClient();
-      const { data: settingsRow } = (await admin
-        .from("site_settings")
-        .select("dx_config")
-        .eq("id", SETTINGS_ROW_ID)
-        .maybeSingle()) as unknown as { data: { dx_config: unknown } | null };
-      const dxConfig = normalizeDxConfig(settingsRow?.dx_config);
-      if (dxConfig.recordHealthChecks) {
-        await admin.from("health_checks").upsert(
-          {
-            checked_on: new Date().toISOString().slice(0, 10),
-            ok: true,
-            latency_ms: dbLatencyMs,
-            detail: `db ok (${dbLatencyMs}ms)`,
-          } as never,
-          { onConflict: "checked_on" },
-        );
-      }
-    } catch {
-      // Ledger write must never flip the health status.
+  try {
+    const admin = createAdminClient();
+    const { data: settingsRow } = (await admin
+      .from("site_settings")
+      .select("dx_config")
+      .eq("id", SETTINGS_ROW_ID)
+      .maybeSingle()) as unknown as { data: { dx_config: unknown } | null };
+    const dxConfig = normalizeDxConfig(settingsRow?.dx_config);
+    if (dxConfig.recordHealthChecks) {
+      // Always record a row — success AND failure — so the ledger shows the
+      // last actual run time (updated_at) and failure detail, and the
+      // dashboard can distinguish "ran and failed" from "never ran".
+      await admin.from("health_checks").upsert(
+        {
+          checked_on: new Date().toISOString().slice(0, 10),
+          ok: db === "ok",
+          latency_ms: dbLatencyMs || null,
+          detail: db === "ok" ? `db ok (${dbLatencyMs}ms)` : `db ${db}: ${detail || "unreachable"}`,
+          updated_at: new Date().toISOString(),
+        } as never,
+        { onConflict: "checked_on" },
+      );
     }
+  } catch {
+    // Ledger write must never flip the health status.
   }
 
   return NextResponse.json(

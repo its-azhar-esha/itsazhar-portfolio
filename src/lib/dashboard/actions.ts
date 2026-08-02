@@ -23,6 +23,7 @@ import { env } from "@/lib/env";
 import { SITE_URL } from "@/lib/site";
 import { formatBytes } from "@/lib/dashboard/format";
 import { getIntegrationList } from "@/lib/integrations/repository";
+import { hoursSince, humanAge, statusFromAge } from "@/lib/keepalive/freshness";
 
 export type MetricStatus = "ok" | "warn" | "error" | "info";
 
@@ -444,7 +445,6 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
     const now = new Date();
     const since30d = new Date(now.getTime() - WINDOW_DAYS * 86_400_000).toISOString();
     const since24h = new Date(now.getTime() - 86_400_000).toISOString();
-    const today = now.toISOString().slice(0, 10);
 
     /* Health: database + storage reachability */
     const health: DashboardOverview["health"] = {
@@ -488,23 +488,31 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
     try {
       const { data: checkRows } = await admin
         .from("health_checks")
-        .select("checked_on,ok")
+        .select("checked_on,ok,updated_at,created_at")
         .order("checked_on", { ascending: false })
         .limit(30);
-      const checks = (checkRows ?? []) as { checked_on: string; ok: boolean }[];
+      const checks = (checkRows ?? []) as {
+        checked_on: string;
+        ok: boolean;
+        updated_at: string | null;
+        created_at: string;
+      }[];
       let streak = 0;
       for (const c of checks) {
         if (c.ok) streak += 1;
         else break;
       }
-      const okToday = checks.some((c) => c.checked_on === today && c.ok);
+      const lastOk = checks.find((c) => c.ok);
+      const lastOkAt = lastOk ? (lastOk.updated_at ?? lastOk.created_at) : null;
+      const ageHours = hoursSince(lastOkAt, now);
+      const uptimeStatus: MetricStatus = checks.length === 0 ? "info" : statusFromAge(ageHours);
       health.uptime = {
-        status: okToday ? "ok" : checks.length === 0 ? "info" : "warn",
+        status: uptimeStatus,
         label: "Uptime",
         detail:
           checks.length === 0
             ? "No health checks recorded yet"
-            : `${streak} day(s) healthy${okToday ? " (checked today)" : " — no check today yet"}`,
+            : `${streak} day(s) healthy · last check ${humanAge(lastOkAt, now)}`,
       };
     } catch (err) {
       health.uptime = {
@@ -518,21 +526,31 @@ export async function getDashboardOverviewAction(): Promise<Result<DashboardOver
     try {
       const { data: backupRows } = await admin
         .from("backups")
-        .select("backup_date,status,created_at")
+        .select("backup_date,status,created_at,updated_at")
         .order("backup_date", { ascending: false })
         .limit(1);
       const latest = (backupRows ?? [])[0] as
-        { backup_date: string; status: string; created_at: string } | undefined;
-      health.backups = latest
-        ? {
-            status: latest.status === "ok" && latest.backup_date >= today ? "ok" : "warn",
-            label: "Backups",
-            detail:
-              latest.status === "ok"
-                ? `Latest backup ${latest.backup_date} — OK`
-                : `Latest backup ${latest.backup_date} — ${latest.status}`,
+        | {
+            backup_date: string;
+            status: string;
+            created_at: string;
+            updated_at: string | null;
           }
-        : { status: "info", label: "Backups", detail: "No backup recorded yet" };
+        | undefined;
+      if (!latest) {
+        health.backups = { status: "info", label: "Backups", detail: "No backup recorded yet" };
+      } else {
+        const lastRunAt = latest.updated_at ?? latest.created_at;
+        const ageHours = hoursSince(lastRunAt, now);
+        health.backups = {
+          status: latest.status !== "ok" ? "warn" : (statusFromAge(ageHours) as MetricStatus),
+          label: "Backups",
+          detail:
+            latest.status === "ok"
+              ? `Latest backup ${latest.backup_date} — OK · ${humanAge(lastRunAt, now)}`
+              : `Latest backup ${latest.backup_date} — ${latest.status}`,
+        };
+      }
     } catch (err) {
       health.backups = {
         status: "error",

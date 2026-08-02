@@ -175,6 +175,7 @@ async function main() {
         file_count: fileCount,
         size_bytes: sizeBytes,
         manifest,
+        updated_at: new Date().toISOString(),
       }),
     });
   } catch {

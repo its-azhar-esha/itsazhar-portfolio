@@ -186,6 +186,7 @@ export async function GET(request: Request) {
         file_count: catalog.length,
         size_bytes: sizeBytes,
         manifest,
+        updated_at: new Date().toISOString(),
       } as never,
       { onConflict: "backup_date" },
     );
@@ -202,6 +203,25 @@ export async function GET(request: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (err) {
+    // Record the failure so the dashboard can show a real error instead of
+    // a stale "no backup today" state.
+    try {
+      const admin = createAdminClient();
+      await admin.from("backups").upsert(
+        {
+          backup_date: new Date().toISOString().slice(0, 10),
+          status: "error",
+          table_count: 0,
+          file_count: 0,
+          size_bytes: 0,
+          manifest: { error: err instanceof Error ? err.message : "Backup failed" },
+          updated_at: new Date().toISOString(),
+        } as never,
+        { onConflict: "backup_date" },
+      );
+    } catch {
+      // Ledger write failure must not mask the original error.
+    }
     return NextResponse.json(
       {
         ok: false,

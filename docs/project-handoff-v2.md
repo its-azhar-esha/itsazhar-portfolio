@@ -1920,3 +1920,72 @@ separate About + Hero bespoke editors kept as-is.
 - Verified: keep-alive page loads via direct URL and client-side nav
   with zero console errors; full admin regression passed
   (dashboard, projects, settings, security, activity, dx, media, blog).
+
+## 32. Keep-Alive Freshness Fix — false-positive warnings eliminated (2026-08-02)
+
+### Problem
+
+The keep-alive status logic used **calendar-date matching** instead of
+**elapsed-time freshness**:
+
+- `okToday` was `okChecks.some(c => c.checked_on === today)`. The health
+  cron runs at 12:00 UTC, so viewing `/admin` before noon flagged
+  "No successful check recorded today" even though the daily check had
+  run fine the day before.
+- Backup health was `latest.backup_date >= today` — a normal
+  "yesterday" backup for the 00:00 UTC job was flagged `warn` /
+  "1d old".
+- `ageDays` came from `created_at`, which only records the FIRST insert
+  of a day (upsert keyed on `checked_on`/`backup_date`), so it could not
+  distinguish the actual run time.
+
+Same flawed logic existed in `src/lib/keepalive/actions.ts`,
+`src/lib/dashboard/actions.ts` and `src/lib/dx/actions.ts` (3 places).
+
+### Fix
+
+- **New shared module** `src/lib/keepalive/freshness.ts` (pure,
+  no server deps, safe for both server and client):
+  - `hoursSince(iso, now)` — whole hours since a timestamp (null-safe).
+  - `statusFromAge(ageHours)` — daily-job thresholds: `ok ≤ 30h`
+    (yesterday's run is healthy), `warn ≤ 96h` (missed a couple days),
+    `error > 96h` (at risk of the ~7-day Supabase idle pause), `info`
+    when there is no data.
+  - `humanAge(iso, now)` — "8m ago" / "2h ago" / "1d ago" / "never".
+- All three actions now derive status from `statusFromAge(hoursSince(lastRunAt))`
+  where `lastRunAt = row.updated_at ?? row.created_at`.
+- **Migration `00030_keepalive_updated_at.sql`** (applied + recorded on
+  remote, `00001`–`00030` match): adds `updated_at timestamptz not null`
+  to `health_checks` and `backups`, backfilled from `created_at`.
+  `src/database.types.ts` hand-synced (Row/Insert/Update).
+- **`/api/health`** now always upserts the ledger row (success AND
+  failure) with `updated_at`, so the dashboard can distinguish "ran and
+  failed" from "never ran". Still gated by `dx_config.recordHealthChecks`;
+  ledger write errors never flip the endpoint status.
+- **`/api/backup`** writes `updated_at` on success and now records a
+  `status:"error"` ledger row on failure before returning 500.
+- **`scripts/backup-to-branch.mjs`** writes `updated_at` on its ledger
+  upsert.
+- **`.github/workflows/keepalive.yml`** now retries (3 attempts, backoff)
+  so transient 429/5xx responses don't fail the run.
+- Keep-alive summary banner shows elapsed time
+  ("Last successful check 1h ago") instead of a calendar "checked today".
+  `KeepAliveReport.summary` gained `lastOkAt`.
+
+### Verified (real services, 2026-08-02)
+
+- TypeScript, ESLint, full production build all green (31 routes).
+- Migration `00030` applied and recorded on remote Supabase; ledger rows
+  carry populated `updated_at`.
+- Freshness thresholds unit-tested (5h → ok, 25.5h → ok, 48h → warn,
+  8d → error, null → info).
+- Deterministic check against live remote ledger (service role):
+  health ledger `ok` (last check 1h ago), backups `ok` (last run 2h ago),
+  dashboard uptime/backups both `ok` → would render Healthy.
+- Authenticated headless-browser regression (real Supabase session):
+  `/admin` shows **Healthy**; `/admin/keepalive` shows **18 healthy**,
+  "All keep-alive components healthy", `2/2 OK · 2-day streak`,
+  "Last backup 2026-08-02 · ok · 2h ago"; `/admin/dx` keep-alive +
+  backup sections show **OK**, no warnings.
+
+- **Last Updated:** 2026-08-02 (Phase 32 — keep-alive freshness fix)

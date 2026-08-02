@@ -21,6 +21,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ok, fail, type Result } from "@/lib/result";
 import type { Database } from "@/database.types";
 import { error as logError } from "@/lib/logger";
+import { hoursSince, humanAge, statusFromAge, DAILY_OK_HOURS } from "@/lib/keepalive/freshness";
 
 export type KeepAliveStatus = "ok" | "warn" | "error" | "info";
 
@@ -101,6 +102,7 @@ export interface KeepAliveReport {
     info: number;
     streakDays: number;
     okToday: boolean;
+    lastOkAt: string | null;
     recordEnabled: boolean;
   };
 }
@@ -109,8 +111,14 @@ const HEALTH_WINDOW_DAYS = 60;
 
 type HealthCheckRow = Pick<
   Database["public"]["Tables"]["health_checks"]["Row"],
-  "checked_on" | "ok" | "latency_ms" | "detail" | "created_at"
+  "checked_on" | "ok" | "latency_ms" | "detail" | "created_at" | "updated_at"
 >;
+
+/* Actual run time of a ledger row: updated_at when present (set on every
+   upsert), falling back to created_at for pre-migration rows. */
+function rowRunAt(row: Pick<HealthCheckRow, "created_at" | "updated_at"> | null): string | null {
+  return row?.updated_at ?? row?.created_at ?? null;
+}
 
 /* Representative tables probed for reachability. */
 const PROBE_TABLES = [
@@ -201,6 +209,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
   let streakDays = 0;
   let okToday = false;
   let recordEnabled = true;
+  let lastOkAt: string | null = null;
 
   try {
     const admin = createAdminClient();
@@ -210,7 +219,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     try {
       const { data } = await admin
         .from("health_checks")
-        .select("checked_on,ok,latency_ms,detail,created_at")
+        .select("checked_on,ok,latency_ms,detail,created_at,updated_at")
         .order("checked_on", { ascending: false })
         .limit(HEALTH_WINDOW_DAYS);
       checks = ((data ?? []) as HealthCheckRow[]).slice().reverse();
@@ -224,21 +233,17 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     const failedChecks = checks.filter((c) => !c.ok);
     const lastOk = okChecks[okChecks.length - 1] ?? null;
     const lastFailed = failedChecks[failedChecks.length - 1] ?? null;
-    const today = now.toISOString().slice(0, 10);
     for (let i = checks.length - 1; i >= 0; i--) {
       if (checks[i].ok) streakDays += 1;
       else break;
     }
-    okToday = okChecks.some((c) => c.checked_on === today);
+    lastOkAt = rowRunAt(lastOk);
+    // "Checked today" = last successful check happened within the last day.
+    okToday = hoursSince(lastOkAt, now) !== null && (hoursSince(lastOkAt, now) as number) <= 24;
     const lastCheckEntry = checks[checks.length - 1] ?? null;
     const overallHealthRate = successRate(okChecks.length, checks.length);
-    const healthComponentStatus: KeepAliveStatus = !okToday
-      ? checks.length === 0
-        ? "info"
-        : "warn"
-      : streakDays >= 30
-        ? "ok"
-        : "ok";
+    const healthComponentStatus: KeepAliveStatus =
+      checks.length === 0 ? "info" : statusFromAge(hoursSince(lastOkAt, now));
 
     /* recordEnabled */
     recordEnabled = true;
@@ -269,11 +274,11 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         detail: error
           ? `Probe failed: ${error.message}`
           : `Reachable · responded in ${latencyMs}ms`,
-        lastKeepAliveAt: lastOk?.created_at ?? null,
+        lastKeepAliveAt: rowRunAt(lastOk),
         nextScheduledAt: null,
-        lastHealthCheckAt: dbEntry?.created_at ?? null,
-        lastSuccessAt: lastOk?.created_at ?? null,
-        lastErrorAt: lastFailed?.created_at ?? null,
+        lastHealthCheckAt: rowRunAt(dbEntry),
+        lastSuccessAt: rowRunAt(lastOk),
+        lastErrorAt: rowRunAt(lastFailed),
         lastError: lastFailed?.detail ?? null,
         retryStatus: lastFailed ? "automatic daily retry" : null,
         failureCount: failedChecks.length,
@@ -306,11 +311,11 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         kind: "database",
         status: "error",
         detail: err instanceof Error ? err.message : "Unreachable",
-        lastKeepAliveAt: lastOk?.created_at ?? null,
+        lastKeepAliveAt: rowRunAt(lastOk),
         nextScheduledAt: null,
-        lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
-        lastSuccessAt: lastOk?.created_at ?? null,
-        lastErrorAt: lastFailed?.created_at ?? null,
+        lastHealthCheckAt: rowRunAt(lastCheckEntry),
+        lastSuccessAt: rowRunAt(lastOk),
+        lastErrorAt: rowRunAt(lastFailed),
         lastError: lastFailed?.detail ?? null,
         retryStatus: "automatic daily retry",
         failureCount: failedChecks.length,
@@ -343,11 +348,11 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         detail: error
           ? `Reachability failed: ${error.message}`
           : `${buckets?.length ?? 0} bucket(s) reachable in ${latencyMs}ms`,
-        lastKeepAliveAt: lastOk?.created_at ?? null,
+        lastKeepAliveAt: rowRunAt(lastOk),
         nextScheduledAt: null,
-        lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
-        lastSuccessAt: lastOk?.created_at ?? null,
-        lastErrorAt: lastFailed?.created_at ?? null,
+        lastHealthCheckAt: rowRunAt(lastCheckEntry),
+        lastSuccessAt: rowRunAt(lastOk),
+        lastErrorAt: rowRunAt(lastFailed),
         lastError: lastFailed?.detail ?? null,
         retryStatus: lastFailed ? "automatic daily retry" : null,
         failureCount: failedChecks.length,
@@ -376,11 +381,11 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         kind: "storage",
         status: "error",
         detail: err instanceof Error ? err.message : "Unreachable",
-        lastKeepAliveAt: lastOk?.created_at ?? null,
+        lastKeepAliveAt: rowRunAt(lastOk),
         nextScheduledAt: null,
-        lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
-        lastSuccessAt: lastOk?.created_at ?? null,
-        lastErrorAt: lastFailed?.created_at ?? null,
+        lastHealthCheckAt: rowRunAt(lastCheckEntry),
+        lastSuccessAt: rowRunAt(lastOk),
+        lastErrorAt: rowRunAt(lastFailed),
         lastError: lastFailed?.detail ?? null,
         retryStatus: "automatic daily retry",
         failureCount: failedChecks.length,
@@ -412,7 +417,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
           detail: error ? `Probe failed: ${error}` : `Readable in ${latencyMs}ms`,
           lastKeepAliveAt: null,
           nextScheduledAt: null,
-          lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
+          lastHealthCheckAt: rowRunAt(lastCheckEntry),
           lastSuccessAt: error ? null : now.toISOString(),
           lastErrorAt: error ? now.toISOString() : null,
           lastError: error,
@@ -477,7 +482,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
           detail: `${bucket.public ? "Public" : "Private"} bucket · id ${bucket.id}`,
           lastKeepAliveAt: null,
           nextScheduledAt: null,
-          lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
+          lastHealthCheckAt: rowRunAt(lastCheckEntry),
           lastSuccessAt: now.toISOString(),
           lastErrorAt: null,
           lastError: null,
@@ -500,7 +505,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         detail: err instanceof Error ? err.message : "Unreachable",
         lastKeepAliveAt: null,
         nextScheduledAt: null,
-        lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
+        lastHealthCheckAt: rowRunAt(lastCheckEntry),
         lastSuccessAt: null,
         lastErrorAt: now.toISOString(),
         lastError: err instanceof Error ? err.message : "Unreachable",
@@ -534,7 +539,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
           detail: error ? `Call failed: ${error.message}` : `RPC callable in ${latencyMs}ms`,
           lastKeepAliveAt: null,
           nextScheduledAt: null,
-          lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
+          lastHealthCheckAt: rowRunAt(lastCheckEntry),
           lastSuccessAt: error ? null : now.toISOString(),
           lastErrorAt: error ? now.toISOString() : null,
           lastError: error?.message ?? null,
@@ -590,27 +595,35 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     const jobStatusFor = (
       id: string,
     ): { status: KeepAliveStatus; detail: string; action: string } => {
-      const last = checks[checks.length - 1];
       switch (id) {
         case "vercel-health":
-        case "gh-keepalive":
+        case "gh-keepalive": {
           if (checks.length === 0)
             return {
               status: "info",
               detail: "No health checks recorded yet",
               action: "Verify the cron has run at least once.",
             };
-          if (!okToday)
+          const age = hoursSince(lastOkAt, now);
+          const status = statusFromAge(age);
+          if (status === "ok")
+            return {
+              status: "ok",
+              detail: `Last check ${humanAge(lastOkAt, now)} (${streakDays}d streak)`,
+              action: "",
+            };
+          if (status === "warn")
             return {
               status: "warn",
-              detail: "No successful check recorded today",
+              detail: `No successful check in the last ${Math.round(age as number)}h`,
               action: "Ensure Vercel cron / GitHub keep-alive is enabled and hitting /api/health.",
             };
           return {
-            status: "ok",
-            detail: `Last check ${last?.checked_on ?? ""} (${streakDays}d streak)`,
-            action: "",
+            status: "error",
+            detail: `Last successful check ${humanAge(lastOkAt, now)}`,
+            action: "Wake the project manually — it may be close to Supabase's idle pause.",
           };
+        }
         case "vercel-backup":
         case "gh-backup":
           return {
@@ -626,9 +639,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     for (const job of SCHEDULED_JOBS) {
       const { status, detail, action } = jobStatusFor(job.id);
       const lastForJob =
-        job.id === "vercel-health" || job.id === "gh-keepalive"
-          ? (lastOk?.created_at ?? null)
-          : null;
+        job.id === "vercel-health" || job.id === "gh-keepalive" ? rowRunAt(lastOk) : null;
       components.push({
         id: job.id,
         name: job.name,
@@ -638,9 +649,9 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         detail: detail || `${job.description} Runs daily at ${job.hourUtc}:00 UTC.`,
         lastKeepAliveAt: lastForJob,
         nextScheduledAt: nextCronHour(job.hourUtc, now).toISOString(),
-        lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
+        lastHealthCheckAt: rowRunAt(lastCheckEntry),
         lastSuccessAt: lastForJob,
-        lastErrorAt: lastFailed?.created_at ?? null,
+        lastErrorAt: rowRunAt(lastFailed),
         lastError: lastFailed?.detail ?? null,
         retryStatus: "automatic daily schedule",
         failureCount: failedChecks.length,
@@ -651,10 +662,18 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         relatedLogs: checks
           .slice(-14)
           .map((c) => ({ at: c.created_at, ok: c.ok, detail: c.detail, latencyMs: c.latency_ms })),
-        ...(status === "warn"
+        ...(status !== "ok" && status !== "info"
           ? {
-              whatHappened: "No successful keep-alive was recorded for today.",
-              why: "The scheduled keep-alive may not have run, or it ran but failed.",
+              whatHappened:
+                status === "error"
+                  ? `The last successful keep-alive was ${humanAge(lastOkAt, now)} ago.`
+                  : `No successful keep-alive was recorded in the last ${Math.round(
+                      hoursSince(lastOkAt, now) as number,
+                    )}h.`,
+              why:
+                status === "error"
+                  ? "A daily keep-alive appears to have been missed for several days."
+                  : "The scheduled keep-alive may not have run, or it ran but failed.",
               impact:
                 "Without daily traffic, the Supabase Free-tier project could pause after ~7 days.",
               autoRecovered: null,
@@ -676,11 +695,11 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
         checks.length === 0
           ? "No health checks recorded yet"
           : `${okChecks.length}/${checks.length} OK · ${streakDays}-day streak`,
-      lastKeepAliveAt: lastOk?.created_at ?? null,
+      lastKeepAliveAt: rowRunAt(lastOk),
       nextScheduledAt: nextCronHour(12, now).toISOString(),
-      lastHealthCheckAt: lastCheckEntry?.created_at ?? null,
-      lastSuccessAt: lastOk?.created_at ?? null,
-      lastErrorAt: lastFailed?.created_at ?? null,
+      lastHealthCheckAt: rowRunAt(lastCheckEntry),
+      lastSuccessAt: rowRunAt(lastOk),
+      lastErrorAt: rowRunAt(lastFailed),
       lastError: lastFailed?.detail ?? null,
       retryStatus: lastFailed ? "automatic daily retry" : null,
       failureCount: failedChecks.length,
@@ -703,12 +722,18 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
               whatHappened:
                 checks.length === 0
                   ? "No health checks have been recorded."
-                  : "A recent health check was not successful.",
+                  : `The last successful health check was ${humanAge(lastOkAt, now)} ago.`,
               why:
                 checks.length === 0
                   ? "The daily keep-alive has not run yet."
-                  : (lastFailed?.detail ?? "Unknown failure."),
-              impact: "Unable to confirm the project is being kept active.",
+                  : healthComponentStatus === "error"
+                    ? "A daily keep-alive appears to have been missed for several days."
+                    : (lastFailed?.detail ??
+                      "The most recent check did not complete successfully."),
+              impact:
+                healthComponentStatus === "error"
+                  ? "The project may be close to Supabase's ~7-day idle pause."
+                  : "Unable to confirm the project is being kept active.",
               autoRecovered: null,
               recommendedAction:
                 "Confirm Vercel cron and the GitHub keep-alive workflow are running.",
@@ -720,35 +745,40 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     try {
       const { data } = await admin
         .from("backups")
-        .select("backup_date,status,table_count,file_count,size_bytes,created_at")
+        .select("backup_date,status,table_count,file_count,size_bytes,created_at,updated_at")
         .order("backup_date", { ascending: false })
         .limit(1);
       const latest = (data ?? [])[0] as
-        | { backup_date: string; status: string; created_at: string; table_count: number }
+        | {
+            backup_date: string;
+            status: string;
+            created_at: string;
+            updated_at: string | null;
+            table_count: number;
+          }
         | undefined;
-      const ageDays = latest
-        ? Math.max(
-            0,
-            Math.round((now.getTime() - new Date(latest.created_at).getTime()) / 86_400_000),
-          )
-        : null;
-      const okToday = latest && latest.created_at.slice(0, 10) === now.toISOString().slice(0, 10);
-      // Note: `status` == "ok" and recent
-      const healthy = latest?.status === "ok" && (okToday || ageDays === null || ageDays <= 0);
+      const lastRunAt = latest?.updated_at ?? latest?.created_at ?? null;
+      const ageHours = hoursSince(lastRunAt, now);
+      const backupStatus: KeepAliveStatus = latest
+        ? latest.status !== "ok"
+          ? "error"
+          : statusFromAge(ageHours)
+        : "info";
+      const backupHealthy = backupStatus === "ok";
       components.push({
         id: "backups",
         name: "Backups",
         group: "Backups",
         kind: "backup",
-        status: latest ? (healthy ? "ok" : "warn") : "info",
+        status: backupStatus,
         detail: latest
-          ? `Last backup ${latest.backup_date} · ${latest.status}${ageDays !== null && ageDays > 0 ? ` · ${ageDays}d old` : ""}`
+          ? `Last backup ${latest.backup_date} · ${latest.status}${ageHours !== null ? ` · ${humanAge(lastRunAt, now)}` : ""}`
           : "No backup recorded yet",
-        lastKeepAliveAt: latest?.created_at ?? null,
+        lastKeepAliveAt: lastRunAt,
         nextScheduledAt: nextCronHour(0, now).toISOString(),
-        lastHealthCheckAt: latest?.created_at ?? null,
-        lastSuccessAt: latest?.status === "ok" ? latest.created_at : null,
-        lastErrorAt: latest && latest.status !== "ok" ? latest.created_at : null,
+        lastHealthCheckAt: lastRunAt,
+        lastSuccessAt: latest?.status === "ok" ? lastRunAt : null,
+        lastErrorAt: latest && latest.status !== "ok" ? lastRunAt : null,
         lastError: latest && latest.status !== "ok" ? `Backup status: ${latest.status}` : null,
         retryStatus: "automatic daily schedule",
         failureCount: latest && latest.status !== "ok" ? 1 : 0,
@@ -765,9 +795,9 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
               autoRecovered: null,
               recommendedAction: "Review the backup workflow logs and re-run the backup.",
             }
-          : latest && ageDays !== null && ageDays > 1
+          : latest && !backupHealthy && ageHours !== null && ageHours > DAILY_OK_HOURS
             ? {
-                whatHappened: `The latest backup is ${ageDays} day(s) old.`,
+                whatHappened: `The last successful backup was ${humanAge(lastRunAt, now)} ago.`,
                 why: "The daily backup has not produced a new ledger row recently.",
                 impact: "Backup recovery is stale.",
                 autoRecovered: null,
@@ -820,6 +850,7 @@ export async function getKeepAliveReportAction(): Promise<Result<KeepAliveReport
     info: components.filter((c) => c.status === "info").length,
     streakDays,
     okToday,
+    lastOkAt,
     recordEnabled,
   } satisfies KeepAliveReport["summary"];
 

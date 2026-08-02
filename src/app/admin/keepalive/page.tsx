@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getKeepAliveReportAction, type KeepAliveComponent } from "@/lib/keepalive/actions";
 import { KeepAliveCard, InfoNote } from "@/components/admin/keepalive/keepalive-card";
 import { STATUS_META } from "@/lib/keepalive/status-meta";
+import { humanAge } from "@/lib/keepalive/freshness";
 
 export const dynamic = "force-dynamic";
 
@@ -104,7 +105,7 @@ export default async function KeepAlivePage() {
             </span>
             <span className="text-muted-foreground flex items-center gap-1.5">
               <ShieldCheck className="h-3 w-3" />
-              {r.summary.okToday ? "Checked today" : "No successful check today"}
+              Last successful check {humanAge(r.summary.lastOkAt, new Date())}
             </span>
             <span className="text-muted-foreground flex items-center gap-1.5">
               <Info className="h-3 w-3" />

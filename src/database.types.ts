@@ -570,6 +570,7 @@ export interface Database {
           size_bytes: number;
           manifest: unknown;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -580,6 +581,7 @@ export interface Database {
           size_bytes?: number;
           manifest?: unknown;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -590,6 +592,7 @@ export interface Database {
           size_bytes?: number;
           manifest?: unknown;
           created_at?: string;
+          updated_at?: string;
         };
       };
       health_checks: {
@@ -600,6 +603,7 @@ export interface Database {
           latency_ms: number | null;
           detail: string;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -608,6 +612,7 @@ export interface Database {
           latency_ms?: number | null;
           detail?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -616,6 +621,7 @@ export interface Database {
           latency_ms?: number | null;
           detail?: string;
           created_at?: string;
+          updated_at?: string;
         };
       };
       blog_posts: {
