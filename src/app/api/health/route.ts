@@ -12,14 +12,25 @@ import { SETTINGS_ROW_ID, normalizeDxConfig } from "@/types/settings";
  * endpoint daily so the Supabase project never goes a full week without
  * API requests — the Free plan pauses projects after ~7 days of
  * inactivity. Any request to Supabase resets that timer.
- * Purpose 3: each check is upserted into the health_checks ledger
- * (one row per day, service-role write) so the DX page can show
- * keep-alive history.
+ * Purpose 3: each Vercel-cron check is upserted into the health_checks
+ * ledger (one row per day, service-role write) so the DX page can show
+ * keep-alive history. Ledger writes are gated to authoritative cron
+ * invocations (`x-vercel-cron: 1`, or a `HEALTH_CRON_SECRET` header) so
+ * random public traffic cannot write fake "healthy" rows into the ledger.
+ * Public probes still run the real DB query (resetting the pause timer);
+ * they just do not write the ledger.
  */
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-export async function GET() {
+/** True when the request is an authoritative keep-alive invocation. */
+function isAuthoritativeCron(request: Request): boolean {
+  if (request.headers.get("x-vercel-cron") === "1") return true;
+  const secret = process.env.HEALTH_CRON_SECRET;
+  return Boolean(secret && request.headers.get("x-health-key") === secret);
+}
+
+export async function GET(request: Request) {
   const startedAt = Date.now();
   let db = "ok";
   let dbLatencyMs = 0;
@@ -47,7 +58,10 @@ export async function GET() {
       .eq("id", SETTINGS_ROW_ID)
       .maybeSingle()) as unknown as { data: { dx_config: unknown } | null };
     const dxConfig = normalizeDxConfig(settingsRow?.dx_config);
-    if (dxConfig.recordHealthChecks) {
+    // Only authoritative cron invocations write the ledger, so the
+    // "last check" freshness reflects the real daily run, and public
+    // traffic cannot forge healthy rows.
+    if (dxConfig.recordHealthChecks && isAuthoritativeCron(request)) {
       // Always record a row — success AND failure — so the ledger shows the
       // last actual run time (updated_at) and failure detail, and the
       // dashboard can distinguish "ran and failed" from "never ran".

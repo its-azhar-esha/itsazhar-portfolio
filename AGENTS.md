@@ -42,6 +42,11 @@ Nothing is off-limits; the user prefers being asked over being skipped.
   components — import actions directly.
 - Use `Result<T>` for all repositories and actions.
 - Hand-sync `src/database.types.ts` when migrations change.
+- Every migration creating a table MUST also declare its Data API grants,
+  `ENABLE ROW LEVEL SECURITY` and policies together — Supabase removes
+  automatic grants for new tables (Oct 30, 2026), so a table without explicit
+  `GRANT` statements is invisible to the Data API. Verify via
+  `list_data_api_grants()` (shown on `/admin/dx`).
 - Resolve media references at render time (never persist resolved URLs).
 - Public pages fall back to mocks/defaults when Supabase is unavailable; admin
   pages must surface real errors.

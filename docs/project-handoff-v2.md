@@ -1989,3 +1989,74 @@ Same flawed logic existed in `src/lib/keepalive/actions.ts`,
   backup sections show **OK**, no warnings.
 
 - **Last Updated:** 2026-08-02 (Phase 32 — keep-alive freshness fix)
+
+## 33. Long-Term Reliability Hardening (2026-08-02)
+
+Goal: the platform stays reliable and self-maintaining with little or no
+manual upkeep, even after months/years of sporadic traffic.
+
+### Supabase Data API grants (breaking change on Oct 30, 2026)
+
+- Supabase is removing automatic table-access grants for the Data API.
+  A one-time opt-in applies to **all existing projects on Oct 30, 2026**;
+  after that date any NEW public table created without explicit `GRANT`
+  statements is invisible to supabase-js / PostgREST.
+- **Migration `00031_data_api_grants.sql`** (applied + recorded on remote):
+  - Grants `SELECT/INSERT/UPDATE/DELETE/REFERENCES/TRIGGER` on all tables
+    and `USAGE/SELECT/UPDATE` on all sequences in `public` to `anon`,
+    `authenticated` and `service_role` (idempotent, re-runnable).
+  - Adds security-definer RPC `list_data_api_grants()` returning one row
+    per table with `anon_ok`, `authenticated_ok`, `service_role_ok`.
+    Revoked from `public`, granted to `authenticated` + `service_role`.
+- **Verified** (via `supabase db query` on live remote): 0 missing grants
+  across all 26 public tables.
+- **DX monitoring:** `/admin/dx` gained a "Data API grants" card that calls
+  the RPC and flags any table missing grants. Help entry `dx-grants` added
+  to `src/lib/admin-help.ts`.
+- **Rule (update AGENTS.md):** every migration creating a table MUST also
+  declare its grants/RLS/policies together.
+
+### Backup truncation fix
+
+- Both backup paths previously used `.limit(1000)`, silently truncating any
+  table past 1000 rows.
+- `src/app/api/backup/route.ts` now paginates with range requests
+  (`EXPORT_PAGE_SIZE = 1000`, loop until a short page).
+- `scripts/backup-to-branch.mjs` now paginates with offset/limit
+  (`PAGE = 1000`, loop until a short page).
+
+### Restore path fixed (composite primary keys)
+
+- `scripts/restore-backup.mjs` hardcoded `on_conflict=id`, so restoring
+  `collection_items` (composite PK `collection_id + resource_id`) failed
+  with `column "id" does not exist`.
+- Fix: omit `on_conflict` so PostgREST upserts against each table's own
+  primary key (documented default). Verified with a real (idempotent)
+  restore from the 2026-08-02 backup: 15 tables restored, 4 empty, 0
+  failures.
+
+### /api/health ledger gating
+
+- `/api/health` only writes `health_checks` ledger rows for authoritative
+  invocations: `x-vercel-cron: 1` (Vercel cron) or `HEALTH_CRON_SECRET`
+  via the `x-health-key` header. Public probes still run the real DB query
+  but can no longer forge "healthy" ledger rows.
+- `.github/workflows/keepalive.yml` sends `x-health-key` when the
+  `HEALTH_CRON_SECRET` repo secret exists.
+
+### Vercel env hardening
+
+- Added `BACKUP_CRON_SECRET` (out-of-band `/api/backup` trigger),
+  `HEALTH_CRON_SECRET` (authoritative `/api/health` header), and
+  `VERCEL_TOKEN` (dashboard deployments widget) as encrypted env vars on
+  the production project via the Vercel API. Verified present.
+
+### Pending (needs credentials from the user)
+
+- GitHub PAT to provision `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` /
+  `HEALTH_CRON_SECRET` repo secrets and seed the (currently 0-run)
+  `nightly-backup` workflow.
+- Third-party uptime monitor (e.g. UptimeRobot) for an independent
+  third keep-alive layer.
+
+- **Last Updated:** 2026-08-02 (Phase 33 — long-term reliability hardening)

@@ -385,6 +385,36 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
     ],
   ),
 
+  "dx-grants": entry(
+    "dx-grants",
+    "Data API grants",
+    "Verifies every public table has the explicit Postgres grants the Data API (supabase-js / PostgREST) needs for anon, authenticated and service_role.",
+    [
+      s("what", "What this does", [
+        "Lists every public table and whether anon, authenticated and service_role each have SELECT/INSERT/UPDATE/DELETE grants on it. A table missing grants is flagged.",
+      ]),
+      s("why", "Why it exists", [
+        "Supabase removed automatic grants for NEW public tables (breaking change, enforced on all projects on October 30, 2026). After that date, a table created by a migration without explicit GRANT statements becomes invisible to the Data API — pages would silently fall back to mock data or the admin would error. This card is the early warning for that.",
+      ]),
+      s("when", "When to use it", [
+        "After adding any new table or migration, or any time a public page or admin module unexpectedly reads empty/mock data.",
+      ]),
+      s("how", "How it works", [
+        "The page calls the list_data_api_grants() RPC, which inspects information_schema.role_table_grants for each of the three roles across all public tables.",
+      ]),
+      s("effects", "What happens if a table is missing grants", [
+        "Supabase returns a permission-denied error for that table over the REST/GraphQL API even though the table exists in Postgres. Fix by adding the matching GRANT statements to the migration that created the table and running supabase db push.",
+      ]),
+      s("best", "Best practices", [
+        "Every migration that creates a table must include its GRANT statements (and ENABLE ROW LEVEL SECURITY + policies) — grants, RLS and policies are a single unit.",
+        "Service-role-only tables (health_checks, backups, audit_log, ...) should still have service_role grants, but no anon/authenticated SELECT policies.",
+      ]),
+      s("warning", "Warning", [
+        "This only inspects the grants a migration declared. A table created outside the migration workflow (e.g. the Supabase SQL editor) is not covered — keep schema changes in migrations.",
+      ]),
+    ],
+  ),
+
   "dx-orphans": entry(
     "dx-orphans",
     "Orphan storage files",

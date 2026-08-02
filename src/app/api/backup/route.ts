@@ -23,6 +23,28 @@ export const maxDuration = 60;
 
 const BACKUP_BUCKET = "backups";
 const BACKUP_RETENTION_DAYS = 30;
+const EXPORT_PAGE_SIZE = 1000;
+
+/** Fetch every row of a table via range pagination (no silent truncation). */
+async function fetchAllRows(
+  admin: ReturnType<typeof createAdminClient>,
+  table: string,
+): Promise<{ rows: unknown[]; error: string | null }> {
+  const rows: unknown[] = [];
+  let offset = 0;
+  while (true) {
+    const { data, error } = await admin
+      .from(table as never)
+      .select("*")
+      .range(offset, offset + EXPORT_PAGE_SIZE - 1);
+    if (error) return { rows, error: error.message };
+    const batch = (data ?? []) as unknown[];
+    rows.push(...batch);
+    if (batch.length < EXPORT_PAGE_SIZE) break;
+    offset += EXPORT_PAGE_SIZE;
+  }
+  return { rows, error: null };
+}
 
 const CONTENT_TABLES = [
   "projects",
@@ -107,14 +129,12 @@ export async function GET(request: Request) {
     let sizeBytes = 0;
     const tableNames: string[] = [];
 
-    // 1) Table exports.
+    // 1) Table exports (paginated — a table larger than one page is fully
+    //    backed up instead of silently truncated).
     for (const table of CONTENT_TABLES) {
-      const { data, error } = await admin
-        .from(table as never)
-        .select("*")
-        .limit(1000);
+      const { rows, error } = await fetchAllRows(admin, table);
       if (error) continue;
-      const json = JSON.stringify(data ?? [], null, 2);
+      const json = JSON.stringify(rows, null, 2);
       const uploadRes = await admin.storage
         .from(BACKUP_BUCKET)
         .upload(`${basePrefix}tables/${table}.json`, json, {

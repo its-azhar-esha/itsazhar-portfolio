@@ -82,6 +82,13 @@ export interface RlsStatusRow {
   policy_count: number;
 }
 
+export interface DataApiGrantRow {
+  table_name: string;
+  anon_ok: boolean;
+  authenticated_ok: boolean;
+  service_role_ok: boolean;
+}
+
 export interface OrphanFile {
   bucket: string;
   path: string;
@@ -122,6 +129,7 @@ export interface DxReport {
   keepAlive: KeepAliveStatus;
   backups: BackupStatus;
   rls: RlsStatusRow[];
+  grants: DataApiGrantRow[];
   orphans: {
     total: number;
     items: OrphanFile[];
@@ -570,6 +578,15 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       policy_count: Number(r.policy_count),
     }));
 
+    /* Data API grants per public table (Supabase Oct 30, 2026 change) */
+    const { data: grantRows } = await admin.rpc("list_data_api_grants" as never);
+    const grants = ((grantRows ?? []) as DataApiGrantRow[]).map((r) => ({
+      table_name: r.table_name,
+      anon_ok: Boolean(r.anon_ok),
+      authenticated_ok: Boolean(r.authenticated_ok),
+      service_role_ok: Boolean(r.service_role_ok),
+    }));
+
     /* Orphan storage files (files not referenced by media_files) */
     const orphans: OrphanFile[] = [];
     try {
@@ -651,6 +668,7 @@ export async function getDxReportAction(): Promise<Result<DxReport>> {
       keepAlive,
       backups,
       rls,
+      grants,
       orphans: {
         total: orphans.length,
         items: orphanItems,

@@ -15,9 +15,18 @@ jobs:
         run: |
           set +e
           STATUS=0
+          HEADER_ARGS=()
+          # When HEALTH_CRON_SECRET is configured as a repository secret, the
+          # GitHub fallback is treated as an authoritative keep-alive and also
+          # records the health_checks ledger row. If unset, this resolves to an
+          # empty value and the endpoint still answers the probe.
+          if [ -n "${{ secrets.HEALTH_CRON_SECRET }}" ]; then
+            HEADER_ARGS=(-H "x-health-key: ${{ secrets.HEALTH_CRON_SECRET }}")
+          fi
           for attempt in 1 2 3; do
             echo "attempt $attempt..."
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 \
+              "${HEADER_ARGS[@]}" \
               https://itsazhar-portfolio.vercel.app/api/health)
             echo "health status: $STATUS"
             # 200 = ok, 429/5xx = transient -> retry with backoff

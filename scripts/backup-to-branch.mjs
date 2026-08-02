@@ -81,6 +81,25 @@ async function rest(pathPart, options = {}) {
   return res;
 }
 
+const PAGE = 1000;
+
+/** Fetch every row of a table via offset/limit pagination (no truncation). */
+async function fetchAllRows(table) {
+  const rows = [];
+  let offset = 0;
+  while (true) {
+    const res = await rest(`${table}?select=*&limit=${PAGE}&offset=${offset}`);
+    const batch = await res.json();
+    if (!Array.isArray(batch)) {
+      throw new Error(`REST ${table} returned non-array`);
+    }
+    rows.push(...batch);
+    if (batch.length < PAGE) break;
+    offset += PAGE;
+  }
+  return rows;
+}
+
 async function listStorage(bucket, prefix, out) {
   const res = await fetch(`${url}/storage/v1/object/list/${bucket}`, {
     method: "POST",
@@ -105,8 +124,8 @@ async function main() {
   fs.mkdirSync(tablesDir, { recursive: true });
 
   for (const table of CONTENT_TABLES) {
-    const res = await rest(`${table}?select=*&limit=1000`);
-    const json = JSON.stringify(await res.json(), null, 2);
+    const rows = await fetchAllRows(table);
+    const json = JSON.stringify(rows, null, 2);
     fs.writeFileSync(path.join(tablesDir, `${table}.json`), json);
     sizeBytes += Buffer.byteLength(json);
     fileCount += 1;

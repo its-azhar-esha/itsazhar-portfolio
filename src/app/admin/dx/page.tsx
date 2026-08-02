@@ -108,6 +108,9 @@ export default async function DxPage() {
   const r = result.data;
   const dxConfig = settingsResult.success ? settingsResult.data?.dx_config : undefined;
   const backupStale = r.backups.ageDays !== null && r.backups.ageDays > 3;
+  const grantsMissing = r.grants.filter(
+    (g) => !g.anon_ok || !g.authenticated_ok || !g.service_role_ok,
+  );
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
@@ -280,6 +283,55 @@ export default async function DxPage() {
               );
             })}
           </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Data API grants"
+          icon={ShieldCheck}
+          help="dx-grants"
+          right={<StatusBadge status={grantsMissing.length === 0 ? "ok" : "error"} />}
+        >
+          <p className="text-muted-foreground mb-3 text-xs">
+            From October 30, 2026 Supabase stops auto-granting table access to the Data API on new
+            public tables. Every table must have explicit grants for anon/authenticated/service_role
+            or it becomes unreachable via supabase-js. This list flags any table missing them.
+          </p>
+          {r.grants.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No public tables found.</p>
+          ) : grantsMissing.length > 0 ? (
+            <div className="border-border/40 divide-border/40 divide-y overflow-hidden rounded-lg border text-xs">
+              {grantsMissing.map((row) => (
+                <div key={row.table_name} className="flex items-center gap-2 px-3 py-2">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                  <span className="font-mono">{row.table_name}</span>
+                  <span className="text-muted-foreground ml-auto">
+                    {!row.anon_ok && "anon "}
+                    {!row.authenticated_ok && "authenticated "}
+                    {!row.service_role_ok && "service_role "}
+                    missing
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-emerald-500">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                All {r.grants.length} public tables have full Data API grants.
+              </p>
+              <div className="border-border/40 divide-border/40 max-h-64 divide-y overflow-hidden overflow-y-auto rounded-lg border text-xs">
+                {r.grants.map((row) => (
+                  <div key={row.table_name} className="flex items-center gap-2 px-3 py-1.5">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                    <span className="font-mono">{row.table_name}</span>
+                    <span className="text-muted-foreground ml-auto">
+                      anon · authenticated · service_role
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </SectionCard>
 
         <SectionCard

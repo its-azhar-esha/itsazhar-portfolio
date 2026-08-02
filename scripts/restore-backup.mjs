@@ -112,7 +112,11 @@ async function main() {
       restored += 1;
       continue;
     }
-    const res = await fetch(`${url}/rest/v1/${table}?on_conflict=id`, {
+    // Omit on_conflict so PostgREST upserts against the table's own primary
+    // key (documented default). Tables with a composite key (e.g.
+    // collection_items: collection_id + resource_id) work without a per-table
+    // hardcoded list.
+    const res = await fetch(`${url}/rest/v1/${table}`, {
       method: "POST",
       headers: {
         ...headers,
