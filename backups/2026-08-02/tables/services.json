@@ -1,0 +1,146 @@
+[
+  {
+    "id": "11565077-6b2c-430e-bfd3-e3d6a415687e",
+    "slug": "workflow-automation-with-n8n",
+    "title": "Workflow Automation with n8n",
+    "short_description": "Design reliable automation workflows that connect your tools, move data automatically, and eliminate repetitive manual processes.",
+    "content": {
+      "highlights": [
+        "End-to-end workflow design",
+        "Tool and API integrations",
+        "Conditional logic branches",
+        "Error handling and retries"
+      ]
+    },
+    "icon": "workflow",
+    "featured": true,
+    "display_order": 1,
+    "status": "published",
+    "seo_title": null,
+    "seo_description": null,
+    "seo_keywords": [],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-02T11:47:08.161359+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "eee8a426-1dd5-4024-b92f-fb8e617523b4",
+    "slug": "api-and-system-integration",
+    "title": "API & System Integration",
+    "short_description": "Connect different platforms, databases, and services to create seamless automated ecosystems.",
+    "content": {
+      "highlights": [
+        "REST and webhook integrations",
+        "Database synchronization",
+        "Legacy system connections",
+        "Real-time data pipelines"
+      ]
+    },
+    "icon": "cable",
+    "featured": true,
+    "display_order": 2,
+    "status": "published",
+    "seo_title": null,
+    "seo_description": null,
+    "seo_keywords": [],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-02T11:47:08.161359+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "6289ecdd-be6e-4114-b42c-b5c9be44d4df",
+    "slug": "document-intelligence-systems",
+    "title": "Document Intelligence Systems",
+    "short_description": "Extract, classify, analyze, and process documents using AI-powered automation pipelines.",
+    "content": {
+      "highlights": [
+        "PDF and document parsing",
+        "Intelligent data extraction",
+        "Document classification",
+        "Automated validation"
+      ]
+    },
+    "icon": "file_text",
+    "featured": true,
+    "display_order": 3,
+    "status": "published",
+    "seo_title": null,
+    "seo_description": null,
+    "seo_keywords": [],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-02T11:47:08.161359+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "0d691ac2-0007-4147-a1f9-b9f616ad395b",
+    "slug": "business-process-automation",
+    "title": "Business Process Automation",
+    "short_description": "Transform slow manual processes into efficient, scalable systems that save time and reduce errors.",
+    "content": {
+      "highlights": [
+        "Process mapping and analysis",
+        "Automation opportunity identification",
+        "Scalable system architecture",
+        "Performance monitoring"
+      ]
+    },
+    "icon": "building2",
+    "featured": true,
+    "display_order": 4,
+    "status": "published",
+    "seo_title": null,
+    "seo_description": null,
+    "seo_keywords": [],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-02T11:47:08.161359+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "2088b147-c344-4ca9-bbf3-f64fbb412137",
+    "slug": "custom-ai-automation-solutions",
+    "title": "Custom AI Automation Solutions",
+    "short_description": "Build tailored automation systems based on unique business challenges and operational goals.",
+    "content": {
+      "highlights": [
+        "Custom workflow engineering",
+        "AI model integration",
+        "Business-specific solutions",
+        "End-to-end implementation"
+      ]
+    },
+    "icon": "cpu",
+    "featured": true,
+    "display_order": 5,
+    "status": "published",
+    "seo_title": null,
+    "seo_description": null,
+    "seo_keywords": [],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-02T11:47:08.161359+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "9aede0d2-2690-44d4-b92a-369549e7f84a",
+    "slug": "ai-agent-intelligent-assistants",
+    "title": "AI Agent & Intelligent Assistants",
+    "short_description": "Build AI-powered assistants that understand requests, make decisions, and automate complex tasks across business operations.",
+    "content": {
+      "highlights": [
+        "Custom AI agent development",
+        "Decision-making workflows",
+        "Multi-step task automation",
+        "Natural language interfaces"
+      ]
+    },
+    "icon": "bot",
+    "featured": true,
+    "display_order": 0,
+    "status": "published",
+    "seo_title": null,
+    "seo_description": null,
+    "seo_keywords": [],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-02T11:47:08.161359+00:00",
+    "scheduled_for": null
+  }
+]

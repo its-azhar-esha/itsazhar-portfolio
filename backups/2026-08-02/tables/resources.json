@@ -1,0 +1,195 @@
+[
+  {
+    "id": "6711483b-2407-4e23-930a-1b46bdf59135",
+    "type": "template",
+    "title": "Lead Qualification Agent Template",
+    "slug": "lead-qualification-agent-template",
+    "summary": "An n8n workflow that scores and routes inbound leads using an LLM before they ever reach your inbox.",
+    "content": "## What this does\n\nThis template turns raw inbound leads into qualified opportunities. A webhook receives the lead, an LLM extracts key details and scores the fit, then the workflow routes it to the right pipeline and sends a Slack notification.\n\n## Nodes included\n\n- **Webhook** — receives lead payload\n- **AI Agent (Groq)** — extracts and scores the lead\n- **Router** — splits qualified vs. unqualified\n- **Slack** — notifies the sales channel\n- **Google Sheets** — appends the lead for tracking\n\n## Getting started\n\n1. Import the workflow JSON into n8n.\n2. Set your API keys (Groq + Slack).\n3. Add your sheet ID and run a test lead.",
+    "category_id": "89ab1b9f-b7fb-4873-b1d8-987c2f6d246f",
+    "tags": [
+      "n8n",
+      "leads",
+      "sales",
+      "ai-agent"
+    ],
+    "cover_image": null,
+    "og_image": null,
+    "version": "1.0.0",
+    "changelog": [
+      {
+        "date": "2026-07-31",
+        "notes": [
+          "Initial release"
+        ],
+        "version": "1.0.0"
+      }
+    ],
+    "metadata": {
+      "nodes": 5,
+      "runtime": "n8n"
+    },
+    "pricing": {
+      "model": "free"
+    },
+    "access_level": "free",
+    "featured": true,
+    "display_order": 1,
+    "status": "published",
+    "downloads_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "canonical_url": null,
+    "keywords": [
+      "lead qualification",
+      "n8n template",
+      "sales automation"
+    ],
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:07.453738+00:00"
+  },
+  {
+    "id": "c286b498-8e93-43ce-bc96-60c036e37b84",
+    "type": "prompt",
+    "title": "Prompt Library — 25 Automation Prompts",
+    "slug": "prompt-library-25-automation-prompts",
+    "summary": "Twenty-five copy-paste prompts for scoping, designing and documenting automation projects.",
+    "content": "## What this includes\n\nA collection of prompts organized by phase:\n\n- **Discovery** — interview guides and requirement capture\n- **Design** — workflow mapping and node selection\n- **Documentation** — handover docs and SOPs\n- **Troubleshooting** — error triage and debugging\n\nEach prompt is written to work with any LLM and includes placeholders you can adapt.",
+    "category_id": "953c8ee3-737d-45e6-be9a-8e142b1f7099",
+    "tags": [
+      "prompts",
+      "llm",
+      "documentation"
+    ],
+    "cover_image": null,
+    "og_image": null,
+    "version": "1.0.0",
+    "changelog": [
+      {
+        "date": "2026-07-31",
+        "notes": [
+          "Initial release"
+        ],
+        "version": "1.0.0"
+      }
+    ],
+    "metadata": {
+      "prompts": 25
+    },
+    "pricing": {
+      "model": "free"
+    },
+    "access_level": "free",
+    "featured": false,
+    "display_order": 3,
+    "status": "published",
+    "downloads_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "canonical_url": null,
+    "keywords": [
+      "prompt library",
+      "automation prompts",
+      "llm"
+    ],
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:07.453738+00:00"
+  },
+  {
+    "id": "96025eac-dafc-4ede-a85e-a78131764377",
+    "type": "guide",
+    "title": "Getting Started with n8n Automations",
+    "slug": "getting-started-with-n8n-automations",
+    "summary": "A beginner-friendly walkthrough of the core n8n concepts you need before building your first workflow.",
+    "content": "## Core concepts\n\n- **Nodes** — each step in a workflow performs one job.\n- **Triggers** — the event that starts a workflow (webhook, schedule, app event).\n- **Connections** — data flows from node to node through edges.\n- **Expressions** — `{{ }}` syntax pulls data from earlier steps.\n\n## Your first workflow\n\n1. Add a **Webhook** trigger and test it.\n2. Connect a **Code** node and transform the payload.\n3. Finish with a **Slack** notification.\n4. Activate the workflow and send a real request.\n\n## Next steps\n\nTry the Lead Qualification template in the hub and remix it in the Workflow Playground.",
+    "category_id": "953c8ee3-737d-45e6-be9a-8e142b1f7099",
+    "tags": [
+      "n8n",
+      "beginner",
+      "tutorial"
+    ],
+    "cover_image": null,
+    "og_image": null,
+    "version": "1.0.0",
+    "changelog": [
+      {
+        "date": "2026-07-31",
+        "notes": [
+          "Initial release"
+        ],
+        "version": "1.0.0"
+      }
+    ],
+    "metadata": {
+      "minutes": 10
+    },
+    "pricing": {
+      "model": "free"
+    },
+    "access_level": "free",
+    "featured": false,
+    "display_order": 4,
+    "status": "published",
+    "downloads_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "canonical_url": null,
+    "keywords": [
+      "n8n tutorial",
+      "beginner guide",
+      "automation basics"
+    ],
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:07.453738+00:00"
+  },
+  {
+    "id": "1985f3c7-08f1-4e06-86b5-054a16e31022",
+    "type": "agent",
+    "title": "AI Sales Agent Pack",
+    "slug": "ai-sales-agent-pack",
+    "summary": "A ready-to-configure AI agent persona pack for outreach, follow-up and objection handling.",
+    "content": "## What this includes\n\nThree agent personas with system prompts, example conversations and integration notes:\n\n1. **Outreach Agent** — first-touch messages that sound human.\n2. **Follow-Up Agent** — polite persistence without being spammy.\n3. **Objection Handler** — answers common objections with evidence.\n\n## How to use\n\nCopy the system prompt of any persona into your agent platform (n8n AI Agent node, Groq, or any chat API) and adjust the knowledge sources.",
+    "category_id": "fbb59d3e-d024-4ef5-b8b4-f90c6480aba9",
+    "tags": [
+      "ai-agent",
+      "sales",
+      "prompts"
+    ],
+    "cover_image": null,
+    "og_image": null,
+    "version": "1.0.0",
+    "changelog": [
+      {
+        "date": "2026-07-31",
+        "notes": [
+          "Initial release"
+        ],
+        "version": "1.0.0"
+      }
+    ],
+    "metadata": {
+      "personas": 3
+    },
+    "pricing": {
+      "model": "one_time",
+      "price": "9",
+      "currency": null,
+      "purchase_url": null
+    },
+    "access_level": "premium",
+    "featured": true,
+    "display_order": 2,
+    "status": "published",
+    "downloads_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "canonical_url": null,
+    "keywords": [
+      "ai sales agent",
+      "outreach",
+      "follow-up"
+    ],
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:07.453738+00:00"
+  }
+]
