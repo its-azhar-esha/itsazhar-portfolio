@@ -54,6 +54,16 @@ Nothing is off-limits; the user prefers being asked over being skipped.
   URLs resolve through `getHealthCheckUrl()` / `getBackupUrl()`.
 - Public pages fall back to mocks/defaults when Supabase is unavailable; admin
   pages must surface real errors.
+- Admin timestamps display in Bangladesh Time (GMT+6, Asia/Dhaka) — use the
+  `src/lib/format/dates.ts` formatters (`formatDateTimeBD`, `formatDateBD`,
+  `formatDateTimeShortBD`, `formatTimeBD`, `formatDateKeyBD`); never render
+  raw UTC in admin UI.
+- Never mask a real failure as OK — admin statuses must reflect the actual
+  ledger/probe (a probe error throws, not `?? 0`).
+- Health/backup ledger rows carry a `source` (`vercel` | `github`); `vercel`
+  is the primary writer, `github` a redundant fallback. When reading ledger
+  rows prefer `source='vercel'` and fall back to `github` only when vercel is
+  missing.
 
 ## Workflows
 

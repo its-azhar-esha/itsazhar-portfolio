@@ -2060,7 +2060,83 @@ manual upkeep, even after months/years of sporadic traffic.
   third keep-alive layer.~~
 - **Done in Phase 35** — see below.
 
-- **Last Updated:** 2026-08-02 (Phase 35 — external keep-alive & backup provisioning)
+- **Last Updated:** 2026-08-02 (Phase 36 — BD-time admin timestamps, real-data status fixes, scheduler source attribution, chat rate limit)
+
+## 36. BD-Time Admin Timestamps, Real-Data Status, Source Attribution & Chat Rate Limit (2026-08-02, commit `0c02565`)
+
+Goal: every admin timestamp displays in Bangladesh Time (GMT+6, Asia/Dhaka)
+regardless of the viewer's locale, and admin status surfaces real data — never
+inferred or masked failures — while keep-alive/backup ledgers now attribute
+each check to the scheduler that actually wrote it.
+
+### BD timezone display rule (`src/lib/format/dates.ts`, NEW)
+
+- New shared formatters: `formatDateTimeBD` ("Aug 2, 2026, 6:52 PM"),
+  `formatDateBD`, `formatDateTimeShortBD`, `formatTimeBD`, and
+  `formatDateKeyBD` (DB `YYYY-MM-DD` keys rendered as "Aug 2, 2026" in Dhaka).
+  `ADMIN_TIME_ZONE = "Asia/Dhaka"`. Display-only — stored values never change.
+- Applied to ~32 admin display sites: dashboard, keepalive, activity,
+  security, analytics, dx pages; keepalive-card, integration-manager,
+  version-history, media-manager, media-detail-dialog, shared-workflows-list,
+  blog-list, leads-manager, case-study-list, testimonial-list, service-list,
+  seo-list, project-card; plus server-side action strings in
+  `src/lib/dashboard/actions.ts` and `src/lib/keepalive/actions.ts` (expiry
+  warnings, deploy detail, backup details).
+
+### Scheduler source attribution (migration `00033_health_source_attribution.sql`)
+
+- `health_checks` + `backups` gain `source text not null default 'vercel'`;
+  unique/day constraints now key on `(checked_on, source)` /
+  `(backup_date, source)`; historical rows backfilled to `vercel`. Applied
+  remotely; `src/database.types.ts` synced.
+- `/api/health` (`src/app/api/health/route.ts`): `authoritativeSource()`
+  returns `vercel|github|null`; upsert uses `onConflict:"checked_on,source"`;
+  GitHub `x-health-key` header path records `source='github'`. `/api/backup`
+  attributes `source` and `scripts/backup-to-branch.mjs` writes
+  `source:'github'` with `on_conflict=backup_date,source`.
+- Keepalive/dashboard/dx reads now filter `source='vercel'` rows as primary
+  and fall back to `github` rows only when vercel is missing. Scheduler
+  status is read per-scheduler from `vercelChecks`/`githubChecks` — no more
+  aggregate inference. `admin-help.ts` updated: vercel is the _primary_ ledger
+  writer, github is a redundant fallback.
+
+### Real-data status fixes (no masked failures)
+
+- Dashboard `ping()` throws on probe error; `get_db_usage` RPC error throws
+  (was `?? 0`); `requests`/`rateLimit` report `warn`/`info` honestly on
+  tracking failure. Auth probe replaced with real
+  `admin.auth.admin.listUsers({page:1, perPage:1})`.
+- `src/lib/dx/actions.ts`: `storage.ok` now reflects probe reachability (not
+  object count); DB health probe checks `error`, no longer flags empty
+  `blog_posts` as an error.
+- Backup route surfaces per-table/catalog failures, status
+  `ok|partial|error`, manifests include `failures`, fires monitoring webhook
+  on non-ok.
+
+### Durable chat rate limit (`src/lib/ai/rate-limit.ts`, NEW)
+
+- DB-backed (sha256-IP hash → `analytics_events` counters), hourly=20 /
+  daily=60, fails open (never breaks chat), survives cold starts. Raw IPs
+  never stored. `/api/chat` returns 429 + Retry-After with a friendly message.
+
+### Verified (all live, 2026-08-02)
+
+- `tsc --noEmit`, `npm run lint`, `npm run build` (31/31 routes) all pass.
+- Commit `0c02565` pushed; Vercel deploy READY.
+- Authenticated headless-browser check of `/admin/keepalive`: "Generated Aug
+  2, 2026, 7:49 PM", "Last check 51m ago (2/2 OK)", "All keep-alive
+  components healthy" — BD timestamps + per-scheduler real data confirmed.
+- `/admin`: "Latest production deploy Aug 2, 2026, 7:42 PM", "2 day(s)
+  healthy · last check 51m ago". `/admin/dx`: keep-alive/backup tiles render
+  (`formatDateKeyBD`). `/api/health` ok; both `source='github'` and
+  `source='vercel'` rows present in the ledger for 2026-08-02.
+
+### Rule (update AGENTS.md)
+
+- Admin timestamps display in BD time (Asia/Dhaka) — use the `src/lib/format/dates.ts`
+  formatters; never render raw UTC in admin UI. Never mask a real failure as
+  OK; statuses must reflect the actual ledger/probe. Health/backup ledger
+  rows carry `source` (`vercel`/`github`); `vercel` is primary.
 
 ## 35. External Keep-Alive & Backup Provisioning (2026-08-02)
 
