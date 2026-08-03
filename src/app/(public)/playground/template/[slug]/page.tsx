@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPublicTemplateAction } from "@/lib/hub/actions";
 import { getPublicPageContent } from "@/lib/content";
+import { getSiteUrl } from "@/lib/site/urls";
 import {
   DEFAULT_PLAYGROUND_CONTENT,
   type PlaygroundPageContent,
@@ -20,14 +21,25 @@ export async function generateMetadata({ params }: TemplateDetailPageProps): Pro
   const { slug } = await params;
   const template = await getPublicTemplateAction(slug);
   if (!template) return {};
+  const baseUrl = await getSiteUrl();
+  const title = template.seo_title || `${template.title} — Workflow Template`;
+  const description = template.seo_description || template.description;
+  const canonical = `${baseUrl}/playground/template/${slug}`;
   return {
-    title: template.seo_title || `${template.title} — Workflow Template`,
-    description: template.seo_description || template.description,
+    title,
+    description,
     keywords: template.keywords,
+    alternates: { canonical },
     openGraph: {
-      title: template.title,
-      description: template.description,
+      title,
+      description,
       type: "article",
+      url: canonical,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
     },
   };
 }

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Wand2 } from "lucide-react";
 import { getSharedWorkflowAction, getPublicNodeTypesAction } from "@/lib/hub/actions";
 import { getPublicPageContent } from "@/lib/content";
+import { getSiteUrl } from "@/lib/site/urls";
 import {
   DEFAULT_PLAYGROUND_CONTENT,
   type PlaygroundPageContent,
@@ -19,10 +20,26 @@ export async function generateMetadata({ params }: SharePageProps): Promise<Meta
   const { code } = await params;
   const workflow = await getSharedWorkflowAction(code);
   if (!workflow) return {};
+  const baseUrl = await getSiteUrl();
+  const title = `${workflow.title} — Shared Workflow`;
+  const description =
+    "A shared automation workflow built in the Workflow Playground. Remix it freely.";
+  const canonical = `${baseUrl}/playground/share/${code}`;
   return {
-    title: `${workflow.title} — Shared Workflow`,
-    description: "A shared automation workflow built in the Workflow Playground. Remix it freely.",
-    openGraph: { title: workflow.title, type: "website" },
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: workflow.title,
+      description,
+      type: "website",
+      url: canonical,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 

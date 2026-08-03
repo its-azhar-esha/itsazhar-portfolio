@@ -6,6 +6,7 @@ import {
 } from "@/lib/hub/actions";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { getPublicPageContent } from "@/lib/content";
+import { getSiteUrl } from "@/lib/site/urls";
 import {
   DEFAULT_PLAYGROUND_CONTENT,
   type PlaygroundPageContent,
@@ -15,11 +16,26 @@ import type { WorkflowEdge, WorkflowNode } from "@/types/hub";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSiteSettings();
+  const baseUrl = await getSiteUrl();
+  const title = `Workflow Builder | ${settings.site_name || "Azhar"}`;
+  const description =
+    "Free visual workflow builder. Drag, connect and configure automation steps, then save and share your flow.";
+  const canonical = `${baseUrl}/playground/builder`;
   return {
-    title: `Workflow Builder | ${settings.site_name || "Azhar"}`,
-    description:
-      "Free visual workflow builder. Drag, connect and configure automation steps, then save and share your flow.",
-    openGraph: { title: "Workflow Builder", type: "website" },
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: canonical,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 

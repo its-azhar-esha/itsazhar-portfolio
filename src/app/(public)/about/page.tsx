@@ -2,10 +2,34 @@ import type { Metadata } from "next";
 import { getPublicAboutContent } from "@/lib/about";
 import { getPublicStats } from "@/lib/stats";
 import { getPageMetadata } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site/urls";
 import { AboutPageClient } from "@/components/about/about-page-client";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return getPageMetadata("about");
+  const base = await getPageMetadata("about");
+  const siteUrl = await getSiteUrl();
+  return {
+    ...base,
+    other: {
+      "application/ld+json": JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: "Azhar Mahmud Alif",
+        jobTitle: "AI Automation Specialist",
+        url: `${siteUrl}/about`,
+        knowsAbout: [
+          "AI Agents",
+          "Workflow Automation",
+          "n8n",
+          "Supabase",
+          "React",
+          "TypeScript",
+          "API Integration",
+          "Business Automation",
+        ],
+      }),
+    },
+  };
 }
 
 export default async function AboutPage() {
