@@ -1,9 +1,14 @@
 "use client";
 
+import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TagInput } from "@/components/ui/tag-input";
 import { MediaField } from "@/components/media/media-field";
+import { SeoPreview } from "@/components/admin/seo/seo-preview";
+import { SeoAnalysisPanel } from "@/components/admin/seo/seo-analysis";
+import { analyzeSeo } from "@/lib/seo/analysis";
+import { SITE_URL } from "@/lib/site";
 import type { FormFields } from "./project-form";
 
 interface SeoSectionProps {
@@ -12,9 +17,69 @@ interface SeoSectionProps {
   onChange: (fields: Partial<FormFields>) => void;
 }
 
+function CharCount({
+  current,
+  max,
+  recommended,
+}: {
+  current: number;
+  max: number;
+  recommended?: [number, number];
+}) {
+  let color = "text-muted-foreground";
+  if (current > max) color = "text-red-500";
+  else if (recommended && current >= recommended[0] && current <= recommended[1])
+    color = "text-emerald-500";
+  else if (recommended && current > recommended[1]) color = "text-amber-500";
+
+  return (
+    <div className="flex justify-between">
+      {recommended && (
+        <p className="text-muted-foreground text-xs">
+          Recommended: {recommended[0]}–{recommended[1]} characters
+        </p>
+      )}
+      {!recommended && <p className="text-muted-foreground text-xs" />}
+      <p className={`text-xs font-medium ${color}`}>
+        {current}/{max}
+      </p>
+    </div>
+  );
+}
+
 export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
+  const analysis = React.useMemo(
+    () =>
+      analyzeSeo({
+        title: fields.seo_title,
+        description: fields.seo_description,
+        ogImage: fields.og_image,
+        keywords: fields.keywords
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
+      }),
+    [fields.seo_title, fields.seo_description, fields.og_image, fields.keywords],
+  );
+
   return (
     <div className="space-y-6">
+      <SeoPreview
+        title={fields.seo_title || fields.title}
+        description={fields.seo_description || fields.short_description}
+        url={`${SITE_URL}/projects/${fields.slug}`}
+      />
+
+      <SeoAnalysisPanel
+        overall={analysis.overall}
+        items={[
+          { label: "Title", item: analysis.title },
+          { label: "Description", item: analysis.description },
+          { label: "OG Image", item: analysis.ogImage },
+          { label: "Keywords", item: analysis.keywords },
+        ]}
+      />
+
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="seo_title">SEO Title</Label>
@@ -24,10 +89,7 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
             onChange={(e) => onChange({ seo_title: e.target.value })}
             placeholder="Optional — defaults to project title"
           />
-          <div className="flex justify-between">
-            <p className="text-muted-foreground text-xs">Recommended: 50–70 characters</p>
-            <p className="text-muted-foreground text-xs">{fields.seo_title.length}/70</p>
-          </div>
+          <CharCount current={fields.seo_title.length} max={70} recommended={[50, 60]} />
           {errors?.seo_title && <p className="text-xs text-red-500">{errors.seo_title}</p>}
         </div>
         <div className="space-y-2">
@@ -38,6 +100,11 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
             onChange={(e) => onChange({ canonical_url: e.target.value })}
             placeholder="https://example.com/projects/my-project"
           />
+          <p className="text-muted-foreground text-xs">
+            {fields.canonical_url
+              ? "Custom canonical URL set."
+              : "Defaults to the project page URL."}
+          </p>
           {errors?.canonical_url && <p className="text-xs text-red-500">{errors.canonical_url}</p>}
         </div>
       </div>
@@ -52,10 +119,7 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
           rows={3}
           className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-primary/20 flex w-full resize-none rounded-lg border px-3 py-2 text-sm transition-all duration-200 focus:ring-1 focus:outline-none"
         />
-        <div className="flex justify-between">
-          <p className="text-muted-foreground text-xs">Recommended: 150–160 characters</p>
-          <p className="text-muted-foreground text-xs">{fields.seo_description.length}/160</p>
-        </div>
+        <CharCount current={fields.seo_description.length} max={160} recommended={[150, 155]} />
         {errors?.seo_description && (
           <p className="text-xs text-red-500">{errors.seo_description}</p>
         )}
@@ -65,7 +129,7 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
         <div className="space-y-2">
           <MediaField
             label="OpenGraph Image"
-            description="Recommended: 1200×630px."
+            description="Recommended: 1200×630px. Used when the page is shared on social media."
             value={fields.og_image}
             onChange={(value) => onChange({ og_image: value ?? "" })}
             previewClassName="aspect-video w-full max-w-xs"

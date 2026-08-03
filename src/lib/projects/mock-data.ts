@@ -40,6 +40,8 @@ export const MOCK_PROJECTS: DbProject[] = [
     ],
     impact:
       "Transformed a reactive fleet monitoring process into an intelligent, proactive safety system that catches incidents in real time and reduces response times from hours to seconds.",
+    key_features: [],
+    future_scope: [],
     created_at: "2024-06-01T00:00:00Z",
     updated_at: "2024-06-01T00:00:00Z",
   },
@@ -82,6 +84,8 @@ export const MOCK_PROJECTS: DbProject[] = [
     ],
     impact:
       "Reduces manual document review time by 80% and eliminates missed contract details — ensuring real estate teams never miss a critical lease clause again.",
+    key_features: [],
+    future_scope: [],
     created_at: "2024-05-01T00:00:00Z",
     updated_at: "2024-05-01T00:00:00Z",
   },
@@ -124,6 +128,8 @@ export const MOCK_PROJECTS: DbProject[] = [
     ],
     impact:
       "Eliminates manual data entry across document-heavy workflows, reducing processing time by 90% and virtually eliminating data entry errors.",
+    key_features: [],
+    future_scope: [],
     created_at: "2024-04-01T00:00:00Z",
     updated_at: "2024-04-01T00:00:00Z",
   },
@@ -166,6 +172,8 @@ export const MOCK_PROJECTS: DbProject[] = [
     ],
     impact:
       "Reduces onboarding time from days to hours, eliminates manual coordination overhead, and delivers a consistent, professional welcome experience for every new client.",
+    key_features: [],
+    future_scope: [],
     created_at: "2024-03-01T00:00:00Z",
     updated_at: "2024-03-01T00:00:00Z",
   },
@@ -208,6 +216,8 @@ export const MOCK_PROJECTS: DbProject[] = [
     ],
     impact:
       "Dramatically reduces manual SKU mapping effort, enabling e-commerce businesses to onboard new suppliers in hours instead of weeks.",
+    key_features: [],
+    future_scope: [],
     created_at: "2024-02-01T00:00:00Z",
     updated_at: "2024-02-01T00:00:00Z",
   },

@@ -65,6 +65,8 @@ export function rowToDbProject(row: Database["public"]["Tables"]["projects"]["Ro
     solution: row.solution ?? null,
     workflow: normalizeStringArray(row.workflow),
     impact: row.impact ?? null,
+    key_features: normalizeStringArray(row.key_features),
+    future_scope: normalizeStringArray(row.future_scope),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

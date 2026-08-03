@@ -21,6 +21,8 @@ export function toProject(db: DbProject): Project {
     solution: db.solution ?? undefined,
     workflow: db.workflow ?? undefined,
     impact: db.impact ?? undefined,
+    keyFeatures: db.key_features?.length ? db.key_features : undefined,
+    futureScope: db.future_scope?.length ? db.future_scope : undefined,
     tech: db.technologies,
     status: STATUS_MAP[db.status],
     industry,

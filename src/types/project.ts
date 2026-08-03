@@ -13,6 +13,8 @@ export interface Project {
   solution?: string;
   workflow?: string[];
   impact?: string;
+  keyFeatures?: string[];
+  futureScope?: string[];
   tech?: string[];
   status?: ProjectStatus;
   industry: string | string[];
@@ -63,6 +65,8 @@ export interface DbProject {
   solution: string | null;
   workflow: string[];
   impact: string | null;
+  key_features: string[];
+  future_scope: string[] | null;
   created_at: string;
   updated_at: string;
 }

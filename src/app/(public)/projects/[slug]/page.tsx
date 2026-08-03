@@ -190,6 +190,38 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </section>
       )}
 
+      {project.keyFeatures && project.keyFeatures.length > 0 && (
+        <section className="border-border/40 border-b py-16 md:py-20">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.keyFeatures}</h2>
+            <div className="mt-6 space-y-3">
+              {project.keyFeatures.map((feature, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="text-primary mt-0.5 text-lg">+</span>
+                  <p className="text-muted-foreground text-sm">{feature}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {project.futureScope && project.futureScope.length > 0 && (
+        <section className="border-border/40 border-b py-16 md:py-20">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-bold sm:text-2xl">{content.detail.futureScope}</h2>
+            <div className="mt-6 space-y-3">
+              {project.futureScope.map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="text-primary/60 mt-0.5 text-lg">&#8250;</span>
+                  <p className="text-muted-foreground text-sm">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {project.tech && (
         <section className="border-border/40 border-b py-16 md:py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">

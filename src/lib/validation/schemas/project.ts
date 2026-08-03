@@ -57,6 +57,8 @@ export const createProjectSchema = z.object({
   solution: z.string().nullable().default(null),
   workflow: z.array(z.string()).default([]),
   impact: z.string().nullable().default(null),
+  key_features: z.array(z.string()).default([]),
+  future_scope: z.array(z.string()).default([]),
 });
 
 /**

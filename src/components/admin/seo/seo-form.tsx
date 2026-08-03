@@ -7,6 +7,8 @@ import type { SeoEntry } from "@/types/seo";
 import { createSeoAction, updateSeoAction, deleteSeoAction } from "@/lib/seo/actions";
 import { createSeoSchema } from "@/lib/validation";
 import { SEO_ROBOTS } from "@/constants/seo";
+import { analyzeSeo } from "@/lib/seo/analysis";
+import { SITE_URL } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +17,8 @@ import { MediaField } from "@/components/media/media-field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
+import { SeoPreview } from "./seo-preview";
+import { SeoAnalysisPanel } from "./seo-analysis";
 
 interface FormFields {
   page_key: string;
@@ -55,12 +59,16 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
 
 interface SeoFormProps {
   entry?: SeoEntry;
+  prefill?: Partial<FormFields>;
 }
 
-export function SeoForm({ entry }: SeoFormProps) {
+export function SeoForm({ entry, prefill }: SeoFormProps) {
   const router = useRouter();
   const mode = entry ? "edit" : "create";
-  const initial = React.useMemo(() => defaultFields(entry), [entry]);
+  const initial = React.useMemo(() => {
+    const base = defaultFields(entry);
+    return prefill ? { ...base, ...prefill } : base;
+  }, [entry, prefill]);
   const [fields, setFields] = React.useState<FormFields>(initial);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormFields, string>>>({});
   const [saving, setSaving] = React.useState(false);
@@ -86,6 +94,20 @@ export function SeoForm({ entry }: SeoFormProps) {
     setFields((prev) => ({ ...prev, ...partial }));
     if (message) setMessage(null);
   }
+
+  const analysis = React.useMemo(
+    () =>
+      analyzeSeo({
+        title: fields.title,
+        description: fields.description,
+        ogImage: fields.og_image,
+        keywords: fields.keywords
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
+      }),
+    [fields.title, fields.description, fields.og_image, fields.keywords],
+  );
 
   function validate(): boolean {
     const data = fieldsToJson(fields);
@@ -186,6 +208,22 @@ export function SeoForm({ entry }: SeoFormProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
+          <SeoPreview
+            title={fields.title}
+            description={fields.description}
+            url={`${SITE_URL}/${fields.page_key}`}
+          />
+
+          <SeoAnalysisPanel
+            overall={analysis.overall}
+            items={[
+              { label: "Title", item: analysis.title },
+              { label: "Description", item: analysis.description },
+              { label: "OG Image", item: analysis.ogImage },
+              { label: "Keywords", item: analysis.keywords },
+            ]}
+          />
+
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="page_key">Page Key</Label>
@@ -229,7 +267,11 @@ export function SeoForm({ entry }: SeoFormProps) {
             />
             <div className="flex justify-between">
               <p className="text-muted-foreground text-xs">Recommended: 50–70 characters</p>
-              <p className="text-muted-foreground text-xs">{fields.title.length}/70</p>
+              <p
+                className={`text-xs font-medium ${fields.title.length > 70 ? "text-red-500" : fields.title.length >= 50 && fields.title.length <= 60 ? "text-emerald-500" : "text-muted-foreground"}`}
+              >
+                {fields.title.length}/70
+              </p>
             </div>
             {errors.title && <p className="text-destructive text-xs">{errors.title}</p>}
           </div>
@@ -246,7 +288,11 @@ export function SeoForm({ entry }: SeoFormProps) {
             />
             <div className="flex justify-between">
               <p className="text-muted-foreground text-xs">Recommended: 150–160 characters</p>
-              <p className="text-muted-foreground text-xs">{fields.description.length}/160</p>
+              <p
+                className={`text-xs font-medium ${fields.description.length > 160 ? "text-red-500" : fields.description.length >= 150 && fields.description.length <= 155 ? "text-emerald-500" : "text-muted-foreground"}`}
+              >
+                {fields.description.length}/160
+              </p>
             </div>
             {errors.description && <p className="text-destructive text-xs">{errors.description}</p>}
           </div>

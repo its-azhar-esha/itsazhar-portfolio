@@ -37,6 +37,8 @@ export interface ProjectsDetailContent {
   challenge: string;
   solution: string;
   workflow: string;
+  keyFeatures: string;
+  futureScope: string;
   stack: string;
   impact: string;
   watchDemo: string;
@@ -102,6 +104,8 @@ export const DEFAULT_PROJECTS_CONTENT: ProjectsPageContent = {
     challenge: "The Challenge",
     solution: "The Solution",
     workflow: "Workflow",
+    keyFeatures: "Key Features",
+    futureScope: "Future Scope",
     stack: "Technology Stack",
     impact: "Impact & Outcome",
     watchDemo: "Watch Full Demo",

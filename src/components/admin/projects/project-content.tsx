@@ -1,10 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronUp, GripVertical, Plus, Trash2 } from "lucide-react";
 import type { FormFields } from "./project-form";
+import { ListEditor } from "./list-editor";
 
 interface ContentSectionProps {
   fields: FormFields;
@@ -14,96 +12,6 @@ interface ContentSectionProps {
 
 const textareaClass =
   "border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-primary/20 flex w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 focus:ring-1 focus:outline-none";
-
-function WorkflowStepsEditor({
-  value,
-  onChange,
-}: {
-  value: string[];
-  onChange: (steps: string[]) => void;
-}) {
-  function updateStep(index: number, text: string) {
-    onChange(value.map((step, i) => (i === index ? text : step)));
-  }
-
-  function addStep() {
-    onChange([...value, ""]);
-  }
-
-  function removeStep(index: number) {
-    onChange(value.filter((_, i) => i !== index));
-  }
-
-  function moveStep(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= value.length) return;
-    const next = [...value];
-    [next[index], next[target]] = [next[target], next[index]];
-    onChange(next);
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        {value.map((step, index) => (
-          <div
-            key={index}
-            className="border-border/50 bg-muted/40 flex items-center gap-2 rounded-lg border px-3 py-2"
-          >
-            <GripVertical className="text-muted-foreground h-4 w-4 shrink-0" />
-            <span className="text-muted-foreground w-5 shrink-0 text-center text-xs font-bold">
-              {index + 1}
-            </span>
-            <Input
-              value={step}
-              onChange={(e) => updateStep(index, e.target.value)}
-              placeholder={`Workflow step ${index + 1}`}
-              className="h-9 flex-1"
-            />
-            <div className="flex shrink-0 items-center gap-0.5">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-foreground h-8 w-8"
-                onClick={() => moveStep(index, -1)}
-                disabled={index === 0}
-                aria-label={`Move step ${index + 1} up`}
-              >
-                <ChevronUp className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-foreground h-8 w-8"
-                onClick={() => moveStep(index, 1)}
-                disabled={index === value.length - 1}
-                aria-label={`Move step ${index + 1} down`}
-              >
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive h-8 w-8"
-                onClick={() => removeStep(index)}
-                aria-label={`Remove step ${index + 1}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addStep}>
-        <Plus className="h-3.5 w-3.5" />
-        Add step
-      </Button>
-    </div>
-  );
-}
 
 export function ProjectContent({ fields, errors, onChange }: ContentSectionProps) {
   return (
@@ -171,13 +79,41 @@ export function ProjectContent({ fields, errors, onChange }: ContentSectionProps
 
       <div className="space-y-2">
         <Label>Workflow</Label>
-        <WorkflowStepsEditor
+        <ListEditor
           value={fields.workflow}
           onChange={(workflow) => onChange({ workflow })}
+          placeholder="Workflow step"
         />
         <p className="text-muted-foreground text-xs">
           Ordered steps rendered as a timeline. Use the arrows to reorder; each step is editable and
           removable.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Key Features</Label>
+        <ListEditor
+          value={fields.key_features}
+          onChange={(key_features) => onChange({ key_features })}
+          placeholder="Key feature"
+          emptyMessage="No key features added yet"
+        />
+        <p className="text-muted-foreground text-xs">
+          Highlight the main features or capabilities of this project. Use the arrows to reorder.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Future Scope</Label>
+        <ListEditor
+          value={fields.future_scope}
+          onChange={(future_scope) => onChange({ future_scope })}
+          placeholder="Future item"
+          emptyMessage="No future scope items added yet"
+        />
+        <p className="text-muted-foreground text-xs">
+          Planned improvements, next steps, or features you intend to build. Use the arrows to
+          reorder.
         </p>
       </div>
 

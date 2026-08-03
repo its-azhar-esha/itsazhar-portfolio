@@ -32,6 +32,8 @@ export interface Database {
           solution: string | null;
           workflow: string[] | null;
           impact: string | null;
+          key_features: string[] | null;
+          future_scope: string[] | null;
           views: number;
           created_at: string;
           updated_at: string;
@@ -64,6 +66,8 @@ export interface Database {
           solution?: string | null;
           workflow?: string[] | null;
           impact?: string | null;
+          key_features?: string[] | null;
+          future_scope?: string | null;
           views?: number;
           created_at?: string;
           updated_at?: string;
@@ -96,6 +100,8 @@ export interface Database {
           solution?: string | null;
           workflow?: string[] | null;
           impact?: string | null;
+          key_features?: string[] | null;
+          future_scope?: string | null;
           views?: number;
           created_at?: string;
           updated_at?: string;

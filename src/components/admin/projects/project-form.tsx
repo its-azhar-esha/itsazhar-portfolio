@@ -51,6 +51,8 @@ export interface FormFields {
   solution: string;
   workflow: string[];
   impact: string;
+  key_features: string[];
+  future_scope: string[];
 }
 
 const VALID_INDUSTRIES = PROJECT_INDUSTRIES as readonly string[];
@@ -91,6 +93,8 @@ function defaultFields(project?: DbProject): FormFields {
     solution: project?.solution ?? "",
     workflow: project?.workflow ?? [],
     impact: project?.impact ?? "",
+    key_features: project?.key_features ?? [],
+    future_scope: project?.future_scope ?? [],
   };
 }
 
@@ -130,6 +134,8 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
     solution: fields.solution || null,
     workflow: fields.workflow.map((s) => s.trim()).filter(Boolean),
     impact: fields.impact || null,
+    key_features: fields.key_features.map((s) => s.trim()).filter(Boolean),
+    future_scope: fields.future_scope.map((s) => s.trim()).filter(Boolean),
     scheduled_for: toIso(fields.scheduledFor),
   };
 }

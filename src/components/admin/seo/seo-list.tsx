@@ -4,10 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { AlertCircle, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Pencil, Plus, RefreshCw, Search, Trash2, AlertTriangle } from "lucide-react";
 import type { SeoEntry } from "@/types/seo";
 import { deleteSeoAction } from "@/lib/seo/actions";
 import { staggerContainer, staggerItem } from "@/lib/motion";
+import { DEFAULT_SEO } from "@/lib/seo/defaults";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,6 +91,35 @@ export function SeoList({ entries, error }: SeoListProps) {
           {deleteError}
         </div>
       )}
+
+      {(() => {
+        const existingKeys = new Set(entries.map((e) => e.page_key));
+        const missingKeys = Object.keys(DEFAULT_SEO).filter((k) => !existingKeys.has(k));
+        if (missingKeys.length === 0) return null;
+        return (
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <p className="text-sm font-medium text-amber-600">
+                {missingKeys.length} page{missingKeys.length === 1 ? "" : "s"} missing SEO entries
+              </p>
+            </div>
+            <p className="text-muted-foreground mb-3 text-xs">
+              These pages will use default SEO values. Add entries to customize them.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {missingKeys.map((key) => (
+                <Link key={key} href={`/admin/seo/new?page_key=${key}`}>
+                  <Badge variant="outline" className="cursor-pointer text-xs hover:bg-amber-500/10">
+                    <Plus className="mr-1 h-3 w-3" />
+                    {key}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center py-16 text-center">
