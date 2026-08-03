@@ -47,6 +47,8 @@ export async function createProjectAction(
     const result = await createProject(parsed.data as never, user.id);
     if (result.success) {
       revalidatePath("/admin/projects");
+      revalidatePath("/projects");
+      revalidatePath("/sitemap.xml");
       await logAudit({
         action: "project.created",
         entity: "projects",
@@ -86,6 +88,9 @@ export async function updateProjectAction(
     const result = await updateProject(id, parsed.data as never, user.id);
     if (result.success) {
       revalidatePath("/admin/projects");
+      revalidatePath("/projects");
+      revalidatePath(`/projects/${result.data.slug}`);
+      revalidatePath("/sitemap.xml");
       await logAudit({
         action: "project.updated",
         entity: "projects",
@@ -114,6 +119,8 @@ export async function deleteProjectAction(id: string): Promise<Result<void>> {
     const result = await deleteProject(id, user.id);
     if (result.success) {
       revalidatePath("/admin/projects");
+      revalidatePath("/projects");
+      revalidatePath("/sitemap.xml");
       await logAudit({ action: "project.deleted", entity: "projects", entityId: id });
       await notify("project.deleted", { fields: { ProjectId: id } });
     }
