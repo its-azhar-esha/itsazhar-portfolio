@@ -296,6 +296,10 @@ reconcile it to the app's `active` convention.
 - **Actions:** CRUD + `getPublicProjectsAction`/`getPublicProjectAction` (public
   reads resolve media references at render time)
 - **Media:** thumbnail/gallery (`MediaField` + `MediaPicker`), og_image
+- **Content fields:** challenge, solution, workflow (ordered steps), key_features
+  (ordered list), future_scope (ordered list), impact
+- **List editor:** `list-editor.tsx` — reusable reorderable list component used
+  for workflow, key_features, and future_scope
 - **Status:** complete
 
 ### SEO
@@ -308,6 +312,13 @@ reconcile it to the app's `active` convention.
 - **Validation:** `createSeoSchema`/`updateSeoSchema`/`seoPageKeySchema`/
   `seoRobotsSchema`
 - **Actions:** `seo/actions.ts` CRUD
+- **Preview:** `seo-preview.tsx` — Google-style SERP preview card shown in both
+  global SEO form and project SEO tab
+- **Analysis:** `seo-analysis.tsx` + `seo/analysis.ts` — real-time SEO scoring
+  with color-coded recommendations (title length, description length, OG image,
+  keywords). Used in both global SEO and project SEO forms.
+- **Missing keys:** `seo-list.tsx` shows which DEFAULT_SEO pages lack custom
+  entries with one-click "Add" badges linking to pre-filled create forms
 - **Status:** complete; og_image supports media references (8B)
 
 ### Services
