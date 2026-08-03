@@ -194,6 +194,13 @@ export const NOTIFICATION_EVENTS: NotificationEventDef[] = [
 
   // ── System / integrations ─────────────────────────────────────────────
   {
+    id: "cleanup.completed",
+    category: "system",
+    label: "Storage cleanup completed",
+    description: "A storage/cleanup run finished and removed items.",
+    defaultPriority: "low",
+  },
+  {
     id: "integration.key.saved",
     category: "system",
     label: "Integration key saved",

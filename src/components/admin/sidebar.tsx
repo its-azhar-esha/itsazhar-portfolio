@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   HeartPulse,
   BellRing,
+  HardDrive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { spring } from "@/lib/motion";
@@ -86,6 +87,7 @@ function buildNavItems(settings: SiteSettings): NavItem[] {
       enabled: settings.show_playground,
     },
     { label: "Media", href: "/admin/media", icon: ImageIcon },
+    { label: "Storage & Cleanup", href: "/admin/storage", icon: HardDrive },
     {
       label: "AI",
       href: "/admin/ai",

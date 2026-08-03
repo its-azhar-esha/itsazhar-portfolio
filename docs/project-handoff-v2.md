@@ -2666,3 +2666,75 @@ webhooks are stored in the database.
 - `npm run lint` clean (1 pre-existing `<img>` warning, markdown.tsx:53).
 - `npm run build` green (70 routes). Migration `00037` applied via
   `supabase db push --linked`. All commits pushed to `main`.
+
+## 42. View Full Details Button + Storage & Cleanup Admin Section (2026-08-03, migration `00038`)
+
+### View Full Details button (project modal)
+
+- `src/components/project-modal.tsx` � the popup button previously labeled
+  "View Case Study" now opens the real project detail page: it calls
+  `openProject(project.slug)` (closes modal, routes to `/projects/[slug]`)
+  with an ArrowRight icon and hover translate. Label driven by content
+  setting `detail.viewFullDetails` (renamed from `viewCaseStudy` in
+  `src/lib/content/defaults/projects.ts`, admin editor key in
+  `src/lib/content/schemas.ts`). No stored `projects` content row exists, so
+  no legacy data migration was needed. Showcase home cards keep
+  "View Case Study" � they correctly open the popup.
+
+### Storage & Cleanup admin section (`/admin/storage`)
+
+- **Page:** `src/app/admin/storage/page.tsx` (force-dynamic) renders
+  `src/components/admin/storage/storage-manager.tsx` (client): summary
+  tiles (categories, issues found, storage reclaimable), cards grouped by
+  area (Media / Storage / Logs / Content / References), each with last-scan
+  time, status badge, candidate count + size, Refresh / Cleanup buttons and
+  a retention control where safe.
+- **Server logic:** `src/lib/cleanup/` (server-only; client imports only
+  `./actions`):
+  - `types.ts` � `CleanupCategory`, `ScanResult`, `CleanupResult`,
+    `CleanupRequest`, retention modes (`keep-days` | `keep-records` |
+    `keep-latest`).
+  - `registry.ts` � 16 categories, each with a read-only `scan()` (real
+    Supabase/storage queries, no placeholders) and a `cleanup()` that
+    RE-FETCHES and RE-VERIFIES the candidate set at execution time � stale
+    scan samples are never trusted. Categories: unused images, unused files,
+    duplicate media, orphaned storage objects, empty buckets, old backup
+    files, old audit log, old login history, old notification deliveries,
+    old content versions, old analytics events, backup ledger, health
+    checks, broken references (repairs field to NULL, never deletes rows),
+    stale drafts, user workflows.
+  - `actions.ts` � `getCleanupOverviewAction` (auth + mixes persisted scan
+    state), `runCleanupScanAction` (upserts `cleanup_scans`), `runCleanupAction`
+    (Zod-validated request, runs cleanup, records post-cleanup scan, writes
+    `audit_log` action `cleanup.run`/`cleanup.failed`, fires notification
+    event `cleanup.completed`).
+- **Migration `00038`:** `cleanup_scans` table (category PK, scanned_at,
+  status, total, size_bytes, summary, items). RLS enabled with NO policies
+  (service role only � same model as audit_log/health_checks/backups);
+  explicit Data API grants for anon/authenticated/service_role per the
+  Oct 30, 2026 grants rule. Verified via REST upsert/read/delete probes.
+- **Safety rules:** reserved buckets (`media`, `backups`) are never deleted
+  by the empty-buckets card; duplicates must match a _referenced_ original;
+  broken-ref repair only NULLs the field; content_entries JSON refs are
+  reported but not auto-cleared (schema position unverifiable); every
+  cleanup re-verifies against live state before deleting.
+- **Sidebar:** `Storage & Cleanup` (HardDrive icon) added after Media.
+- **Help:** `storage-cleanup` + `cleanup-*` entries per category in
+  `src/lib/admin-help.ts`.
+- **Types:** `cleanup_scans` hand-synced into `src/database.types.ts`.
+
+### Verified (2026-08-03)
+
+- `npm run lint` clean (1 pre-existing `<img>` warning, markdown.tsx:53).
+- `npm run build` green (70 routes incl. `/admin/storage`).
+- Live-data sanity test via temporary API route (removed afterwards): all 16
+  category scans return real data � orphan-objects 2 (319,604 B),
+  unused-images 2 (159,819 B: support-system.png + test.png),
+  empty-buckets 1 (project-media, now deleted), old-backup-files 2 folders,
+  audit-log 12, login-history 23, notification-deliveries 14,
+  content-versions 6, analytics-events 112, health-checks 3, backup-ledger 4.
+- End-to-end cleanup test: empty-buckets cleanup deleted the empty
+  `project-media` bucket, post-cleanup scan returned clean; retention
+  no-op test (audit-log keep 100,000 days) deleted 0 rows.
+- Migration `00038` applied via `supabase db push --linked` (00001�00037
+  already applied).

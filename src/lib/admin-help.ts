@@ -1301,6 +1301,266 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
       ]),
     ],
   ),
+
+  /* ───────────────────────────── Storage & Cleanup ───────────────────────────── */
+
+  "storage-cleanup": entry(
+    "storage-cleanup",
+    "Storage & Cleanup page",
+    "Find and safely remove unused media, orphaned storage objects, broken references, and old log/notification/history records — category by category.",
+    [
+      s("what", "What this page does", [
+        "Each card is one cleanup category. Cards show real totals, estimated sizes, the last scan time and a status. You can re-run a scan (Refresh) or start a cleanup (Cleanup) that deletes only what the live scan positively identified as unused, orphaned, expired, or unreferenced.",
+      ]),
+      s("why", "Why it exists", [
+        "Databases and storage grow with leftovers: failed uploads, replaced media, broken references, and old audit/notification/history rows. This page keeps the project organized without forcing you into the Supabase dashboard.",
+      ]),
+      s("when", "When to use it", [
+        "After large edits (uploads, deletions, content imports), before deployments, or as a monthly hygiene routine.",
+      ]),
+      s("how", "How it works", [
+        "Every scan runs real read-only Supabase queries against the live database and storage buckets. Cleanups re-verify everything at execution time — the numbers shown on a card are never trusted for deletion. Items that cannot be verified are never touched.",
+      ]),
+      s("effects", "What happens when you clean up", [
+        "Only the confirmed candidates are deleted: media rows plus their storage objects, orphaned storage objects, or old log rows. Every run is written to the audit log and a Telegram notification is fired (event cleanup.completed).",
+      ]),
+      s("best", "Best practices", [
+        "Start with Refresh to see current totals before cleaning.",
+        "Use the confirmation dialog to review exactly what will be removed.",
+        "For log-type categories, prefer 'keep last N days' or 'keep newest N records' over deleting everything.",
+        "Scan results are stored so the page shows the last scan time across reloads.",
+      ]),
+      s("notes", "Important notes", [
+        "Anything currently used by the website or CMS is never deleted — the scans verify references across every module.",
+        "Broken reference cleanup repairs by clearing the reference to NULL; it never deletes a content row.",
+        "Content-entry JSON references are reported but not auto-cleared, because clearing them cannot be verified safely.",
+      ]),
+    ],
+  ),
+
+  "cleanup-unused-images": entry(
+    "cleanup-unused-images",
+    "Unused images",
+    "Image files in the media bucket that no CMS field references.",
+    [
+      s("what", "What this is", [
+        "Media files whose mime type is image/* and whose media:<uuid> reference does not appear in any project, page, blog post, template, setting, testimonial, resource, or collection field.",
+      ]),
+      s("how", "It is detected", [
+        "A scan collects every media reference used across the CMS (including JSON content entries) and compares it with the media_files table.",
+      ]),
+      s("effects", "What cleanup deletes", [
+        "The media_files row and its storage object. If a grace period is set, files uploaded within the last N days are kept.",
+      ]),
+    ],
+  ),
+
+  "cleanup-unused-files": entry(
+    "cleanup-unused-files",
+    "Unused files",
+    "Non-image assets (documents, video, audio) that no CMS field references.",
+    [
+      s("what", "What this is", [
+        "Media files that are not images and whose media:<uuid> reference does not appear anywhere in the CMS.",
+      ]),
+      s("effects", "What cleanup deletes", [
+        "The media_files row and its storage object. A grace period (days) can protect recently uploaded files.",
+      ]),
+    ],
+  ),
+
+  "cleanup-duplicate-media": entry(
+    "cleanup-duplicate-media",
+    "Duplicate media",
+    "Extra copies sharing the exact size and type of a referenced original.",
+    [
+      s("what", "What this is", [
+        "Media files grouped by exact size + mime type. Only copies whose identical twin is still referenced by the CMS are flagged.",
+      ]),
+      s("why", "Why it is safe", [
+        "The referenced original is never touched; only unreferenced copies are candidates, and they are re-verified at delete time.",
+      ]),
+    ],
+  ),
+
+  "cleanup-orphan-objects": entry(
+    "cleanup-orphan-objects",
+    "Orphaned storage objects",
+    "Objects in the media bucket with no media_files row.",
+    [
+      s("what", "What this is", [
+        "Files that exist in storage but have no metadata row — typically interrupted or failed uploads. The backups bucket is intentionally excluded.",
+      ]),
+      s("effects", "What cleanup deletes", [
+        "Only the storage objects (no database rows involved).",
+      ]),
+    ],
+  ),
+
+  "cleanup-empty-buckets": entry(
+    "cleanup-empty-buckets",
+    "Empty storage buckets",
+    "Buckets that contain zero objects and are not used by the app.",
+    [
+      s("what", "What this is", [
+        "Legacy or test buckets (like the old project-media bucket) that hold no objects. The media and backups buckets are always kept.",
+      ]),
+      s("warning", "Warning", [
+        "This is destructive: the bucket itself is deleted. Only buckets verified to be empty and not in the reserved set are candidates.",
+      ]),
+    ],
+  ),
+
+  "cleanup-old-backup-files": entry(
+    "cleanup-old-backup-files",
+    "Old backup files",
+    "YYYY-MM-DD snapshot folders in the private backups bucket older than the retention period.",
+    [
+      s("what", "What this is", [
+        "Nightly backup snapshots stored in the backups bucket. The nightly cron prunes folders older than 30 days; this card applies the same rule manually.",
+      ]),
+      s("warning", "Warning", [
+        "Deleting backups removes the offsite recovery copies for those dates. Keep at least the default 30-day retention unless you have an external backup (the GitHub backups branch is the offsite copy).",
+      ]),
+    ],
+  ),
+
+  "cleanup-audit-log": entry(
+    "cleanup-audit-log",
+    "Old activity log entries",
+    "Append-only audit_log rows older than the retention rule.",
+    [
+      s("what", "What this is", [
+        "Every admin action writes an audit_log row shown on the Activity page. Old rows are safe to prune — the page only reads recent history.",
+      ]),
+      s("how", "Retention options", [
+        "Keep entries newer than N days (default 90), keep the newest N entries (default 500), or keep only the latest entry.",
+      ]),
+    ],
+  ),
+
+  "cleanup-login-history": entry(
+    "cleanup-login-history",
+    "Old login history",
+    "login_history rows recording sign-in attempts.",
+    [
+      s("what", "What this is", [
+        "Every admin sign-in attempt writes a login_history row shown on the Security page.",
+      ]),
+      s("how", "Retention options", [
+        "Keep entries newer than N days (default 90) or keep the newest N entries (default 200).",
+      ]),
+    ],
+  ),
+
+  "cleanup-notification-deliveries": entry(
+    "cleanup-notification-deliveries",
+    "Old notification logs",
+    "notification_deliveries rows recording every notification delivery attempt.",
+    [
+      s("what", "What this is", [
+        "Rows written for every Telegram/notification delivery, shown on the Notifications page.",
+      ]),
+      s("how", "Retention options", [
+        "Keep entries newer than N days (default 30) or keep the newest N entries (default 200).",
+      ]),
+    ],
+  ),
+
+  "cleanup-content-versions": entry(
+    "cleanup-content-versions",
+    "Old content versions",
+    "content_versions rows saved on every admin edit.",
+    [
+      s("what", "What this is", [
+        "Every admin save writes a version row used for the version history feature. Old versions are safe to prune.",
+      ]),
+      s("how", "Retention options", [
+        "Keep versions newer than N days (default 90), or keep the newest N versions per entity (default 10).",
+      ]),
+    ],
+  ),
+
+  "cleanup-analytics-events": entry(
+    "cleanup-analytics-events",
+    "Old analytics events",
+    "analytics_events rows (page views, clicks) older than the retention rule.",
+    [
+      s("what", "What this is", [
+        "The nightly cron already prunes analytics_events per the analytics retention setting (default 90 days); this card applies the same rule on demand.",
+      ]),
+    ],
+  ),
+
+  "cleanup-backup-ledger": entry(
+    "cleanup-backup-ledger",
+    "Old backup ledger rows",
+    "backups table rows (nightly backup records).",
+    [
+      s("what", "What this is", [
+        "One row per nightly backup (Vercel cron or GitHub workflow). Only the latest is used by the DX page.",
+      ]),
+      s("how", "Retention options", [
+        "Keep rows newer than N days (default 60) or keep the newest N rows (default 10).",
+      ]),
+    ],
+  ),
+
+  "cleanup-health-checks": entry(
+    "cleanup-health-checks",
+    "Old health check records",
+    "health_checks rows recorded daily by the keep-alive cron.",
+    [
+      s("what", "What this is", [
+        "Daily keep-alive probes stored in the health_checks table. The keep-alive page only needs recent history.",
+      ]),
+      s("how", "Retention options", [
+        "Keep records newer than N days (default 30) or keep the newest N records (default 60).",
+      ]),
+    ],
+  ),
+
+  "cleanup-broken-refs": entry(
+    "cleanup-broken-refs",
+    "Broken media references",
+    "media:<uuid> values pointing at media files that no longer exist.",
+    [
+      s("what", "What this is", [
+        "References in projects, posts, templates, settings, testimonials and other fields whose target media_files row is missing.",
+      ]),
+      s("effects", "What cleanup does", [
+        "Sets the broken field to NULL (a repair). No content row is ever deleted. References nested inside content-entry JSON are reported but not auto-cleared because clearing them cannot be verified safely.",
+      ]),
+    ],
+  ),
+
+  "cleanup-stale-drafts": entry(
+    "cleanup-stale-drafts",
+    "Stale drafts",
+    "Projects, services and blog posts stuck in draft status.",
+    [
+      s("what", "What this is", [
+        "Rows with status=draft that have not been updated for the retention period. Published, featured, or scheduled content is never touched.",
+      ]),
+      s("warning", "Warning", [
+        "Deleting a draft is permanent. Verify the drafts listed before confirming — this is the only card that deletes whole content rows.",
+      ]),
+    ],
+  ),
+
+  "cleanup-user-workflows": entry(
+    "cleanup-user-workflows",
+    "Old user workflows",
+    "user_workflows rows shared from the public playground.",
+    [
+      s("what", "What this is", [
+        "Workflows visitors shared via the playground. Only old user-submitted rows are candidates — the template library is never touched.",
+      ]),
+      s("how", "Retention options", [
+        "Keep workflows newer than N days (default 365) or keep the newest N workflows (default 100).",
+      ]),
+    ],
+  ),
 };
 
 export function getHelp(id: string): HelpEntry | undefined {

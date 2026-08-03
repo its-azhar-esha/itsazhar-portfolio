@@ -73,3 +73,5 @@ export {
   updateWorkflowTemplateSchema,
   createSharedWorkflowSchema,
 } from "./schemas/hub";
+
+export { cleanupRequestSchema } from "./schemas/cleanup";

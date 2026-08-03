@@ -634,7 +634,11 @@ export async function bulkDeleteMedia(ids: string[]): Promise<Result<{ deleted: 
   }
 }
 
-/** Collects every `media:<uuid>` reference used anywhere in the CMS. */
+/**
+ * Collects every `media:<uuid>` reference used anywhere in the CMS.
+ * Returns full references (e.g. `media:1f2a...`) so callers can compare
+ * against `media_files` rows directly.
+ */
 async function collectUsedReferences(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<Set<string>> {
@@ -666,14 +670,20 @@ async function collectUsedReferences(
   const { data: seo } = await supabase.from("seo_metadata").select("*").limit(5000);
   for (const row of (seo ?? []) as SeoRow[]) add(row.og_image);
 
-  type BlogRow = Pick<Database["public"]["Tables"]["blog_posts"]["Row"], "cover_image" | "og_image">;
+  type BlogRow = Pick<
+    Database["public"]["Tables"]["blog_posts"]["Row"],
+    "cover_image" | "og_image"
+  >;
   const { data: blog } = await supabase.from("blog_posts").select("*").limit(5000);
   for (const row of (blog ?? []) as BlogRow[]) {
     add(row.cover_image);
     add(row.og_image);
   }
 
-  type ResourceRow = Pick<Database["public"]["Tables"]["resources"]["Row"], "cover_image" | "og_image">;
+  type ResourceRow = Pick<
+    Database["public"]["Tables"]["resources"]["Row"],
+    "cover_image" | "og_image"
+  >;
   const { data: resources } = await supabase.from("resources").select("*").limit(5000);
   for (const row of (resources ?? []) as ResourceRow[]) {
     add(row.cover_image);
@@ -688,7 +698,31 @@ async function collectUsedReferences(
   const { data: settings } = await supabase.from("site_settings").select("*").limit(50);
   for (const row of (settings ?? []) as SettingsRow[]) add(row.logo);
 
+  type TestimonialRow = Pick<Database["public"]["Tables"]["testimonials"]["Row"], "avatar">;
+  const { data: testimonials } = await supabase.from("testimonials").select("*").limit(5000);
+  for (const row of (testimonials ?? []) as TestimonialRow[]) add(row.avatar);
+
+  type CollectionRow = Pick<
+    Database["public"]["Tables"]["resource_collections"]["Row"],
+    "cover_image"
+  >;
+  const { data: collections } = await supabase.from("resource_collections").select("*").limit(5000);
+  for (const row of (collections ?? []) as CollectionRow[]) add(row.cover_image);
+
+  type ResourceFileRow = Pick<Database["public"]["Tables"]["resource_files"]["Row"], "file_ref">;
+  const { data: resourceFiles } = await supabase.from("resource_files").select("*").limit(5000);
+  for (const row of (resourceFiles ?? []) as ResourceFileRow[]) add(row.file_ref);
+
   return used;
+}
+
+/**
+ * Returns the set of every media reference currently used anywhere in the CMS
+ * (full `media:<uuid>` strings). Server-only helper for unused-media scans.
+ */
+export async function getUsedMediaRefs(): Promise<Set<string>> {
+  const supabase = await createClient();
+  return collectUsedReferences(supabase);
 }
 
 /**

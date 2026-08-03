@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Play, ExternalLink, ArrowRight, FolderKanban } from "lucide-react";
+import { X, Play, ArrowRight, FolderKanban } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -226,9 +226,15 @@ export function ProjectModal({ project, projects, detail, onClose }: ProjectModa
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={spring}
+                  className="group"
                 >
-                  <Button variant="outline" className="gap-1.5">
-                    {detail.viewCaseStudy} <ExternalLink className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => openProject(project.slug)}
+                  >
+                    {detail.viewFullDetails}{" "}
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-[3px]" />
                   </Button>
                 </motion.div>
               </div>

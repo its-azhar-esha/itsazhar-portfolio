@@ -1284,6 +1284,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      cleanup_scans: {
+        Row: {
+          category: string;
+          scanned_at: string;
+          status: string;
+          total: number;
+          size_bytes: number;
+          summary: Record<string, unknown>;
+          items: unknown[];
+        };
+        Insert: {
+          category: string;
+          scanned_at?: string;
+          status?: string;
+          total?: number;
+          size_bytes?: number;
+          summary?: Record<string, unknown>;
+          items?: unknown[];
+        };
+        Update: {
+          category?: string;
+          scanned_at?: string;
+          status?: string;
+          total?: number;
+          size_bytes?: number;
+          summary?: Record<string, unknown>;
+          items?: unknown[];
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

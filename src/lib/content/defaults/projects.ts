@@ -42,7 +42,7 @@ export interface ProjectsDetailContent {
   stack: string;
   impact: string;
   watchDemo: string;
-  viewCaseStudy: string;
+  viewFullDetails: string;
   related: string;
   previous: string;
   next: string;
@@ -109,7 +109,7 @@ export const DEFAULT_PROJECTS_CONTENT: ProjectsPageContent = {
     stack: "Technology Stack",
     impact: "Impact & Outcome",
     watchDemo: "Watch Full Demo",
-    viewCaseStudy: "View Case Study",
+    viewFullDetails: "View Full Details",
     related: "Related Projects",
     previous: "Previous",
     next: "Next",

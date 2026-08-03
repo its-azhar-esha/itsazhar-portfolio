@@ -207,7 +207,7 @@ export const PAGE_CONTENT_DEFINITIONS: PageContentDefinition[] = [
           { key: "detail.stack", label: "Technology Stack heading", type: "text" },
           { key: "detail.impact", label: "Impact & Outcome heading", type: "text" },
           { key: "detail.watchDemo", label: "Watch Full Demo button", type: "text" },
-          { key: "detail.viewCaseStudy", label: "View Case Study button", type: "text" },
+          { key: "detail.viewFullDetails", label: "View Full Details button", type: "text" },
           { key: "detail.related", label: "Related Projects heading", type: "text" },
           { key: "detail.previous", label: "Previous project", type: "text" },
           { key: "detail.next", label: "Next project", type: "text" },

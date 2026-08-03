@@ -8,6 +8,7 @@ export {
   uploadMedia,
   updateMediaMetadata,
   deleteMedia,
+  getUsedMediaRefs,
   type GetMediaQuery,
 } from "./repository";
 export {
