@@ -86,7 +86,7 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
             }
             onChange={(tags) => onChange({ keywords: tags.join(", ") })}
             placeholder="Type a keyword and press Enter"
-            hint="Press Enter or comma to add, Backspace to remove the last one."
+            hint="Press Enter or comma to add, Backspace to remove, double-click a tag to edit. Paste a list to split automatically."
             error={errors?.keywords}
           />
         </div>

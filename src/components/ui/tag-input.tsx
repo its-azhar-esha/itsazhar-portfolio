@@ -16,6 +16,14 @@ interface TagInputProps {
   id?: string;
 }
 
+/** Splits raw input or pasted text into individual candidate tags. */
+function splitDelimited(raw: string): string[] {
+  return raw
+    .split(/[\n,;]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export function TagInput({
   value,
   onChange,
@@ -28,31 +36,92 @@ export function TagInput({
   id,
 }: TagInputProps) {
   const [input, setInput] = React.useState("");
+  const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+  const [editValue, setEditValue] = React.useState("");
 
-  function addTag(raw: string) {
-    const tag = raw.trim();
-    if (!tag) return;
-    if (tag.length > maxLength) return;
-    if (value.length >= maxTags) return;
-    if (value.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+  function addTags(raw: string) {
+    const candidates = splitDelimited(raw);
+    if (candidates.length === 0) {
       setInput("");
       return;
     }
-    onChange([...value, tag]);
+    const next = [...value];
+    for (const tag of candidates) {
+      if (tag.length > maxLength) continue;
+      if (next.length >= maxTags) break;
+      if (next.some((t) => t.toLowerCase() === tag.toLowerCase())) continue;
+      next.push(tag);
+    }
+    if (next.length !== value.length || input.trim()) {
+      onChange(next);
+    }
     setInput("");
   }
 
+  function commitEdit() {
+    if (editingIndex === null) return;
+    const tag = editValue.trim();
+    const next = [...value];
+    if (!tag) {
+      next.splice(editingIndex, 1);
+    } else if (tag.length <= maxLength) {
+      const duplicatedElsewhere = next.some(
+        (t, i) => i !== editingIndex && t.toLowerCase() === tag.toLowerCase(),
+      );
+      if (!duplicatedElsewhere) {
+        next[editingIndex] = tag;
+      }
+    }
+    setEditingIndex(null);
+    setEditValue("");
+    onChange(next);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (editingIndex !== null) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitEdit();
+      } else if (e.key === "Escape") {
+        setEditingIndex(null);
+        setEditValue("");
+      }
+      return;
+    }
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      addTag(input);
+      addTags(input);
     } else if (e.key === "Backspace" && !input && value.length > 0) {
       onChange(value.slice(0, -1));
     }
   }
 
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const text = e.clipboardData.getData("text");
+    if (!text) return;
+    if (editingIndex !== null) {
+      setEditValue(text);
+      return;
+    }
+    e.preventDefault();
+    addTags(text);
+  }
+
   function handleBlur() {
-    if (input.trim()) addTag(input);
+    if (editingIndex !== null) {
+      commitEdit();
+      return;
+    }
+    if (input.trim()) addTags(input);
+  }
+
+  function startEdit(index: number, tag: string) {
+    setEditingIndex(index);
+    setEditValue(tag);
+  }
+
+  function removeTag(index: number) {
+    onChange(value.filter((_, i) => i !== index));
   }
 
   return (
@@ -64,20 +133,41 @@ export function TagInput({
           className,
         )}
       >
-        {value.map((tag) => (
+        {value.map((tag, index) => (
           <span
-            key={tag}
-            className="bg-accent text-accent-foreground inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium"
+            key={`${tag}-${index}`}
+            className="bg-accent text-accent-foreground group inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium"
           >
-            {tag}
-            <button
-              type="button"
-              onClick={() => onChange(value.filter((t) => t !== tag))}
-              aria-label={`Remove ${tag}`}
-              className="text-muted-foreground hover:text-foreground rounded-sm transition-colors"
-            >
-              <X className="h-3 w-3" />
-            </button>
+            {editingIndex === index ? (
+              <input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                autoFocus
+                maxLength={maxLength}
+                aria-label={`Edit ${tag}`}
+                className="w-24 bg-transparent px-0.5 text-xs outline-none"
+              />
+            ) : (
+              <>
+                <span
+                  title="Double-click to edit"
+                  onDoubleClick={() => startEdit(index, tag)}
+                  className="cursor-text"
+                >
+                  {tag}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeTag(index)}
+                  aria-label={`Remove ${tag}`}
+                  className="text-muted-foreground hover:text-foreground rounded-sm transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </>
+            )}
           </span>
         ))}
         <input
@@ -85,6 +175,7 @@ export function TagInput({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onBlur={handleBlur}
           placeholder={value.length === 0 ? placeholder : ""}
           className="placeholder:text-muted-foreground/60 min-w-[120px] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"

@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { TagInput } from "@/components/ui/tag-input";
 import { PROJECT_INDUSTRIES, PROJECT_CATEGORIES, DB_PROJECT_STATUSES } from "@/constants/projects";
 import type { FormFields } from "./project-form";
 
@@ -87,13 +88,20 @@ export function ProjectGeneral({ fields, errors, onChange }: GeneralSectionProps
 
       <div className="space-y-2">
         <Label htmlFor="technologies">Technologies</Label>
-        <Input
+        <TagInput
           id="technologies"
-          value={fields.technologies}
-          onChange={(e) => onChange({ technologies: e.target.value })}
-          placeholder="n8n, Supabase, OpenAI, React"
+          value={
+            fields.technologies
+              ? fields.technologies
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+              : []
+          }
+          onChange={(tags) => onChange({ technologies: tags.join(", ") })}
+          placeholder="Type a technology and press Enter"
+          hint="Press Enter or comma to add, Backspace to remove, double-click a tag to edit. Paste a list to split automatically."
         />
-        <p className="text-muted-foreground text-xs">Comma-separated list of technologies used.</p>
         {errors.technologies && <p className="text-xs text-red-500">{errors.technologies}</p>}
       </div>
 

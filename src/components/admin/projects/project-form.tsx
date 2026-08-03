@@ -47,6 +47,10 @@ export interface FormFields {
   og_image: string;
   canonical_url: string;
   keywords: string;
+  challenge: string;
+  solution: string;
+  workflow: string[];
+  impact: string;
 }
 
 const VALID_INDUSTRIES = PROJECT_INDUSTRIES as readonly string[];
@@ -83,6 +87,10 @@ function defaultFields(project?: DbProject): FormFields {
     og_image: project?.og_image ?? "",
     canonical_url: project?.canonical_url ?? "",
     keywords: project?.keywords?.join(", ") ?? "",
+    challenge: project?.challenge ?? "",
+    solution: project?.solution ?? "",
+    workflow: project?.workflow ?? [],
+    impact: project?.impact ?? "",
   };
 }
 
@@ -118,6 +126,10 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
       .split(",")
       .map((k) => k.trim())
       .filter(Boolean),
+    challenge: fields.challenge || null,
+    solution: fields.solution || null,
+    workflow: fields.workflow.map((s) => s.trim()).filter(Boolean),
+    impact: fields.impact || null,
     scheduled_for: toIso(fields.scheduledFor),
   };
 }
@@ -190,8 +202,7 @@ export function ProjectForm({ project }: ProjectFormProps) {
       for (const issue of result.error.issues) {
         const rawKey = String(issue.path[0] ?? "");
         const key = (rawKey === "scheduled_for" ? "scheduledFor" : rawKey) as
-          | keyof FormFields
-          | undefined;
+          keyof FormFields | undefined;
         if (key && !fieldErrors[key]) {
           fieldErrors[key] = issue.message;
         }

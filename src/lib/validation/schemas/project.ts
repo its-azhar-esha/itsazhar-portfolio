@@ -53,6 +53,10 @@ export const createProjectSchema = z.object({
   og_image: z.string().nullable().default(null),
   canonical_url: z.string().nullable().default(null),
   keywords: z.array(z.string()).default([]),
+  challenge: z.string().nullable().default(null),
+  solution: z.string().nullable().default(null),
+  workflow: z.array(z.string()).default([]),
+  impact: z.string().nullable().default(null),
 });
 
 /**
