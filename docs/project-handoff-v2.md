@@ -403,17 +403,30 @@ reconcile it to the app's `active` convention.
   root layout provides global defaults/templates, `metadataBase` = `https://azhar.dev`
 - **`getPageMetadata(pageKey)`** (`seo/metadata.ts`): reads `seo_metadata`
   row via repository, falls back to `seo/defaults.ts` `DEFAULT_SEO`, then
-  `SITE_NAME`; builds title/description/keywords/robots/canonical/openGraph;
-  `og_image` resolved through the media resolver (references → URL)
+  `SITE_NAME`; builds title/description/keywords/robots/canonical/openGraph/
+  twitter card; `og_image` resolved through the media resolver (references → URL)
 - **Fallback strategy:** DB → defaults → site name (three tiers); any lookup
   failure falls back instead of crashing; public pages also render mock data
   when Supabase is unreachable
+- **Canonical hardening (2026-08-03):** `isValidCanonical()` rejects
+  placeholder/invalid values (legacy literal `"{}"`, empty, malformed URLs)
+  so they never leak into `<link rel="canonical">`; migration `00037`
+  cleaned the seeded `'{}'` canonical_url values in `projects` back to NULL;
+  every detail page now emits a default canonical built from the effective
+  site URL when none is stored (project `/projects/:slug`, service
+  `/services/:slug`, hub `/hub/:slug`, playground template/share/builder)
 - **Project SEO precedence:** project detail pages use project-level
   `seo_title`/`seo_description`/`og_image`/`canonical_url` (project form SEO
-  tab) — falls back to page defaults when empty
+  tab) — falls back to page defaults when empty; `og_image` is now preferred
+  over the cover image for Open Graph/Twitter `summary_large_image` cards
+- **Twitter cards (2026-08-03):** all detail pages (project, service, hub,
+  blog, playground template/share/builder) and `getPageMetadata` pages now
+  emit `twitter` metadata (`summary_large_image` when an image is available,
+  else `summary`)
 - **Robots:** `robots.ts` (static file, sitemap-linked), `seoRobotsSchema`
   enum `index,follow | index,nofollow | noindex,follow | noindex,nofollow`
-- **Sitemap:** `sitemap.ts` (dynamic — reads public data)
+- **Sitemap:** `sitemap.ts` (dynamic — reads public data; includes project,
+  service, blog, hub resource, and playground template detail URLs)
 
 ## 8. Shared Components
 
@@ -2590,3 +2603,66 @@ webhooks are stored in the database.
   from `monitoring_config` (DB → env → default). Never hardcode the domain
   in consumers — use `getSiteUrl()` / `getHealthCheckUrl()` /
   `getBackupUrl()` from `@/lib/site/urls`.
+
+## 41. Public Content Revalidation + End-to-End SEO Fixes (2026-08-03, commits `6ed07c2` → `f3b873e`)
+
+### Project content now reaches the public site
+
+- **Bug:** Key Features / Future Scope edits saved in the CMS never appeared
+  on `/projects/:slug`. Root cause: `src/lib/projects/actions.ts`
+  (create/update/delete) only revalidated `/admin/projects` — the public
+  `/projects` page, `/projects/:slug`, and `/sitemap.xml` were stale.
+- **Fix:** all three project mutation actions now also
+  `revalidatePath("/projects")`, `revalidatePath("/sitemap.xml")`, and on
+  update `revalidatePath(\`/projects/${slug}\`)`. Version-restore path in
+`src/lib/versions/actions.ts` already revalidated public routes.
+- **Verified:** data flow DB → mapper → public render is correct (the only
+  gap was cache invalidation).
+
+### Canonical URL data bug
+
+- **Bug:** migration `00012` seeded `canonical_url = '{}'` (a literal text
+  string, not an array) for every project. This emitted broken
+  `<link rel="canonical" href="{}">` tags and broke `effectiveCanonical`.
+- **Fix:** migration `00037_cleanup_project_canonical_url.sql` sets
+  `canonical_url = NULL WHERE canonical_url = '{}'` (applied, verified via
+  REST). No schema change — types untouched.
+- **Guard:** `src/lib/seo/metadata.ts` now exports `isValidCanonical()`
+  which rejects placeholders (`{}`, `[]`), empty, and malformed URLs before
+  any canonical reaches metadata output.
+
+### Detail-page metadata completeness
+
+- **Project (`projects/[slug]/page.tsx`):** now prefers `project.og_image`
+  over `coverImage` for OG/Twitter images; default canonical
+  `${baseUrl}/projects/${slug}` when none stored; `type: "article"`, site
+  name from settings, `twitter` card (large image when available).
+- **Service (`services/[slug]/page.tsx`):** default canonical, OG image from
+  page SEO, `twitter` card, site name from settings.
+- **Hub resource (`hub/[slug]/page.tsx`):** default canonical
+  `/hub/:slug` when none stored; `twitter` card.
+- **Playground** template/share/builder: default canonical +
+  `twitter` card.
+- **`getPageMetadata()`** now also emits `twitter` metadata, so every page
+  that uses it (home, projects, services, hub, blog, contact, playground)
+  gets a Twitter card automatically.
+- **About:** removed hardcoded `generateMetadata` from
+  `about/layout.tsx` that shadowed the CMS-driven page metadata; Person
+  JSON-LD moved into `about/page.tsx` and merged with `getPageMetadata("about")`.
+
+### Sitemap
+
+- `sitemap.ts` now includes service detail pages
+  (`getPublicServiceSlugsAction`), closing the last dynamic-content gap.
+
+### New helpers
+
+- `firstOgImageUrl(images)` in `src/lib/seo/metadata.ts` normalizes the
+  string / OGImage / OGImage[] variants into a single URL string; exported
+  via `src/lib/seo/index.ts`.
+
+### Verified
+
+- `npm run lint` clean (1 pre-existing `<img>` warning, markdown.tsx:53).
+- `npm run build` green (70 routes). Migration `00037` applied via
+  `supabase db push --linked`. All commits pushed to `main`.
