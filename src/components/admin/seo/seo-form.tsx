@@ -314,6 +314,7 @@ export function SeoForm({ entry, prefill }: SeoFormProps) {
                 placeholder="Type a keyword and press Enter"
                 hint="Press Enter or comma to add, Backspace to remove the last one."
                 error={errors.keywords}
+                clearable
               />
             </div>
             <div className="space-y-2">

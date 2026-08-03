@@ -14,6 +14,7 @@ interface TagInputProps {
   className?: string;
   error?: string;
   id?: string;
+  clearable?: boolean;
 }
 
 /** Splits raw input or pasted text into individual candidate tags. */
@@ -34,6 +35,7 @@ export function TagInput({
   className,
   error,
   id,
+  clearable = false,
 }: TagInputProps) {
   const [input, setInput] = React.useState("");
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
@@ -181,10 +183,27 @@ export function TagInput({
           className="placeholder:text-muted-foreground/60 min-w-[120px] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
         />
       </div>
-      {hint && (
-        <p className="text-muted-foreground text-xs">
-          {hint} · {value.length}/{maxTags}
-        </p>
+      {(hint || clearable) && (
+        <div className="flex items-center justify-between gap-2">
+          {hint ? (
+            <p className="text-muted-foreground text-xs">
+              {hint} · {value.length}/{maxTags}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              {value.length}/{maxTags}
+            </p>
+          )}
+          {clearable && value.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-muted-foreground hover:text-destructive text-xs font-medium transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
       )}
       {error && <p className="text-destructive text-xs">{error}</p>}
     </div>

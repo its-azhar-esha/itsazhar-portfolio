@@ -152,6 +152,7 @@ export function ProjectSeo({ fields, errors, onChange }: SeoSectionProps) {
             placeholder="Type a keyword and press Enter"
             hint="Press Enter or comma to add, Backspace to remove, double-click a tag to edit. Paste a list to split automatically."
             error={errors?.keywords}
+            clearable
           />
         </div>
       </div>
