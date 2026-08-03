@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getProjectSlugs } from "@/lib/projects-data";
 import { getPublicBlogPostsAction } from "@/lib/blog/actions";
 import { getPublicResourcesAction, getPublicTemplatesAction } from "@/lib/hub/actions";
+import { getPublicServiceSlugsAction } from "@/lib/services/actions";
 import { getSiteUrl } from "@/lib/site/urls";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -68,6 +69,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  const serviceSlugs = await getPublicServiceSlugsAction();
+  const servicePages = serviceSlugs.map((slug: string) => ({
+    url: `${baseUrl}/services/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
   const posts = await getPublicBlogPostsAction();
   const blogPages = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
@@ -92,5 +101,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...projectPages, ...blogPages, ...resourcePages, ...templatePages];
+  return [
+    ...staticPages,
+    ...projectPages,
+    ...servicePages,
+    ...blogPages,
+    ...resourcePages,
+    ...templatePages,
+  ];
 }

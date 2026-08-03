@@ -11,8 +11,10 @@ import {
   getAdjacentProjects,
   getRelatedProjects,
 } from "@/lib/projects-data";
-import { getPageMetadata } from "@/lib/seo";
+import { getPageMetadata, isValidCanonical, firstOgImageUrl } from "@/lib/seo";
 import { getPublicPageContent } from "@/lib/content";
+import { getPublicSiteSettings } from "@/lib/settings";
+import { getSiteUrl } from "@/lib/site/urls";
 import {
   DEFAULT_PROJECTS_CONTENT,
   type ProjectsPageContent,
@@ -31,36 +33,41 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getProject(slug);
+  const [project, settings] = await Promise.all([getProject(slug), getPublicSiteSettings()]);
   if (!project) return { title: "Project Not Found" };
 
   const pageSeo = await getPageMetadata("projects");
+  const siteName = settings.site_name || "Azhar";
+  const baseUrl = await getSiteUrl();
 
-  const title = project.seo_title
-    ? `${project.seo_title} | Azhar`
-    : `${project.name} | Azhar | AI Automation Systems`;
+  const title = project.seo_title || `${project.name} | ${siteName} | AI Automation Systems`;
   const description = project.seo_description || project.description || pageSeo.description || "";
+  const ogImage =
+    project.og_image || project.coverImage || firstOgImageUrl(pageSeo.openGraph?.images);
+  const canonical = isValidCanonical(project.canonical_url)
+    ? project.canonical_url
+    : `${baseUrl}/projects/${slug}`;
 
   return {
     title,
     description,
     keywords: project.keywords?.length ? project.keywords.join(", ") : pageSeo.keywords,
     robots: pageSeo.robots,
+    alternates: { canonical },
     openGraph: {
-      title: project.seo_title || `${project.name} | Azhar`,
+      title,
       description,
-      ...(project.coverImage
-        ? { images: [{ url: project.coverImage }] }
-        : pageSeo.openGraph?.images
-          ? { images: pageSeo.openGraph.images }
-          : {}),
-      ...(project.canonical_url
-        ? { url: project.canonical_url }
-        : pageSeo.openGraph?.url
-          ? { url: pageSeo.openGraph.url }
-          : {}),
+      type: "article",
+      url: canonical,
+      siteName: `${siteName} | AI Automation Systems`,
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
-    alternates: project.canonical_url ? { canonical: project.canonical_url } : undefined,
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 

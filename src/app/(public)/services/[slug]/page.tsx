@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicServiceAction, getPublicServiceSlugsAction } from "@/lib/services";
-import { getPageMetadata } from "@/lib/seo";
+import { getPageMetadata, firstOgImageUrl } from "@/lib/seo";
+import { getPublicSiteSettings } from "@/lib/settings";
+import { getSiteUrl } from "@/lib/site/urls";
 import { getPublicPageContent } from "@/lib/content";
 import {
   DEFAULT_SERVICES_CONTENT,
@@ -25,27 +27,41 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const service = await getPublicServiceAction(slug);
+  const [service, settings] = await Promise.all([
+    getPublicServiceAction(slug),
+    getPublicSiteSettings(),
+  ]);
   if (!service) return { title: "Service Not Found" };
 
   const pageSeo = await getPageMetadata("services");
+  const siteName = settings.site_name || "Azhar";
+  const baseUrl = await getSiteUrl();
 
-  const title = service.seo_title
-    ? `${service.seo_title} | Azhar`
-    : `${service.title} | Azhar | AI Automation Services`;
+  const title = service.seo_title || `${service.title} | ${siteName} | AI Automation Services`;
   const description =
     service.seo_description || service.short_description || pageSeo.description || "";
+  const canonical = `${baseUrl}/services/${slug}`;
+  const ogImage = firstOgImageUrl(pageSeo.openGraph?.images);
 
   return {
     title,
     description,
     keywords: service.seo_keywords?.length ? service.seo_keywords.join(", ") : pageSeo.keywords,
     robots: pageSeo.robots,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
       type: "website",
-      ...(pageSeo.openGraph?.url ? { url: `${pageSeo.openGraph.url}/${slug}` } : {}),
+      url: canonical,
+      siteName: `${siteName} | AI Automation Services`,
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }

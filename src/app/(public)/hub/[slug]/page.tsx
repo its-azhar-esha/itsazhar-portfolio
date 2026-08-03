@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronDown, Download, FileText, History, Lock } from "lucid
 import { Badge } from "@/components/ui/badge";
 import { getPublicResourceAction } from "@/lib/hub/actions";
 import { getPublicPageContent } from "@/lib/content";
+import { getSiteUrl } from "@/lib/site/urls";
 import { DEFAULT_HUB_CONTENT, type HubPageContent } from "@/lib/content/defaults/hub";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { renderMarkdown } from "@/lib/markdown";
@@ -27,17 +28,30 @@ export async function generateMetadata({
   const { slug } = await params;
   const resource = await getPublicResourceAction(slug);
   if (!resource) return { title: "Resource not found" };
+  const baseUrl = await getSiteUrl();
+
+  const title = resource.seo_title || `${resource.title} | ${RESOURCE_TYPE_LABELS[resource.type]}`;
+  const description = resource.seo_description || resource.summary;
+  const canonical = resource.canonical_url || `${baseUrl}/hub/${slug}`;
+
   return {
-    title: resource.seo_title || `${resource.title} | ${RESOURCE_TYPE_LABELS[resource.type]}`,
-    description: resource.seo_description || resource.summary,
+    title,
+    description,
     alternates: {
-      canonical: resource.canonical_url ?? undefined,
+      canonical,
     },
     openGraph: {
-      title: resource.title,
-      description: resource.summary,
+      title,
+      description,
       type: "article",
+      url: canonical,
       ...(resource.ogUrl ? { images: [{ url: resource.ogUrl }] } : {}),
+    },
+    twitter: {
+      card: resource.ogUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(resource.ogUrl ? { images: [resource.ogUrl] } : {}),
     },
   };
 }

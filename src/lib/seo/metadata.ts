@@ -13,13 +13,40 @@ function parseRobots(value: string): Metadata["robots"] {
   };
 }
 
+/** Rejects placeholder/invalid canonical values (e.g. legacy literal "{}")
+    so they never leak into <link rel="canonical"> output. */
+export function isValidCanonical(value: string | null | undefined): value is string {
+  if (!value) return false;
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed === "{}" || trimmed === "[]") return false;
+  try {
+    new URL(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Extracts the first image URL from Next.js OG image values, which may be
+    a plain string, a single OGImage object, or an array of either. */
+export function firstOgImageUrl(
+  images: NonNullable<Metadata["openGraph"]>["images"],
+): string | undefined {
+  if (!images) return undefined;
+  const first = Array.isArray(images) ? images[0] : images;
+  if (!first) return undefined;
+  if (typeof first === "string") return first;
+  if ("url" in first) return String(first.url);
+  return first.toString();
+}
+
 /** Rebuilds a canonical URL against the effective site URL so a DB-driven
     domain change (admin panel) propagates to metadata without code edits. */
 async function effectiveCanonical(
   fallbackCanonical: string | null | undefined,
   rowCanonical: string | null | undefined,
 ): Promise<string | null> {
-  if (rowCanonical) return rowCanonical;
+  if (isValidCanonical(rowCanonical)) return rowCanonical;
   if (!fallbackCanonical) return null;
   const siteUrl = await getSiteUrl();
   const relative = fallbackCanonical.startsWith("http")
@@ -58,6 +85,12 @@ export async function getPageMetadata(pageKey: string): Promise<Metadata> {
       type: "website",
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       ...(canonical ? { url: canonical } : {}),
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }
