@@ -17,6 +17,7 @@ import { error as logError } from "@/lib/logger";
 import { MOCK_BLOG_POSTS, toPublicBlogPost } from "./mock-data";
 import { rowToDbBlogPost } from "./repository";
 import { resolveMediaValue, resolveMediaValues } from "@/lib/media/repository";
+import { notify } from "@/lib/notifications/sender";
 
 const TABLE = "blog_posts" as const;
 
@@ -51,6 +52,9 @@ export async function createBlogPostAction(
         entity: "blog_posts",
         entityId: result.data.id,
         detail: { slug: result.data.slug },
+      });
+      await notify("blog.created", {
+        fields: { Slug: result.data.slug, Status: result.data.status ?? "draft" },
       });
     }
     return result;
@@ -88,6 +92,9 @@ export async function updateBlogPostAction(
         entityId: id,
         detail: { slug: result.data.slug },
       });
+      await notify("blog.updated", {
+        fields: { Slug: result.data.slug, Status: result.data.status ?? "draft" },
+      });
     }
     return result;
   } catch (err) {
@@ -111,6 +118,7 @@ export async function deleteBlogPostAction(id: string): Promise<Result<void>> {
     if (result.success) {
       revalidateBlogPaths();
       await logAudit({ action: "blog.deleted", entity: "blog_posts", entityId: id });
+      await notify("blog.deleted", { fields: { BlogId: id } });
     }
     return result;
   } catch (err) {

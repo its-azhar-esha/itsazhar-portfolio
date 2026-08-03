@@ -40,6 +40,7 @@ import type {
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
+import { notify } from "@/lib/notifications/sender";
 
 function revalidateMediaPaths(): void {
   revalidatePath("/admin/media");
@@ -64,7 +65,12 @@ export async function storeMediaAction(input: Record<string, unknown>): Promise<
     }
 
     const result = await uploadMedia(parsed.data as CreateMediaInput, user.id);
-    if (result.success) revalidateMediaPaths();
+    if (result.success) {
+      revalidateMediaPaths();
+      await notify("media.uploaded", {
+        fields: { Name: result.data.original_name, Folder: result.data.folder },
+      });
+    }
     return result;
   } catch (err) {
     logError("storeMediaAction failed", {
@@ -115,6 +121,7 @@ export async function updateMediaMetadataAction(
           tags: update.tags,
         },
       });
+      await notify("media.updated", { fields: { Name: result.data.original_name } });
     }
     return result;
   } catch (err) {
@@ -138,6 +145,7 @@ export async function deleteMediaAction(id: string): Promise<Result<void>> {
     if (result.success) {
       revalidateMediaPaths();
       await logAudit({ action: "media.deleted", entity: "media", entityId: id });
+      await notify("media.deleted", { fields: { MediaId: id } });
     }
     return result;
   } catch (err) {

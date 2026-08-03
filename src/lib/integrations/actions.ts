@@ -12,6 +12,7 @@ import {
   type IntegrationInfo,
 } from "./repository";
 import { isIntegrationId } from "./catalog";
+import { notify } from "@/lib/notifications/sender";
 
 export async function getIntegrationsAction(): Promise<Result<IntegrationInfo[]>> {
   try {
@@ -51,6 +52,11 @@ export async function saveIntegrationKeyAction(
         entityId: id,
         detail: { expiresAt: expiresAt || null },
       });
+      if (id !== "telegram") {
+        await notify("integration.key.saved", {
+          fields: { Integration: id },
+        });
+      }
     }
     return result;
   } catch (err) {
@@ -75,6 +81,11 @@ export async function clearIntegrationKeyAction(id: IntegrationId): Promise<Resu
         entity: "integration",
         entityId: id,
       });
+      if (id !== "telegram") {
+        await notify("integration.key.cleared", {
+          fields: { Integration: id },
+        });
+      }
     }
     return result;
   } catch (err) {

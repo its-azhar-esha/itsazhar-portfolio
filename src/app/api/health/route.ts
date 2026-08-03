@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SETTINGS_ROW_ID, normalizeDxConfig } from "@/types/settings";
 import { fireMonitoringWebhooks } from "@/lib/monitoring/actions";
+import { notify } from "@/lib/notifications/sender";
 
 /**
  * Lightweight liveness endpoint.
@@ -56,6 +57,7 @@ export async function GET(request: Request) {
     detail = err instanceof Error ? err.message : "Unreachable";
   }
 
+  const source = authoritativeSource(request);
   try {
     const admin = createAdminClient();
     const { data: settingsRow } = (await admin
@@ -68,7 +70,6 @@ export async function GET(request: Request) {
     // "last check" freshness reflects the real daily run, and public
     // traffic cannot forge healthy rows. The source is attributed so the
     // keep-alive report can distinguish Vercel cron from GitHub Actions.
-    const source = authoritativeSource(request);
     if (dxConfig.recordHealthChecks && source) {
       // Always record a row — success AND failure — so the ledger shows the
       // last actual run time (updated_at) and failure detail, and the
@@ -95,6 +96,17 @@ export async function GET(request: Request) {
       detail: detail || "Health check failed",
       source: "api/health",
       latencyMs: dbLatencyMs,
+    });
+    await notify("health.failed", {
+      title: "Health check failed",
+      description: detail || "The database health check did not pass.",
+      fields: { Db: db, LatencyMs: dbLatencyMs },
+    });
+  } else if (source) {
+    // Only authoritative cron runs fire the "ok" event so public probes
+    // do not spam the ledger or the chat.
+    await notify("health.ok", {
+      fields: { LatencyMs: dbLatencyMs, Source: source },
     });
   }
 

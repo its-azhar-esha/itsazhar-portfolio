@@ -15,6 +15,7 @@ import {
 import type { Lead, LeadStats } from "@/types/lead";
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
+import { notify } from "@/lib/notifications/sender";
 
 /** Public: captures a lead from the Book a Free Audit form. No auth required. */
 export async function submitLeadAction(input: Record<string, unknown>): Promise<Result<Lead>> {
@@ -24,7 +25,19 @@ export async function submitLeadAction(input: Record<string, unknown>): Promise<
       const messages = parsed.error.issues.map((i) => i.message).join("; ");
       return fail(messages);
     }
-    return createLead(parsed.data);
+    const result = await createLead(parsed.data);
+    if (result.success) {
+      await notify("lead.created", {
+        fields: {
+          Name: parsed.data.name,
+          Email: parsed.data.email,
+          Phone: parsed.data.phone ?? "",
+          Message: parsed.data.message ?? "",
+          Source: result.data.source,
+        },
+      });
+    }
+    return result;
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to submit lead");
   }

@@ -9,6 +9,7 @@ import type { SiteSettings } from "@/types/settings";
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
+import { notify } from "@/lib/notifications/sender";
 
 export async function saveSiteSettingsAction(
   input: Record<string, unknown>,
@@ -31,6 +32,9 @@ export async function saveSiteSettingsAction(
       revalidatePath("/", "layout");
       revalidatePath("/admin/settings");
       await logAudit({ action: "settings.updated", entity: "settings" });
+      await notify("settings.updated", {
+        fields: { SiteName: parsed.data.site_name },
+      });
     }
     return result;
   } catch (err) {

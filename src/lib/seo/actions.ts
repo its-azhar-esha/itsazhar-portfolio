@@ -9,6 +9,7 @@ import type { SeoEntry, CreateSeoInput, UpdateSeoInput } from "@/types/seo";
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
+import { notify } from "@/lib/notifications/sender";
 
 function revalidateSeoPaths(pageKey: string): void {
   revalidatePath("/admin/seo");
@@ -46,6 +47,7 @@ export async function createSeoAction(input: Record<string, unknown>): Promise<R
         entityId: result.data.id,
         detail: { pageKey: result.data.page_key },
       });
+      await notify("seo.created", { fields: { PageKey: result.data.page_key } });
     }
     return result;
   } catch (err) {
@@ -80,6 +82,7 @@ export async function updateSeoAction(
         entityId: id,
         detail: { pageKey: result.data.page_key },
       });
+      await notify("seo.updated", { fields: { PageKey: result.data.page_key } });
     }
     return result;
   } catch (err) {
@@ -100,6 +103,7 @@ export async function deleteSeoAction(id: string): Promise<Result<void>> {
     if (result.success) {
       revalidatePath("/admin/seo");
       await logAudit({ action: "seo.deleted", entity: "seo", entityId: id });
+      await notify("seo.deleted", { fields: { SeoId: id } });
     }
     return result;
   } catch (err) {

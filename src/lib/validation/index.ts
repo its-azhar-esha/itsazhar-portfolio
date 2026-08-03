@@ -41,6 +41,15 @@ export {
   monitoringConfigSchema,
 } from "./schemas/settings";
 
+export {
+  notificationConfigSchema,
+  notificationRecipientSchema,
+  saveNotificationConfigInputSchema,
+  testTelegramInputSchema,
+  sendTestMessageInputSchema,
+  retryDeliveryInputSchema,
+} from "./schemas/notifications";
+
 export { submitLeadSchema, updateLeadStatusSchema } from "./schemas/lead";
 
 export { createCaseStudySchema, updateCaseStudySchema } from "./schemas/case-study";

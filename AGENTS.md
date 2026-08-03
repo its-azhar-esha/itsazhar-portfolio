@@ -64,6 +64,12 @@ Nothing is off-limits; the user prefers being asked over being skipped.
   is the primary writer, `github` a redundant fallback. When reading ledger
   rows prefer `source='vercel'` and fall back to `github` only when vercel is
   missing.
+- Telegram notifications: never call the sender with ad-hoc event strings —
+  add events to the registry in `src/lib/notifications/events.ts`. Hooks are
+  fire-and-forget, best-effort, never throw, and ride on the success path
+  next to `logAudit`. The bot token is a secret stored encrypted in
+  `integration_settings` (env fallback `TELEGRAM_BOT_TOKEN`), never in
+  `site_settings.notification_config`.
 
 ## Workflows
 

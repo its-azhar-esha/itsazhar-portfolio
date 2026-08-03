@@ -50,6 +50,17 @@ export const INTEGRATION_CATALOG = [
     icon: "openrouter",
     docsUrl: "https://openrouter.ai/settings/keys",
   },
+  {
+    id: "telegram",
+    label: "Telegram",
+    description: "Bot used to deliver notifications to your chats.",
+    keyLabel: "TELEGRAM_BOT_TOKEN",
+    envVarName: "TELEGRAM_BOT_TOKEN",
+    category: "other",
+    icon: "telegram",
+    docsUrl: "https://t.me/BotFather",
+    keyHint: "123456789:",
+  },
 ] as const satisfies readonly IntegrationCatalogEntry[];
 
 export type IntegrationId = (typeof INTEGRATION_CATALOG)[number]["id"];

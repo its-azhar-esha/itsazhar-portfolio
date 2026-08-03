@@ -23,6 +23,7 @@ import { fail } from "@/lib/result";
 import { resolveMediaValue, resolveMediaValues } from "@/lib/media/repository";
 import { createProject, updateProject, deleteProject } from "./repository";
 import { rowToDbProject } from "./mappers";
+import { notify } from "@/lib/notifications/sender";
 
 export async function createProjectAction(
   input: Record<string, unknown>,
@@ -51,6 +52,9 @@ export async function createProjectAction(
         entity: "projects",
         entityId: result.data.id,
         detail: { slug: result.data.slug },
+      });
+      await notify("project.created", {
+        fields: { Slug: result.data.slug, Status: result.data.status ?? "active" },
       });
     }
     return result;
@@ -88,6 +92,9 @@ export async function updateProjectAction(
         entityId: id,
         detail: { slug: result.data.slug },
       });
+      await notify("project.updated", {
+        fields: { Slug: result.data.slug, Status: result.data.status ?? "active" },
+      });
     }
     return result;
   } catch (err) {
@@ -108,6 +115,7 @@ export async function deleteProjectAction(id: string): Promise<Result<void>> {
     if (result.success) {
       revalidatePath("/admin/projects");
       await logAudit({ action: "project.deleted", entity: "projects", entityId: id });
+      await notify("project.deleted", { fields: { ProjectId: id } });
     }
     return result;
   } catch (err) {

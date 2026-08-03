@@ -2330,6 +2330,95 @@ But the rendered contact page still showed the hardcoded
 - `tsc --noEmit` exit 0, `npm run lint` clean (1 pre-existing `<img>`
   warning), `npm run build` green (70 routes).
 
+## 40. Telegram Notification System (2026-08-03, migration `00034`)
+
+Goal: reliable, admin-manageable Telegram notifications for monitoring,
+system and CMS content activity, plus a full admin panel section.
+
+### What was built
+
+- **Config** (`site_settings.notification_config` JSONB, non-secret): master
+  switch, per-category and per-event toggles, per-event priority overrides,
+  recipients list (chat ids with per-recipient enable). The bot token is a
+  secret and is NOT stored here — it lives AES-256-GCM encrypted in
+  `integration_settings` (Telegram added to the Integration Center catalog,
+  env fallback `TELEGRAM_BOT_TOKEN`).
+- **Event registry** (`src/lib/notifications/events.ts`): single source of
+  truth for ~34 events across categories leads/content/monitoring/system/
+  security, each with a default priority (new leads = critical). Adding an
+  event is a one-line declarative change; the admin UI and sender pick it up
+  automatically.
+- **Sender** (`src/lib/notifications/sender.ts`): the single dispatch point.
+  Gates: master → category → event → enabled recipients. Best-effort, never
+  throws (mirrors `fireMonitoringWebhooks`). Every message includes the
+  priority emoji, title, event id and a GMT+6 timestamp. Records one
+  `notification_deliveries` row per recipient (sent/failed + error + attempts
+  - delivered_at).
+- **Ledger** `notification_deliveries`: service-role-only (RLS enabled, zero
+  policies, explicit grants to `authenticated, service_role`) like
+  health_checks / backups / audit_log. Admin history + retry read through the
+  service-role client.
+- **Admin panel** `/admin/notifications` (sidebar entry with Bell icon):
+  master switch, category/event toggles with per-event priority dropdowns,
+  Telegram connection card (masked token, rotate/remove, test connection,
+  live status), recipients CRUD + per-recipient mute + "send test message",
+  delivery history with retry for failures. All mutations require auth,
+  validate with Zod (`notificationConfigSchema` etc.), audit via `logAudit`.
+- **Hooks wired** (each rides alongside the existing `logAudit` / success
+  path, never alters control flow): lead.created (public submitLeadAction),
+  project/blog/service created/updated/deleted, media uploaded/updated/
+  deleted, settings.updated, seo created/updated/deleted, content.updated,
+  auth.signed_in, integration key saved/cleared (Telegram itself excluded to
+  avoid self-notification loops), health ok/failed (api/health), backup
+  ok/partial/failed (api/backup).
+
+### Design decisions
+
+- Fire-and-forget, never throw — a misconfigured channel drops events but
+  never breaks the caller (lead form, cron, CRUD).
+- Unknown events are dropped unless `allowUnregistered` (test sends use the
+  same pipeline). Deliberately avoids notifying for the Telegram token save
+  and per-recipient edits to prevent feedback loops.
+- `notification_deliveries` records the full message body so retry can
+  resend the exact text and admins can see why a send failed.
+- Data API grants rule (00031) followed: the new table declares its grants
+  and RLS together.
+
+### Migration `00034_notification_system.sql`
+
+- `alter table site_settings add column notification_config jsonb not null
+default '{}'`.
+- `create table notification_deliveries` + indexes on (created_at desc) and
+  (status, created_at desc), RLS enabled with no policies, grants to
+  `authenticated, service_role`.
+- Applied to remote, verified: column present (jsonb), RLS true, REST probe
+  `select=id&limit=1` returns 200 empty (anon denied by RLS as intended).
+
+### Seeded config (via SQL, not a migration)
+
+- `enabled: true`, all categories enabled, recipient `7444460828` ("Owner",
+  enabled). Token configured via `TELEGRAM_BOT_TOKEN` env (Vercel + local)
+  with the Integration Center encrypted storage available from the admin
+  panel for rotation.
+
+### Verified
+
+- `tsc --noEmit` exit 0, `npm run lint` clean (only the pre-existing `<img>`
+  warning), `npm run build` green (71 routes incl. /admin/notifications).
+- Telegram API reachable from Vercel after deploy: test connection + test
+  message + a real event (e.g. lead.created) confirmed delivery to chat
+  `7444460828`.
+
+### Rules / conventions added
+
+- New notifiable events are added to the registry in
+  `src/lib/notifications/events.ts` — never call the sender with ad-hoc
+  strings from feature code.
+- Every notification hook is fire-and-forget and must not throw; keep it on
+  the success path next to `logAudit`.
+- Secrets for the notification channel use the integration repository
+  (encrypted at rest), never the notification_config JSONB.
+
 ## 35. External Keep-Alive & Backup Provisioning (2026-08-02)
 
 Goal: activate the two remaining keep-alive/backup layers that were blocked

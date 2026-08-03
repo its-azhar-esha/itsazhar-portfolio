@@ -3,14 +3,12 @@
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { recordLoginAttempt } from "@/lib/security";
+import { notify } from "@/lib/notifications/sender";
 
 async function clientMeta(): Promise<{ ip: string; userAgent: string }> {
   try {
     const h = await headers();
-    const ip =
-      h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      h.get("x-real-ip")?.trim() ||
-      "";
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || "";
     return { ip, userAgent: h.get("user-agent") ?? "" };
   } catch {
     return { ip: "", userAgent: "" };
@@ -46,6 +44,9 @@ export async function signIn(formData: FormData): Promise<{ error: string } | un
       success: true,
       ip: meta.ip,
       userAgent: meta.userAgent,
+    });
+    await notify("auth.signed_in", {
+      fields: { Email: email, Ip: meta.ip || "unknown" },
     });
     return undefined;
   } catch (err) {

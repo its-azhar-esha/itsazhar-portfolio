@@ -370,6 +370,7 @@ export interface Database {
           analytics_config: unknown;
           dx_config: unknown;
           monitoring_config: unknown;
+          notification_config: unknown;
           created_at: string;
           updated_at: string;
         };
@@ -412,6 +413,7 @@ export interface Database {
           analytics_config?: unknown;
           dx_config?: unknown;
           monitoring_config?: unknown;
+          notification_config?: unknown;
           created_at?: string;
           updated_at?: string;
         };
@@ -454,6 +456,7 @@ export interface Database {
           analytics_config?: unknown;
           dx_config?: unknown;
           monitoring_config?: unknown;
+          notification_config?: unknown;
           created_at?: string;
           updated_at?: string;
         };
@@ -631,6 +634,56 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           source?: string;
+        };
+      };
+      notification_deliveries: {
+        Row: {
+          id: string;
+          event: string;
+          category: string;
+          priority: string;
+          title: string;
+          message: string;
+          channel: string;
+          chat_id: string;
+          recipient_label: string;
+          status: string;
+          error: string | null;
+          attempts: number;
+          created_at: string;
+          delivered_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          event: string;
+          category: string;
+          priority?: string;
+          title: string;
+          message?: string;
+          channel?: string;
+          chat_id: string;
+          recipient_label?: string;
+          status?: string;
+          error?: string | null;
+          attempts?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          event?: string;
+          category?: string;
+          priority?: string;
+          title?: string;
+          message?: string;
+          channel?: string;
+          chat_id?: string;
+          recipient_label?: string;
+          status?: string;
+          error?: string | null;
+          attempts?: number;
+          created_at?: string;
+          delivered_at?: string | null;
         };
       };
       blog_posts: {

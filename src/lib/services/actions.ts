@@ -16,6 +16,7 @@ import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
 import { error as logError } from "@/lib/logger";
 import { MOCK_SERVICES } from "./mock-data";
+import { notify } from "@/lib/notifications/sender";
 
 const TABLE = "services" as const;
 
@@ -94,6 +95,9 @@ export async function createServiceAction(
         entityId: result.data.id,
         detail: { slug: result.data.slug },
       });
+      await notify("service.created", {
+        fields: { Slug: result.data.slug, Status: result.data.status ?? "draft" },
+      });
     }
     return result;
   } catch (err) {
@@ -130,6 +134,9 @@ export async function updateServiceAction(
         entityId: id,
         detail: { slug: result.data.slug },
       });
+      await notify("service.updated", {
+        fields: { Slug: result.data.slug, Status: result.data.status ?? "draft" },
+      });
     }
     return result;
   } catch (err) {
@@ -153,6 +160,7 @@ export async function deleteServiceAction(id: string): Promise<Result<void>> {
     if (result.success) {
       revalidateServicePaths();
       await logAudit({ action: "service.deleted", entity: "services", entityId: id });
+      await notify("service.deleted", { fields: { ServiceId: id } });
     }
     return result;
   } catch (err) {

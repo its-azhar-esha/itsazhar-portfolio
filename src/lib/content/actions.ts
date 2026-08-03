@@ -14,6 +14,7 @@ import { getPageContentDefinition } from "./schemas";
 import type { ContentEntry, CreateContentInput, UpdateContentInput } from "@/types/content";
 import type { Result } from "@/lib/result";
 import { fail, ok } from "@/lib/result";
+import { notify } from "@/lib/notifications/sender";
 
 export async function createContentAction(
   input: Record<string, unknown>,
@@ -40,6 +41,7 @@ export async function createContentAction(
         entityId: result.data.id,
         detail: { key: result.data.key },
       });
+      await notify("content.updated", { fields: { Key: result.data.key } });
     }
     return result;
   } catch (err) {
@@ -73,6 +75,7 @@ export async function updateContentAction(
         entityId: id,
         detail: { key: result.data.key },
       });
+      await notify("content.updated", { fields: { Key: result.data.key } });
     }
     return result;
   } catch (err) {
@@ -92,6 +95,7 @@ export async function deleteContentAction(id: string): Promise<Result<void>> {
     if (result.success) {
       revalidatePath("/admin/content");
       await logAudit({ action: "content.deleted", entity: "content_entries", entityId: id });
+      await notify("content.updated", { fields: { Deleted: id } });
     }
     return result;
   } catch (err) {

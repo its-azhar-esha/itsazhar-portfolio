@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SETTINGS_ROW_ID, normalizeAnalyticsConfig } from "@/types/settings";
 import { fireMonitoringWebhooks } from "@/lib/monitoring/actions";
+import { notify } from "@/lib/notifications/sender";
 
 /**
  * Nightly automated backup (Vercel cron 00:00 UTC, and optionally
@@ -256,6 +257,22 @@ export async function GET(request: Request) {
             : `Backup partially completed (${tableFailures.length} of ${CONTENT_TABLES.length} exports failed).`,
         source: backupSource(request),
       });
+      await notify(status === "error" ? "backup.failed" : "backup.partial", {
+        title: status === "error" ? "Backup failed" : "Backup partially failed",
+        description:
+          status === "error"
+            ? (tableFailures[0]?.error ?? "The backup reported an unknown error.")
+            : `${tableFailures.length} of ${CONTENT_TABLES.length} table exports failed.`,
+        fields: { Tables: `${tableCount}/${CONTENT_TABLES.length}`, Source: backupSource(request) },
+      });
+    } else {
+      await notify("backup.ok", {
+        fields: {
+          Tables: `${tableCount}`,
+          SizeBytes: `${sizeBytes}`,
+          Source: backupSource(request),
+        },
+      });
     }
 
     return NextResponse.json(
@@ -296,6 +313,11 @@ export async function GET(request: Request) {
     await fireMonitoringWebhooks("backup", {
       detail: err instanceof Error ? err.message : "Backup failed",
       source: "api/backup",
+    });
+    await notify("backup.failed", {
+      title: "Backup failed",
+      description: err instanceof Error ? err.message : "The backup reported an unknown error.",
+      fields: { Source: "api/backup" },
     });
     return NextResponse.json(
       {

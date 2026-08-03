@@ -1,3 +1,5 @@
+import { DEFAULT_NOTIFICATION_CONFIG, type NotificationConfig } from "@/types/notifications";
+
 export interface NavItemConfig {
   label: string;
   href: string;
@@ -77,12 +79,12 @@ export interface SiteSettings {
   analytics_config: AnalyticsConfig;
   dx_config: DxConfig;
   monitoring_config: MonitoringConfig;
+  notification_config: NotificationConfig;
   created_at: string;
   updated_at: string;
 }
 
 export type SiteSettingsInput = Partial<Omit<SiteSettings, "id" | "created_at" | "updated_at">>;
-
 export const SETTINGS_ROW_ID = "00000000-0000-0000-0000-000000000001";
 
 export const DEFAULT_NAV_ORDER: NavItemConfig[] = [
@@ -250,4 +252,5 @@ export const DEFAULT_SITE_SETTINGS: Omit<SiteSettings, "id" | "created_at" | "up
   analytics_config: DEFAULT_ANALYTICS_CONFIG,
   dx_config: DEFAULT_DX_CONFIG,
   monitoring_config: DEFAULT_MONITORING_CONFIG,
+  notification_config: DEFAULT_NOTIFICATION_CONFIG,
 };
