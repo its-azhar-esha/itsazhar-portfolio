@@ -22,7 +22,7 @@ export function ProjectContent({ fields, errors, onChange }: ContentSectionProps
           id="short_description"
           value={fields.short_description}
           onChange={(e) => onChange({ short_description: e.target.value })}
-          placeholder="Brief overview of the project (max 500 characters)"
+          placeholder="Brief overview of the project (max 200 characters)"
           rows={3}
           className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-primary/20 flex w-full resize-none rounded-lg border px-3 py-2 text-sm transition-all duration-200 focus:ring-1 focus:outline-none"
         />
@@ -31,7 +31,7 @@ export function ProjectContent({ fields, errors, onChange }: ContentSectionProps
             <p className="text-xs text-red-500">{errors.short_description}</p>
           )}
           <p className="text-muted-foreground ml-auto text-xs">
-            {fields.short_description.length}/500
+            {fields.short_description.length}/200
           </p>
         </div>
       </div>

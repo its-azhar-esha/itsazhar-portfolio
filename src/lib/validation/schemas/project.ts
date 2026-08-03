@@ -13,7 +13,7 @@ export const createProjectSchema = z.object({
   short_description: z
     .string()
     .min(1, "Short description is required")
-    .max(500, "Short description must be 500 characters or fewer"),
+    .max(200, "Short description must be 200 characters or fewer"),
   description: z.string().nullable().default(null),
   thumbnail: z.string().nullable().default(null),
   images: z.array(z.string()).default([]),
