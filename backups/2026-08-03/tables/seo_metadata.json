@@ -1,0 +1,71 @@
+[
+  {
+    "id": "71116022-374c-4c5a-a2e5-54399b9b65a8",
+    "page_key": "home",
+    "title": "Azhar Mahmud | AI Automation Engineer",
+    "description": "AI automation solutions, workflow engineering, and intelligent business systems.",
+    "keywords": [
+      "ai automation",
+      "workflow engineering",
+      "business automation",
+      "ai engineer",
+      "intelligent systems"
+    ],
+    "og_image": null,
+    "canonical_url": null,
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-02T11:47:07.799803+00:00"
+  },
+  {
+    "id": "afeda33c-9784-44e4-8a7e-3d576290a019",
+    "page_key": "about",
+    "title": "About Me — Azhar Mahmud | AI Automation Specialist",
+    "description": "I build intelligent automation systems that help businesses eliminate repetitive work, streamline operations, and scale efficiently using AI, workflows, and modern integrations.",
+    "keywords": [
+      "about",
+      "ai automation specialist",
+      "workflow automation",
+      "business automation"
+    ],
+    "og_image": null,
+    "canonical_url": null,
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-02T11:47:07.799803+00:00"
+  },
+  {
+    "id": "c0d8f98f-5b65-47f0-b799-af58c0723a93",
+    "page_key": "projects",
+    "title": "Featured Systems & Automation Projects | Azhar Mahmud",
+    "description": "Explore production-ready AI systems, workflow automations, and business solutions designed to eliminate repetitive work and improve operational efficiency.",
+    "keywords": [
+      "projects",
+      "ai systems",
+      "automation projects",
+      "workflow automations"
+    ],
+    "og_image": null,
+    "canonical_url": null,
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-02T11:47:07.799803+00:00"
+  },
+  {
+    "id": "f35c610b-313f-4c46-ac5c-ef5253240310",
+    "page_key": "contact",
+    "title": "Contact | Book a Free Automation Audit",
+    "description": "Book a free 15-minute automation audit. Find automation opportunities in your business workflow — no pressure, no obligation.",
+    "keywords": [
+      "contact",
+      "automation audit",
+      "free consultation",
+      "business workflow"
+    ],
+    "og_image": null,
+    "canonical_url": null,
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-02T11:47:07.799803+00:00"
+  }
+]

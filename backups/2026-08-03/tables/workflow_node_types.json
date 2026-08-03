@@ -1,0 +1,232 @@
+[
+  {
+    "id": "f9cccd6f-af2f-4d9d-890d-e07268648ffc",
+    "key": "webhook",
+    "name": "Webhook",
+    "category": "triggers",
+    "icon": "radio",
+    "color": "#3b82f6",
+    "description": "Starts the workflow when an HTTP request hits your endpoint.",
+    "config_schema": {
+      "path": "text"
+    },
+    "default_config": {
+      "path": ""
+    },
+    "display_order": 1,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "9f905267-b471-4f43-8e0b-86b0ca3eaddd",
+    "key": "schedule",
+    "name": "Schedule",
+    "category": "triggers",
+    "icon": "calendar-clock",
+    "color": "#3b82f6",
+    "description": "Starts the workflow on a fixed interval or cron schedule.",
+    "config_schema": {
+      "cron": "text"
+    },
+    "default_config": {
+      "cron": "0 9 * * *"
+    },
+    "display_order": 2,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "fbab0a4f-a6a3-4336-948c-edd698e9f5d5",
+    "key": "ai_agent",
+    "name": "AI Agent",
+    "category": "ai",
+    "icon": "bot",
+    "color": "#8b5cf6",
+    "description": "An LLM-powered agent that follows your system prompt.",
+    "config_schema": {
+      "prompt": "textarea"
+    },
+    "default_config": {
+      "prompt": "You are a helpful assistant."
+    },
+    "display_order": 3,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "1015b1a0-7aef-4554-ab5d-122af1e86bef",
+    "key": "ai_chat",
+    "name": "AI Chat",
+    "category": "ai",
+    "icon": "message-square",
+    "color": "#8b5cf6",
+    "description": "Single-turn LLM call for extraction, rewriting or scoring.",
+    "config_schema": {
+      "prompt": "textarea"
+    },
+    "default_config": {
+      "prompt": ""
+    },
+    "display_order": 4,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "edc2c361-2763-49f6-870d-6b15ebb29ae7",
+    "key": "http_request",
+    "name": "HTTP Request",
+    "category": "data",
+    "icon": "globe",
+    "color": "#0ea5e9",
+    "description": "Calls any REST API and passes the response downstream.",
+    "config_schema": {
+      "url": "text",
+      "method": "select"
+    },
+    "default_config": {
+      "url": "",
+      "method": "GET"
+    },
+    "display_order": 5,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "2a8157fe-a5ce-44d8-9980-13e70f02e28e",
+    "key": "data_store",
+    "name": "Data Store",
+    "category": "data",
+    "icon": "database",
+    "color": "#0ea5e9",
+    "description": "Reads or writes structured rows in a simple store.",
+    "config_schema": {
+      "operation": "select"
+    },
+    "default_config": {
+      "operation": "read"
+    },
+    "display_order": 6,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "484035f8-db9e-49d4-8af2-e261d8d9ecf2",
+    "key": "code",
+    "name": "Code Step",
+    "category": "data",
+    "icon": "code-2",
+    "color": "#f59e0b",
+    "description": "Runs JavaScript to transform or validate data.",
+    "config_schema": {
+      "code": "textarea"
+    },
+    "default_config": {
+      "code": "return items;"
+    },
+    "display_order": 7,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "835f1c53-6382-4ec6-b6c4-fb4b69233c62",
+    "key": "filter",
+    "name": "Filter",
+    "category": "logic",
+    "icon": "filter",
+    "color": "#ef4444",
+    "description": "Passes data only when the condition is true.",
+    "config_schema": {
+      "condition": "text"
+    },
+    "default_config": {
+      "condition": ""
+    },
+    "display_order": 8,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "be9520f4-97e2-4e2a-bcbd-d9cd40a1b46b",
+    "key": "router",
+    "name": "Router",
+    "category": "logic",
+    "icon": "git-branch",
+    "color": "#ef4444",
+    "description": "Branches the flow into different paths by rules.",
+    "config_schema": {
+      "rules": "text"
+    },
+    "default_config": {
+      "rules": ""
+    },
+    "display_order": 9,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "7bb46728-2020-4176-bb05-8a4d63f5abf1",
+    "key": "slack",
+    "name": "Slack",
+    "category": "actions",
+    "icon": "message-circle",
+    "color": "#22c55e",
+    "description": "Posts a message to a Slack channel.",
+    "config_schema": {
+      "channel": "text"
+    },
+    "default_config": {
+      "channel": "#general"
+    },
+    "display_order": 10,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "30f8dcc1-fd44-4ff5-87a0-6b7218d92211",
+    "key": "telegram",
+    "name": "Telegram",
+    "category": "actions",
+    "icon": "send",
+    "color": "#22c55e",
+    "description": "Sends a message to a Telegram chat.",
+    "config_schema": {
+      "chat_id": "text"
+    },
+    "default_config": {
+      "chat_id": ""
+    },
+    "display_order": 11,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  },
+  {
+    "id": "a884e1c2-d2dd-490f-8507-0a4fd2ef013d",
+    "key": "email",
+    "name": "Email",
+    "category": "actions",
+    "icon": "mail",
+    "color": "#22c55e",
+    "description": "Sends an email to one or more recipients.",
+    "config_schema": {
+      "to": "text"
+    },
+    "default_config": {
+      "to": ""
+    },
+    "display_order": 12,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:09.719719+00:00"
+  }
+]

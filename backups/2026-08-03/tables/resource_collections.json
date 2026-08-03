@@ -1,0 +1,14 @@
+[
+  {
+    "id": "d69ed3b3-5c76-45d1-99fa-f7d385fe5359",
+    "name": "Getting Started Pack",
+    "slug": "getting-started-pack",
+    "description": "Everything you need to build your first automation.",
+    "cover_image": null,
+    "featured": true,
+    "display_order": 1,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:06.840628+00:00"
+  }
+]
