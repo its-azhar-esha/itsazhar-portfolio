@@ -13,14 +13,36 @@ import { notify } from "@/lib/notifications/sender";
 
 function revalidateSeoPaths(pageKey: string): void {
   revalidatePath("/admin/seo");
-  if (pageKey === "home") {
-    revalidatePath("/");
-  } else if (pageKey === "about") {
-    revalidatePath("/about");
-  } else if (pageKey === "projects") {
-    revalidatePath("/projects");
-  } else if (pageKey === "contact") {
-    revalidatePath("/contact");
+  switch (pageKey) {
+    case "home":
+      revalidatePath("/");
+      break;
+    case "about":
+      revalidatePath("/about");
+      break;
+    case "projects":
+      revalidatePath("/projects");
+      revalidatePath("/sitemap.xml");
+      break;
+    case "services":
+      revalidatePath("/services");
+      revalidatePath("/sitemap.xml");
+      break;
+    case "blog":
+      revalidatePath("/blog");
+      revalidatePath("/sitemap.xml");
+      break;
+    case "hub":
+      revalidatePath("/hub");
+      revalidatePath("/sitemap.xml");
+      break;
+    case "playground":
+      revalidatePath("/playground");
+      revalidatePath("/sitemap.xml");
+      break;
+    case "contact":
+      revalidatePath("/contact");
+      break;
   }
 }
 

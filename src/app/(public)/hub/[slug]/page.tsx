@@ -70,9 +70,32 @@ export default async function ResourceDetailPage({
   if (!resource) notFound();
 
   const premium = resource.access_level === "premium";
+  const baseUrl = await getSiteUrl();
+  const resourceUrl = `${baseUrl}/hub/${resource.slug}`;
+  const resourceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: resource.title,
+    description: resource.summary,
+    url: resourceUrl,
+    ...(resource.ogUrl ? { image: resource.ogUrl } : {}),
+    dateModified: resource.updated_at,
+    creator: {
+      "@type": "Person",
+      name: "Azhar Mahmud",
+      alternateName: "Azhar (ItsAzhar)",
+      url: baseUrl,
+      jobTitle: "AI Automation Expert",
+    },
+    keywords: resource.tags.length ? resource.tags.join(", ") : undefined,
+  };
 
   return (
     <div className="pt-24 md:pt-32">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(resourceJsonLd) }}
+      />
       <article className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <Link
           href="/hub"

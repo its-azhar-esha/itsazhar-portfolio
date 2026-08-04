@@ -2738,3 +2738,64 @@ webhooks are stored in the database.
   no-op test (audit-log keep 100,000 days) deleted 0 rows.
 - Migration `00038` applied via `supabase db push --linked` (00001�00037
   already applied).
+
+## 43. Full SEO Optimization + itsazhar.com Domain Switch (2026-08-03/04)
+
+### Domain: itsazhar.com (custom domain live)
+
+- `monitoring_config.siteUrl` in `site_settings` set to `https://itsazhar.com`
+  (admin-editable at Admin > Keep-Alive > Monitoring Config). Canonicals,
+  sitemap, robots and OG URLs all resolve through it at render time.
+- `NEXT_PUBLIC_SITE_URL=https://itsazhar.com` set as Vercel env var
+  (production+preview) and in `.env.local`. Code fallback
+  `SITE_URL_DEFAULT` in `src/lib/site.ts` also updated to
+  `https://itsazhar.com`.
+- `site_settings.contact_email` updated to `azhar@itsazhar.com`.
+- Domain registered at Spaceship (nameservers launch1/launch2.spaceship.net),
+  verified on Vercel (`verified: true`), site serving HTTPS 200 on
+  itsazhar.com. NOTE: Vercel is NOT authoritative for DNS � any TXT/CNAME
+  records (e.g. Google Search Console verification) must be added at the
+  Spaceship DNS panel, not via Vercel.
+
+### Admin SEO tab � full control confirmed
+
+- `/admin/seo` already had full CRUD (list/search/create/edit/delete with
+  confirm dialog), force-dynamic pages, and `router.refresh()` after
+  mutations � the "always fetch fresh" requirement was already satisfied.
+- **Fixed revalidation bug:** `revalidateSeoPaths()` in
+  `src/lib/seo/actions.ts` only revalidated home/about/projects/contact.
+  It now covers services, blog, hub, playground + `/sitemap.xml`, so every
+  SEO edit propagates immediately.
+- All 8 default page keys now have DB rows (home, about, projects, services,
+  contact, blog, hub, playground) with keyword-optimized titles,
+  descriptions, and canonical URLs � all editable in the admin SEO tab.
+
+### Keyword targeting + branding
+
+- Full target keyword set applied to `DEFAULT_SEO` (`src/lib/seo/defaults.ts`)
+  and the 8 DB rows: AI Automation, AI Automation Expert, Automation Expert,
+  Automation Specialist, Automation Freelancer, Workflow Automation,
+  Business Automation, Process Automation, n8n Expert, n8n Developer,
+  AI Agent Developer, AI Consultant, API Integration, Custom Automation.
+- Branding: Azhar / ItsAzhar / itsazhar.com woven into titles, descriptions,
+  JSON-LD (Person alternateName "Azhar", Organization "ItsAzhar",
+  email azhar@itsazhar.com) and root layout keywords.
+
+### Structured data (JSON-LD)
+
+- Root layout: Person + Organization (ItsAzhar, founder link) + WebSite with
+  SearchAction (targets `/hub?search={term}` � hub page supports `search`
+  param). Person gains `jobTitle: "AI Automation Expert"`, `alternateName`,
+  business email.
+- New per-page JSON-LD: `services/[slug]` Service (provider Person),
+  `blog/[slug]` BlogPosting (author + ItsAzhar publisher), `projects/[slug]`
+  CreativeWork (creator Person), `hub/[slug]` CreativeWork (creator Person).
+
+### Verified
+
+- `npm run lint` clean (1 pre-existing `<img>` warning, markdown.tsx:53).
+- `npm run build` green (70 routes).
+- DB rows verified via REST: 8/8 seo_metadata, site_settings title/email/
+  siteUrl correct. Vercel env var confirmed.
+- Interrupted by a power outage mid-session; verified all code edits, DB
+  rows, env vars and Vercel config intact before continuing.

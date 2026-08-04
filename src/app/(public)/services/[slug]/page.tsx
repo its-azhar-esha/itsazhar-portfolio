@@ -76,9 +76,35 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
   const Icon = SERVICE_ICONS[service.icon] ?? SERVICE_ICONS.bot;
   const highlights = service.content?.highlights ?? [];
+  const baseUrl = await getSiteUrl();
+
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: service.title,
+    description: service.seo_description || service.short_description,
+    url: `${baseUrl}/services/${service.slug}`,
+    provider: {
+      "@type": "Person",
+      name: "Azhar Mahmud",
+      alternateName: "Azhar (ItsAzhar)",
+      url: baseUrl,
+      jobTitle: "AI Automation Expert",
+    },
+    areaServed: "Worldwide",
+    serviceType: "AI Automation",
+    audience: {
+      "@type": "BusinessAudience",
+      name: "Businesses",
+    },
+  };
 
   return (
     <div className="pt-24 md:pt-32">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
       <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6">

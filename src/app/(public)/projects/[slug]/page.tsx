@@ -84,8 +84,31 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     DEFAULT_PROJECTS_CONTENT,
   );
 
+  const baseUrl = await getSiteUrl();
+  const projectUrl = `${baseUrl}/projects/${project.slug}`;
+  const projectJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: project.name,
+    description: project.description,
+    url: projectUrl,
+    ...(project.coverImage ? { image: project.coverImage } : {}),
+    about: ["AI Automation", "Workflow Automation", "n8n", "API Integration"],
+    creator: {
+      "@type": "Person",
+      name: "Azhar Mahmud",
+      alternateName: "Azhar (ItsAzhar)",
+      url: baseUrl,
+      jobTitle: "AI Automation Expert",
+    },
+  };
+
   return (
     <div className="pt-24 md:pt-32">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }}
+      />
       <section className="border-border/40 border-b py-16 md:py-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6">

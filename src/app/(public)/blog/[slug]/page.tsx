@@ -107,8 +107,35 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const postUrl = `${siteUrl}/blog/${post.slug}`;
   const shareText = encodeURIComponent(`${post.title} — by ${post.author}`);
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    image: post.coverImage ? [post.coverImage] : undefined,
+    datePublished: post.publishedAt,
+    author: {
+      "@type": "Person",
+      name: post.author || "Azhar Mahmud",
+      alternateName: "Azhar (ItsAzhar)",
+      url: siteUrl,
+      jobTitle: "AI Automation Expert",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "ItsAzhar",
+      url: siteUrl,
+    },
+    mainEntityOfPage: postUrl,
+    keywords: post.keywords.length ? post.keywords.join(", ") : undefined,
+  };
+
   return (
     <article className="pt-24 md:pt-32">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <header className="border-border/40 relative overflow-hidden border-b">
         <div className="from-primary/15 pointer-events-none absolute -top-24 left-1/2 h-64 w-[42rem] -translate-x-1/2 rounded-full bg-gradient-to-r via-transparent to-transparent blur-3xl" />
         <div className="relative mx-auto max-w-3xl px-4 py-14 sm:px-6 md:py-20">

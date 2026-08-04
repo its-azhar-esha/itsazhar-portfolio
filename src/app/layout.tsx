@@ -30,9 +30,9 @@ export const viewport: Viewport = {
   themeColor: "#09090b",
 };
 
-const FALLBACK_TITLE = "Azhar | Automate Anything — AI Automation Specialist";
+const FALLBACK_TITLE = "Azhar (ItsAzhar) | AI Automation Expert & n8n Developer";
 const FALLBACK_DESCRIPTION =
-  "AI Automation Specialist. I build intelligent AI automation systems using AI agents, n8n workflows, and API integrations that eliminate repetitive work, streamline operations, and help businesses scale faster.";
+  "AI Automation Expert. I build intelligent AI automation systems using AI agents, n8n workflows, and API integrations that eliminate repetitive work, streamline operations, and help businesses scale faster.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSiteSettings();
@@ -49,15 +49,24 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: siteDescription,
     keywords: [
-      "AI automation specialist",
+      "AI automation",
+      "AI automation expert",
+      "automation expert",
+      "automation specialist",
+      "automation freelancer",
       "workflow automation",
-      "n8n developer",
-      "AI agents",
       "business automation",
       "process automation",
+      "n8n expert",
+      "n8n developer",
+      "AI agent developer",
+      "AI consultant",
       "API integration",
-      "Supabase",
-      "automation consultant",
+      "custom automation",
+      "AI agents",
+      "ItsAzhar",
+      "Azhar",
+      "itsazhar.com",
       "Bangladesh automation developer",
     ],
     authors: [{ name: "Azhar Mahmud Alif" }],
@@ -110,30 +119,59 @@ export default async function RootLayout({
         "@type": "Person",
         "@id": `${baseUrl}/#person`,
         name: "Azhar Mahmud Alif",
-        jobTitle: "AI Automation Specialist",
+        alternateName: "Azhar",
+        jobTitle: "AI Automation Expert",
         url: baseUrl,
+        email: "azhar@itsazhar.com",
         sameAs: [settings.social_linkedin, settings.social_github, settings.social_twitter].filter(
           (url): url is string => Boolean(url),
         ),
         knowsAbout: [
+          "AI Automation",
+          "AI Agents",
+          "n8n",
+          "Workflow Automation",
+          "Business Automation",
+          "Process Automation",
+          "API Integration",
+          "AI Consulting",
+        ],
+        worksFor: { "@id": `${baseUrl}/#organization` },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${baseUrl}/#organization`,
+        name: "ItsAzhar",
+        alternateName: "ItsAzhar — AI Automation by Azhar",
+        url: baseUrl,
+        email: "azhar@itsazhar.com",
+        founder: { "@id": `${baseUrl}/#person` },
+        knowsAbout: [
+          "AI Automation",
+          "n8n",
           "AI Agents",
           "Workflow Automation",
-          "n8n",
           "API Integration",
           "Business Automation",
-          "React",
-          "TypeScript",
-          "Supabase",
         ],
       },
       {
         "@type": "WebSite",
         "@id": `${baseUrl}/#website`,
         url: baseUrl,
-        name: "Azhar | AI Automation Systems",
+        name: "ItsAzhar | AI Automation Expert & n8n Developer",
+        alternateName: "ItsAzhar",
         description:
-          "AI Automation Specialist — building intelligent AI automation systems for businesses worldwide.",
+          "AI Automation Expert — building intelligent AI automation systems with AI agents, n8n workflows and API integrations for businesses worldwide.",
         publisher: { "@id": `${baseUrl}/#person` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${baseUrl}/hub?search={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
       },
     ],
   };
