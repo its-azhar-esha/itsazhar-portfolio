@@ -132,6 +132,7 @@ async function sendChunks(
 ): Promise<void> {
   let offset = 0;
   let attempts = 0;
+  let lastStatus = 0;
 
   while (offset < file.size) {
     const chunk = file.slice(offset, Math.min(offset + TUS_CHUNK_SIZE, file.size));
@@ -142,6 +143,7 @@ async function sendChunks(
         totalBytes: file.size,
       });
     });
+    lastStatus = status;
 
     if (status === 204) {
       attempts = 0;
@@ -165,7 +167,9 @@ async function sendChunks(
       }
     }
     if (attempts >= TUS_MAX_ATTEMPTS) {
-      throw new Error("Upload stalled after several retries. Check your connection and try again.");
+      throw new Error(
+        `Upload stalled after several retries (last server response: ${lastStatus}). Check your connection and try again.`,
+      );
     }
     await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
   }
@@ -183,6 +187,7 @@ function patchChunk(
     xhr.open("PATCH", uploadUrl);
     xhr.setRequestHeader("Authorization", headers().Authorization);
     xhr.setRequestHeader("apikey", headers().apikey);
+    xhr.setRequestHeader("Tus-Resumable", "1.0.0");
     xhr.setRequestHeader("Upload-Offset", String(offset));
     xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
 
