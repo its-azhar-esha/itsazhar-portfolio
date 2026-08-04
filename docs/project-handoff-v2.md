@@ -1806,16 +1806,17 @@ separate About + Hero bespoke editors kept as-is.
 - Home hero metrics (previously CMS-editable hardcoded JSON, now
   computed):
   - "Automation Systems Built" = published projects (status `active`)
-  - "Workflows Created" = published `workflow_templates`
+  - "Workflows Created" = total documented workflow steps across
+    published projects (project `workflow[]` arrays; see Phase 44)
   - "AI Automation Services" = published `services`
-  - "Documented Systems" = % of published projects fully documented
+  - "Documented Systems" = count of published projects fully documented
     (challenge + solution + impact + workflow[] all non-empty)
 - About "By the Numbers" (previously computed client-side from the
   public projects fetch; now server-computed and passed as a prop):
   - Projects = published projects, Technologies = unique
     technologies across published projects, Industries = unique
-    industries across published projects, Workflows = published
-    `workflow_templates`.
+    industries across published projects, Workflows = total documented
+    workflow steps across published projects.
   - Note: the services table has no technology/industry columns, so
     tech/industry uniqueness is project-derived (the only reliable
     source). Documented in Phase 28.
@@ -1824,8 +1825,9 @@ separate About + Hero bespoke editors kept as-is.
   Metrics are no longer manually maintainable by design.
 - Verified locally against production DB (5 active projects / 13 techs
   / 11 industries / 5 of 5 documented / 6 published services / 3
-  published workflow_templates): home renders "5+ / 3+ / 6+ / 100%",
-  about renders "5 / 13 / 11 / 3".
+  published workflow_templates): home rendered "5+ / 3+ / 6+ / 100%",
+  about rendered "5 / 13 / 11 / 3" (Phase 44 redefines Workflows as
+  project workflow steps and Documented Systems as a count).
 
 ### Admin-only theme toggle (light/dark)
 
@@ -2814,62 +2816,104 @@ webhooks are stored in the database.
   canonical `https://itsazhar.com`, JSON-LD present, GA4 tag present,
   sitemap.xml (31 URLs, itsazhar.com domain) and robots.txt serving.
 
-## 44. Expanded Project Industries/Categories + New Filter Panel (2026-08-04)
+## 44. Project Taxonomy + Searchable Comboboxes + Smart Filters + Drag-to-Reorder + Live Metrics (2026-08-04)
 
 ### Comprehensive option lists (`src/constants/projects.ts`)
 
-- `PROJECT_INDUSTRIES` expanded from 21 to 60 entries (all original values
-  kept first for backward compatibility; additions cover accounting,
-  advertising, agriculture, automotive, aviation, banking, biotechnology,
-  cybersecurity, energy, gaming, IoT, robotics, SaaS, startups, utilities,
-  wholesale, etc.). `ProjectIndustry` type still derived via `as const`.
-- `PROJECT_CATEGORIES` expanded from 8 to 29 entries (originals kept;
-  additions are solution-type categories: Workflow Automation, AI Agents &
-  Chatbots, Data Integration & APIs, Lead Generation, Sales/Marketing/HR/
-  Accounting Automation, Content Generation, Voice & Call Automation,
-  Analytics & Reporting, Data Extraction & OCR, Web Scraping, CRM
-  Integration, Inventory & Order Management, Internal Tools & Dashboards,
-  Client Portals, Notification & Alerting, Booking & Scheduling, Email &
-  SMS Automation, Document Generation).
+- `PROJECT_INDUSTRIES` expanded to **177 entries** (all original values kept
+  for backward compatibility; added telemedicine, agritech, D2C, marketplaces,
+  freight, warehousing, regtech/insurtech/wealthtech, K-12, gyms, podcasts,
+  drones, climate tech, solar, etc.). Alphabetical for a clean dropdown.
+- `PROJECT_CATEGORIES` expanded to **77 entries** (all originals kept;
+  additions are solution-type categories: Claim Processing, Compliance & Audit
+  Automation, Contract Lifecycle Management, Data Pipelines & ETL, DevOps &
+  Deployment Automation, Form Processing & Validation, Grant Management,
+  KYC & Identity Verification, Lead Scoring, LMS Delivery, Loyalty & Rewards,
+  Order Fulfillment, Payment Processing & Reconciliation, Pricing & Quoting,
+  Proposal & RFP Automation, Route & Dispatch Optimization, Talent Sourcing,
+  Tenant & Property Management, Timetable & Shift Scheduling, Workflow
+  Orchestration, etc.).
+- Validation (`src/lib/validation/schemas/project.ts`) stays free-text
+  (`industryItemSchema`/`categorySchema`, trim, 1-80 chars) — constants are
+  suggestions, custom values remain fully supported (DB has no enum).
+- Verified with a script: no duplicate values; every industry and category
+  (except the intentionally-ungrouped "Custom Solutions") belongs to ≥1
+  filter group; every group member exists in the constants.
 
-### Custom values now allowed (validation + admin form)
+### Searchable comboboxes (`src/components/ui/searchable-select.tsx`, new)
 
-- `src/lib/validation/schemas/project.ts`: industry items and category
-  relaxed from `z.enum(PROJECT_*)` to plain strings (`industryItemSchema`,
-  `categorySchema`; trim, 1-80 chars, max 20 industries, industry min 1,
-  category required). `projectFilterSchema.category` relaxed to
-  `z.string()`. DB statuses remain enums.
-- `src/components/admin/projects/project-form.tsx`: removed the
-  `VALID_INDUSTRIES`/`VALID_CATEGORIES` filters in `defaultFields()` — a
-  stored custom industry/category survives editing instead of being
-  dropped or reset to a default.
-- `src/components/admin/projects/project-general.tsx`: below the industry
-  checkbox grid there is now a `TagInput` for custom industries
-  (custom-only subset, merged back into `fields.industry`); the Category
-  select is now a free-text `<input list>` datalist combobox (pick a
-  preset or type a custom category).
+- One reusable combobox powers both fields in the admin project form.
+- **Search:** type to filter options (case-insensitive substring), keyboard
+  navigation (↑/↓/Enter/Escape/Tab), click-outside closes.
+- **Custom values:** when the typed text matches no option, an
+  "Add «value»" row appears; Enter or click adds it (multi keeps it as a tag,
+  single selects it). Multi-select also commits a pending custom value on
+  blur/outside-click and respects `maxSelections` (20).
+- **Industry** (`project-general.tsx`): replaces the old checkbox grid +
+  TagInput with a multi-select combobox (177 presets + any existing custom
+  values pre-merged into the option list).
+- **Category** (`project-general.tsx`): replaces the `<input list>` datalist
+  with a single-select combobox (77 presets + current custom value).
+  The old `TagInput` for industries and the `datalist` were removed.
 
-### Public Projects page filter panel (`src/components/projects-page.tsx`)
+### Smart, hierarchical filters on the public Projects page
 
-- The always-open industry tab list is gone. A **Filter** button (outline,
-  SlidersHorizontal icon, chevron that rotates, active-filter count badge)
-  toggles an animated collapsible panel.
-- Panel sections: **Industry** (all 60 presets + any custom values found
-  in project data, each with project count; 0-count industries trigger
-  the existing "Coming Soon" CTA), **Category** (presets + customs),
-  **Status** (multi-select: Production Ready / In Development / Prototype
-  / Completed), **Featured only** switch, and a Clear all button.
-- Active filters are shown as removable chips under the Filter button
-  with a Clear all link; the "no results" empty state now clears every
-  filter (search, industry, category, status, featured).
-- URL sync: `?industry=` and `?category=` params (replaceState + popstate
-  both directions); status/featured are session-only.
-- New content keys in `src/lib/content/defaults/projects.ts`
-  (`filters.button/industries/categories/status/featuredOnly/clearAll/
-activeCount`) — deep-merged defaults, so existing DB content rows need
-  no migration; all editable at Admin > Content > Projects.
+- New `PROJECT_FILTER_GROUPS` (18 curated buckets, e.g. **Healthcare &
+  Wellness**, Finance & FinTech, Logistics & Supply Chain, Technology &
+  Software...) — each maps a broad label to its related industries **and**
+  categories. Selecting "Healthcare & Wellness" matches Medical/HealthTech/
+  Hospitals & Clinics/Pharmaceuticals/Telemedicine etc. automatically.
+- `projectMatchesGroup()`, `getFilterGroupForValue()`, `isUngroupedProject()`
+  helpers in the constants module; the long industry/category chip lists are
+  gone — the panel shows only: All, the 18 groups (each with live project
+  count), an "Other & Custom" fallback chip (catches any ungrouped custom
+  value so nothing is ever unreachable), Status chips, Featured switch.
+- URL sync switched to `?group=`; legacy `?industry=` / `?category=` links
+  are auto-mapped to their owning group on load and popstate.
+- New content key `filters.groups` ("Industry & Category") in
+  `src/lib/content/defaults/projects.ts` (deep-merged, no migration needed).
+
+### Admin: display order + drag-and-drop reordering
+
+- Admin list page (`/admin/projects`) fetches `getProjects({ sort:
+"order_asc", pageSize: 100 })`; new `order_asc` sort in the repository
+  switch and `SORT_OPTIONS`.
+- `project-card.tsx` shows each project's current display position (numbered
+  badge + grip icon) without opening the edit page.
+- `project-list.tsx` wraps the cards in framer-motion `Reorder.Group`
+  (same pattern as Settings > Navigation): dragging a card reorders the list
+  optimistically, then `reorderProjectsAction(orderedIds)` persists
+  1-based `order` values for the full payload; "Saving new order..." state,
+  revert-on-error toast, `router.refresh()` on success. Reorder is disabled
+  while a search query is active (filtered subset reorder would corrupt
+  order values). The form's numeric Display Order field remains as a manual
+  override (with a hint pointing to the drag UI).
+- `src/lib/projects/repository.ts` -> `reorderProjects(orderedIds)`:
+  validates payload (non-empty, no duplicates, all ids exist), then applies
+  `order = index+1` to every id. Server action does `auth.getUser()`,
+  `revalidatePath` for `/`, `/projects`, `/admin/projects`, logs audit
+  (`projects.reordered`) and fires the new `project.reordered` notification
+  event (registered in `src/lib/notifications/events.ts`).
+- Public pages (`getPublicProjectsAction` sorts by `order` asc) and the
+  homepage showcase reflect the new order automatically.
+
+### Homepage metrics — always real data (`src/lib/stats/index.ts`)
+
+- "Automation Systems Built" = published (active) projects.
+- "Workflows Created" = **sum of documented workflow steps across published
+  projects** (was: count of published `workflow_templates`, which under-
+  reported e.g. 3 vs 8 projects).
+- "AI Automation Services" = published `services`.
+- "Documented Systems" = **count** of published projects that are fully
+  documented (challenge + solution + impact + workflow[] non-empty) — was a
+  percentage; now renders as a plain count matching the other metrics.
+- Everything is computed at render time from the DB (mock fallback for
+  public pages only), so it stays accurate as content is added/edited/
+  unpublished/deleted. About page "By the Numbers" Workflows also inherits
+  the project-derived count.
 
 ### Verified
 
-- `npm run lint` clean (1 pre-existing `<img>` warning, markdown.tsx:53).
-- `npm run build` green (70 routes).
+- `npm run lint` clean.
+- `npx tsc --noEmit` clean.
+- `npm run build` green (70+ routes).

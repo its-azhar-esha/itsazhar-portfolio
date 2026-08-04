@@ -7,13 +7,13 @@ export interface LiveStats {
   projects: number;
   /** Published services — "AI Automation Services". */
   services: number;
-  /** Published workflow templates — "Workflows Created" / "Workflows". */
+  /** Total documented workflow steps across published projects — "Workflows Created". */
   workflows: number;
   /** Unique technologies used across published projects. */
   technologies: number;
   /** Unique industries served across published projects. */
   industries: number;
-  /** Percentage of published projects that are fully documented (0–100). */
+  /** Number of published projects that are fully documented — "Documented Systems". */
   documentation: number;
 }
 
@@ -27,15 +27,12 @@ interface ProjectSample {
   impact: string | null;
 }
 
-function deriveStats(
-  rows: ProjectSample[],
-  servicesCount: number,
-  workflowsCount: number,
-): LiveStats {
+function deriveStats(rows: ProjectSample[], servicesCount: number): LiveStats {
   const published = rows.filter((r) => r.status === "active");
   const technologies = new Set<string>();
   const industries = new Set<string>();
   let documented = 0;
+  let workflowSteps = 0;
 
   for (const p of published) {
     for (const t of p.technologies ?? []) {
@@ -44,6 +41,7 @@ function deriveStats(
     for (const i of p.industry ?? []) {
       if (i.trim()) industries.add(i.trim());
     }
+    workflowSteps += (p.workflow ?? []).filter((s) => s.trim()).length;
     const fullyDocumented =
       Boolean(p.challenge?.trim()) &&
       Boolean(p.solution?.trim()) &&
@@ -55,10 +53,10 @@ function deriveStats(
   return {
     projects: published.length,
     services: servicesCount,
-    workflows: workflowsCount,
+    workflows: workflowSteps,
     technologies: technologies.size,
     industries: industries.size,
-    documentation: published.length > 0 ? Math.round((documented / published.length) * 100) : 100,
+    documentation: documented,
   };
 }
 
@@ -69,7 +67,7 @@ function deriveStats(
 export async function getPublicStats(): Promise<LiveStats> {
   try {
     const supabase = await createClient();
-    const [projectsRes, servicesRes, workflowsRes] = await Promise.all([
+    const [projectsRes, servicesRes] = await Promise.all([
       supabase
         .from("projects")
         .select("status, technologies, industry, challenge, solution, workflow, impact")
@@ -78,24 +76,14 @@ export async function getPublicStats(): Promise<LiveStats> {
         .from("services")
         .select("id", { count: "exact", head: true })
         .eq("status", "published"),
-      supabase
-        .from("workflow_templates")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "published"),
     ]);
     if (projectsRes.error) throw new Error(projectsRes.error.message);
     return deriveStats(
       (projectsRes.data ?? []) as unknown as ProjectSample[],
       servicesRes.count ?? 0,
-      workflowsRes.count ?? 0,
     );
   } catch {
     const published = MOCK_PROJECTS.filter((p) => p.status === "active");
-    const workflows = published.reduce((sum, p) => sum + (p.workflow?.length ?? 0), 0);
-    return deriveStats(
-      published,
-      MOCK_SERVICES.filter((s) => s.status === "published").length,
-      workflows,
-    );
+    return deriveStats(published, MOCK_SERVICES.filter((s) => s.status === "published").length);
   }
 }

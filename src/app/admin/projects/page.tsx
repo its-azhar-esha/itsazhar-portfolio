@@ -2,7 +2,7 @@ import { getProjects } from "@/lib/projects";
 import { ProjectList } from "@/components/admin/projects/project-list";
 
 export default async function AdminProjectsPage() {
-  const result = await getProjects();
+  const result = await getProjects({ sort: "order_asc", pageSize: 100 });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">

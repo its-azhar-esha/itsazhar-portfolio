@@ -58,6 +58,7 @@ export interface ProjectsPageContent {
     button: string;
     industries: string;
     categories: string;
+    groups: string;
     status: string;
     featuredOnly: string;
     clearAll: string;
@@ -83,6 +84,7 @@ export const DEFAULT_PROJECTS_CONTENT: ProjectsPageContent = {
     button: "Filter",
     industries: "Industry",
     categories: "Category",
+    groups: "Industry & Category",
     status: "Status",
     featuredOnly: "Featured only",
     clearAll: "Clear all",

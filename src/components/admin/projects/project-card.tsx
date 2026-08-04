@@ -4,12 +4,14 @@ import type { DbProject } from "@/types/project";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateBD } from "@/lib/format/dates";
+import { GripVertical } from "lucide-react";
 
 interface ProjectCardProps {
   project: DbProject;
+  displayOrder?: number;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, displayOrder }: ProjectCardProps) {
   const statusColor: Record<string, string> = {
     active: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     draft: "bg-amber-500/10 text-amber-500 border-amber-500/20",
@@ -19,6 +21,14 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Card className="hover:border-primary/30 transition-all duration-200 hover:shadow-sm">
       <CardContent className="flex items-start gap-4 p-4 sm:p-5">
+        {displayOrder !== undefined && (
+          <div className="text-muted-foreground flex shrink-0 items-center gap-1 pt-0.5">
+            <GripVertical className="h-4 w-4" />
+            <span className="bg-muted text-foreground/80 flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-xs font-semibold tabular-nums">
+              {displayOrder}
+            </span>
+          </div>
+        )}
         <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
           <span className="text-sm font-bold">{project.title.charAt(0)}</span>
         </div>

@@ -43,6 +43,13 @@ export const NOTIFICATION_EVENTS: NotificationEventDef[] = [
     defaultPriority: "normal",
   },
   {
+    id: "project.reordered",
+    category: "content",
+    label: "Projects reordered",
+    description: "The display order of projects was changed.",
+    defaultPriority: "low",
+  },
+  {
     id: "blog.created",
     category: "content",
     label: "Blog post created",

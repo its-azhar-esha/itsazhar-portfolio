@@ -68,6 +68,9 @@ export async function getProjects(
           .order("featured", { ascending: false })
           .order("created_at", { ascending: false });
         break;
+      case "order_asc":
+        builder = builder.order("order", { ascending: true });
+        break;
     }
 
     const { data, error, count } = await builder.range(from, to);
@@ -174,5 +177,49 @@ export async function deleteProject(id: string, actorId?: string): Promise<Resul
     return ok(undefined);
   } catch (err) {
     return fail(err instanceof Error ? err.message : "Failed to delete project");
+  }
+}
+
+/**
+ * Reorders projects so their `order` values match the given id sequence
+ * (1-based). Fetches current rows first, then applies the new order to
+ * every id in the payload. Returns the updated rows.
+ */
+export async function reorderProjects(orderedIds: string[]): Promise<Result<DbProject[]>> {
+  try {
+    if (orderedIds.length === 0) return fail("No projects provided to reorder.");
+    if (new Set(orderedIds).size !== orderedIds.length) {
+      return fail("Duplicate project ids in reorder payload.");
+    }
+
+    const supabase = await createClient();
+    const { data, error: fetchError } = await supabase
+      .from(TABLE)
+      .select("id")
+      .in("id", orderedIds);
+    if (fetchError) return fail(fetchError.message);
+
+    const rows = (data ?? []) as unknown as { id: string }[];
+    const existing = new Set(rows.map((r) => r.id));
+    const unknown = orderedIds.filter((id) => !existing.has(id));
+    if (unknown.length > 0) return fail(`Unknown project ids: ${unknown.join(", ")}`);
+
+    const updates = orderedIds.map((id, index) =>
+      supabase
+        .from(TABLE)
+        .update({ order: index + 1, updated_at: new Date().toISOString() } as never)
+        .eq("id", id)
+        .select()
+        .single(),
+    );
+
+    const results = await Promise.all(updates);
+    for (const res of results) {
+      if (res.error) return fail(res.error.message);
+    }
+
+    return ok(results.map((r) => rowToDbProject(r.data as unknown as ProjectRow)));
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to reorder projects");
   }
 }

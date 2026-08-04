@@ -21,7 +21,7 @@ import {
 import type { Result } from "@/lib/result";
 import { fail } from "@/lib/result";
 import { resolveMediaValue, resolveMediaValues } from "@/lib/media/repository";
-import { createProject, updateProject, deleteProject } from "./repository";
+import { createProject, updateProject, deleteProject, reorderProjects } from "./repository";
 import { rowToDbProject } from "./mappers";
 import { notify } from "@/lib/notifications/sender";
 
@@ -132,6 +132,39 @@ export async function deleteProjectAction(id: string): Promise<Result<void>> {
 
 export async function publishProjectAction(id: string): Promise<Result<DbProject>> {
   return updateProjectAction(id, { status: "active" });
+}
+
+/**
+ * Persists a new display order for the given project ids (first = position 1).
+ * Public pages read `order` ascending, so this immediately changes the order
+ * shown on /projects and the homepage showcase.
+ */
+export async function reorderProjectsAction(orderedIds: string[]): Promise<Result<DbProject[]>> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail("Authentication required.");
+
+    const result = await reorderProjects(orderedIds);
+    if (result.success) {
+      revalidatePath("/admin/projects");
+      revalidatePath("/projects");
+      revalidatePath("/");
+      await logAudit({
+        action: "projects.reordered",
+        entity: "projects",
+        entityId: "list",
+        detail: { orderedIds },
+      });
+      await notify("project.reordered", { fields: { Count: String(orderedIds.length) } });
+    }
+    return result;
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : "Failed to reorder projects");
+  }
 }
 
 /* ─── Public read server actions ─── */

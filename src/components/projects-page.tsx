@@ -26,8 +26,11 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
-  PROJECT_INDUSTRIES,
-  PROJECT_CATEGORIES,
+  PROJECT_FILTER_GROUPS,
+  OTHER_GROUP_LABEL,
+  getFilterGroupForValue,
+  projectMatchesGroup,
+  isUngroupedProject,
   PUBLIC_PROJECT_STATUSES,
 } from "@/constants/projects";
 import { getProjects } from "@/lib/projects-data";
@@ -85,15 +88,17 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
   const [loading, setLoading] = React.useState(true);
   const [selectedProject, setSelectedProject] = React.useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [activeIndustry, setActiveIndustry] = React.useState<string>(() => {
+  const [activeGroup, setActiveGroup] = React.useState<string>(() => {
     if (typeof window === "undefined") return ALL_LABEL;
     const params = new URLSearchParams(window.location.search);
-    const ind = params.get("industry");
-    return ind || ALL_LABEL;
-  });
-  const [activeCategory, setActiveCategory] = React.useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    return new URLSearchParams(window.location.search).get("category") ?? "";
+    const group = params.get("group");
+    if (group) return group;
+    const legacy = params.get("industry") ?? params.get("category");
+    if (legacy) {
+      const mapped = getFilterGroupForValue(legacy);
+      if (mapped) return mapped.label;
+    }
+    return ALL_LABEL;
   });
   const [activeStatuses, setActiveStatuses] = React.useState<string[]>([]);
   const [featuredOnly, setFeaturedOnly] = React.useState(false);
@@ -117,66 +122,58 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     });
   }, []);
 
-  const industryOptions = React.useMemo(() => {
-    const presets = PROJECT_INDUSTRIES as readonly string[];
-    const customs = new Set<string>();
-    for (const p of projects) {
-      const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-      for (const ind of inds) {
-        if (!presets.includes(ind)) customs.add(ind);
-      }
-    }
-    return [...presets, ...[...customs].sort()];
-  }, [projects]);
-
-  const categoryOptions = React.useMemo(() => {
-    const presets = PROJECT_CATEGORIES as readonly string[];
-    const customs = new Set<string>();
-    for (const p of projects) {
-      if (p.category && !presets.includes(p.category)) customs.add(p.category);
-    }
-    return [...presets, ...[...customs].sort()];
-  }, [projects]);
-
   React.useEffect(() => {
     const onPopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const ind = params.get("industry");
-      setActiveIndustry(ind && ind !== ALL_LABEL ? ind : ALL_LABEL);
-      setActiveCategory(params.get("category") ?? "");
+      const group = params.get("group");
+      if (group) {
+        setActiveGroup(group);
+        return;
+      }
+      const legacy = params.get("industry") ?? params.get("category");
+      if (legacy) {
+        const mapped = getFilterGroupForValue(legacy);
+        if (mapped) {
+          setActiveGroup(mapped.label);
+          return;
+        }
+      }
+      setActiveGroup(ALL_LABEL);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const getIndustryCounts = React.useCallback(() => {
+  const groupCounts = React.useMemo(() => {
     const counts: Record<string, number> = { [ALL_LABEL]: projects.length };
+    for (const group of PROJECT_FILTER_GROUPS) counts[group.label] = 0;
+    counts[OTHER_GROUP_LABEL] = 0;
     for (const p of projects) {
       const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-      for (const ind of inds) {
-        counts[ind] = (counts[ind] || 0) + 1;
+      let matched = false;
+      for (const group of PROJECT_FILTER_GROUPS) {
+        if (projectMatchesGroup(group, inds, p.category ?? "")) {
+          counts[group.label] += 1;
+          matched = true;
+        }
       }
+      if (!matched) counts[OTHER_GROUP_LABEL] += 1;
     }
     return counts;
   }, [projects]);
 
   const filterProjects = React.useCallback(
-    (
-      industry: string,
-      category: string,
-      statuses: string[],
-      featuredOnly: boolean,
-      query: string,
-    ): Project[] => {
+    (group: string, statuses: string[], featuredOnly: boolean, query: string): Project[] => {
       let result = projects;
-      if (industry !== ALL_LABEL) {
+      if (group !== ALL_LABEL) {
         result = result.filter((p) => {
           const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-          return inds.includes(industry);
+          if (group === OTHER_GROUP_LABEL) {
+            return isUngroupedProject(inds, p.category ?? "");
+          }
+          const groupDef = PROJECT_FILTER_GROUPS.find((g) => g.label === group);
+          return !!groupDef && projectMatchesGroup(groupDef, inds, p.category ?? "");
         });
-      }
-      if (category) {
-        result = result.filter((p) => p.category === category);
       }
       if (statuses.length > 0) {
         result = result.filter((p) => !!p.status && statuses.includes(p.status));
@@ -199,39 +196,27 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     [projects],
   );
 
-  const updateFilters = React.useCallback((industry: string, category: string) => {
-    setActiveIndustry(industry);
-    setActiveCategory(category);
+  const updateFilters = React.useCallback((group: string) => {
+    setActiveGroup(group);
     const params = new URLSearchParams(window.location.search);
-    if (industry === ALL_LABEL) {
-      params.delete("industry");
+    if (group === ALL_LABEL) {
+      params.delete("group");
     } else {
-      params.set("industry", industry);
+      params.set("group", group);
     }
-    if (category) {
-      params.set("category", category);
-    } else {
-      params.delete("category");
-    }
+    params.delete("industry");
+    params.delete("category");
     const qs = params.toString();
     const url = qs ? `/projects?${qs}` : "/projects";
     window.history.replaceState(null, "", url);
   }, []);
 
-  const updateIndustry = React.useCallback(
-    (industry: string) => {
-      if (industry === activeIndustry) return;
-      updateFilters(industry, activeCategory);
+  const updateGroup = React.useCallback(
+    (group: string) => {
+      if (group === activeGroup) return;
+      updateFilters(group);
     },
-    [activeIndustry, activeCategory, updateFilters],
-  );
-
-  const updateCategory = React.useCallback(
-    (category: string) => {
-      if (category === activeCategory) return;
-      updateFilters(activeIndustry, category);
-    },
-    [activeCategory, activeIndustry, updateFilters],
+    [activeGroup, updateFilters],
   );
 
   const toggleStatus = React.useCallback((status: string) => {
@@ -244,20 +229,15 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     setSearchQuery("");
     setActiveStatuses([]);
     setFeaturedOnly(false);
-    updateFilters(ALL_LABEL, "");
+    updateFilters(ALL_LABEL);
   }, [updateFilters]);
 
-  const industryCounts = React.useMemo(() => getIndustryCounts(), [getIndustryCounts]);
-
   const activeFilterCount =
-    (activeIndustry !== ALL_LABEL ? 1 : 0) +
-    (activeCategory ? 1 : 0) +
-    activeStatuses.length +
-    (featuredOnly ? 1 : 0);
+    (activeGroup !== ALL_LABEL ? 1 : 0) + activeStatuses.length + (featuredOnly ? 1 : 0);
 
   const filtered = React.useMemo(
-    () => filterProjects(activeIndustry, activeCategory, activeStatuses, featuredOnly, searchQuery),
-    [activeIndustry, activeCategory, activeStatuses, featuredOnly, searchQuery, filterProjects],
+    () => filterProjects(activeGroup, activeStatuses, featuredOnly, searchQuery),
+    [activeGroup, activeStatuses, featuredOnly, searchQuery, filterProjects],
   );
 
   const clearSearch = () => {
@@ -394,15 +374,8 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
 
               {activeFilterCount > 0 && (
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {activeIndustry !== ALL_LABEL && (
-                    <FilterChip
-                      label={activeIndustry}
-                      active
-                      onClick={() => updateIndustry(ALL_LABEL)}
-                    />
-                  )}
-                  {activeCategory && (
-                    <FilterChip label={activeCategory} active onClick={() => updateCategory("")} />
+                  {activeGroup !== ALL_LABEL && (
+                    <FilterChip label={activeGroup} active onClick={() => updateGroup(ALL_LABEL)} />
                   )}
                   {activeStatuses.map((status) => (
                     <FilterChip
@@ -441,46 +414,36 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
                   <div className="border-border/60 bg-card/60 mx-auto max-w-3xl space-y-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm">
                     <div>
                       <p className="text-muted-foreground mb-2.5 text-xs font-medium tracking-wider uppercase">
-                        {content.filters.industries}
+                        {content.filters.groups}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <FilterChip
                           label={content.filters.all}
-                          active={activeIndustry === ALL_LABEL}
+                          active={activeGroup === ALL_LABEL}
                           count={projects.length}
-                          onClick={() => updateIndustry(ALL_LABEL)}
+                          onClick={() => updateGroup(ALL_LABEL)}
                         />
-                        {industryOptions.map((ind) => (
+                        {PROJECT_FILTER_GROUPS.map((group) => (
                           <FilterChip
-                            key={ind}
-                            label={ind}
-                            active={activeIndustry === ind}
-                            count={industryCounts[ind] || 0}
-                            onClick={() => updateIndustry(ind)}
+                            key={group.label}
+                            label={group.label}
+                            active={activeGroup === group.label}
+                            count={groupCounts[group.label] || 0}
+                            onClick={() => updateGroup(group.label)}
                           />
                         ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-muted-foreground mb-2.5 text-xs font-medium tracking-wider uppercase">
-                        {content.filters.categories}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
                         <FilterChip
-                          label={content.filters.all}
-                          active={!activeCategory}
-                          onClick={() => updateCategory("")}
+                          label={OTHER_GROUP_LABEL}
+                          active={activeGroup === OTHER_GROUP_LABEL}
+                          count={groupCounts[OTHER_GROUP_LABEL] || 0}
+                          onClick={() => updateGroup(OTHER_GROUP_LABEL)}
                         />
-                        {categoryOptions.map((cat) => (
-                          <FilterChip
-                            key={cat}
-                            label={cat}
-                            active={activeCategory === cat}
-                            onClick={() => updateCategory(cat)}
-                          />
-                        ))}
                       </div>
+                      <p className="text-muted-foreground/70 mt-2 text-xs">
+                        Selecting a broad category includes all related industries and categories
+                        (e.g. Healthcare & Wellness covers clinics, hospitals, healthtech,
+                        pharmaceuticals and more).
+                      </p>
                     </div>
 
                     <div>
@@ -523,9 +486,7 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
             </AnimatePresence>
           </div>
 
-          {filtered.length === 0 &&
-          activeIndustry !== ALL_LABEL &&
-          industryCounts[activeIndustry] === 0 ? (
+          {filtered.length === 0 && activeGroup !== ALL_LABEL && groupCounts[activeGroup] === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -533,7 +494,7 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
             >
               <p className="text-lg font-medium">{content.industryEmpty.comingSoon}</p>
               <p className="text-muted-foreground mt-2 text-sm">
-                {content.industryEmpty.description.replace("{industry}", activeIndustry)}
+                {content.industryEmpty.description.replace("{industry}", activeGroup)}
               </p>
               <p className="text-muted-foreground mt-1 text-sm">{content.industryEmpty.hint}</p>
               <p className="text-muted-foreground mt-1 text-sm">
@@ -543,7 +504,7 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
                 <Link href="/contact">
                   <Button>{content.industryEmpty.discussLabel}</Button>
                 </Link>
-                <Button variant="outline" onClick={() => updateIndustry(ALL_LABEL)}>
+                <Button variant="outline" onClick={() => updateGroup(ALL_LABEL)}>
                   {content.industryEmpty.returnAll}
                 </Button>
               </div>

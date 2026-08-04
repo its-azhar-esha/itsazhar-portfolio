@@ -1,13 +1,13 @@
 "use client";
 
+import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TagInput } from "@/components/ui/tag-input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PROJECT_INDUSTRIES, PROJECT_CATEGORIES, DB_PROJECT_STATUSES } from "@/constants/projects";
 import type { FormFields } from "./project-form";
-
-const VALID_INDUSTRIES = PROJECT_INDUSTRIES as readonly string[];
 
 interface GeneralSectionProps {
   fields: FormFields;
@@ -16,6 +16,25 @@ interface GeneralSectionProps {
 }
 
 export function ProjectGeneral({ fields, errors, onChange }: GeneralSectionProps) {
+  const industryPresets = PROJECT_INDUSTRIES as readonly string[];
+  const categoryPresets = PROJECT_CATEGORIES as readonly string[];
+
+  const industryOptions = React.useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...industryPresets,
+          ...fields.industry.filter((i) => !industryPresets.includes(i)),
+        ]),
+      ),
+    [fields.industry, industryPresets],
+  );
+
+  const categoryOptions = React.useMemo(
+    () => Array.from(new Set([...categoryPresets, ...(fields.category ? [fields.category] : [])])),
+    [fields.category, categoryPresets],
+  );
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 sm:grid-cols-2">
@@ -44,57 +63,30 @@ export function ProjectGeneral({ fields, errors, onChange }: GeneralSectionProps
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Industry</Label>
-          <div className="border-border/40 grid grid-cols-2 gap-2 rounded-lg border p-3">
-            {PROJECT_INDUSTRIES.map((ind) => {
-              const checked = fields.industry.includes(ind);
-              return (
-                <label
-                  key={ind}
-                  className="hover:text-foreground flex cursor-pointer items-center gap-2 text-sm transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {
-                      const next = checked
-                        ? fields.industry.filter((i) => i !== ind)
-                        : [...fields.industry, ind];
-                      onChange({ industry: next });
-                    }}
-                    className="border-border text-primary focus:ring-primary/20 h-4 w-4 rounded"
-                  />
-                  {ind}
-                </label>
-              );
-            })}
-          </div>
-          <TagInput
-            id="custom-industries"
-            value={fields.industry.filter((i) => !VALID_INDUSTRIES.includes(i))}
-            onChange={(tags) => {
-              const presets = fields.industry.filter((i) => VALID_INDUSTRIES.includes(i));
-              onChange({ industry: Array.from(new Set([...presets, ...tags])) });
-            }}
-            placeholder="Type a custom industry and press Enter"
-            hint="Don't see your industry? Add it here."
+          <SearchableSelect
+            multiple
+            options={industryOptions}
+            value={fields.industry}
+            onChange={(next) => onChange({ industry: next as string[] })}
+            placeholder="Search industries or type to add..."
+            searchPlaceholder="Search industries..."
+            hint="Search the list, or type a custom industry and press Enter."
+            maxSelections={20}
+            id="industries"
           />
           {errors.industry && <p className="text-xs text-red-500">{errors.industry}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <input
-            id="category"
-            list="project-category-options"
+          <SearchableSelect
+            options={categoryOptions}
             value={fields.category}
-            onChange={(e) => onChange({ category: e.target.value })}
+            onChange={(next) => onChange({ category: next as string })}
             placeholder="Pick a category or type a custom one"
-            className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-primary/20 flex h-10 w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 focus:ring-1 focus:outline-none"
+            searchPlaceholder="Search categories..."
+            hint="Search the list, or type a custom category and press Enter."
+            id="category"
           />
-          <datalist id="project-category-options">
-            {PROJECT_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} />
-            ))}
-          </datalist>
           {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
         </div>
       </div>
@@ -137,6 +129,9 @@ export function ProjectGeneral({ fields, errors, onChange }: GeneralSectionProps
             value={String(fields.order)}
             onChange={(e) => onChange({ order: parseInt(e.target.value) || 0 })}
           />
+          <p className="text-muted-foreground text-xs">
+            Tip: drag projects into place on the Projects list page — order updates automatically.
+          </p>
         </div>
       </div>
 

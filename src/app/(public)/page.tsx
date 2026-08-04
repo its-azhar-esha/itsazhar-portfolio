@@ -51,7 +51,7 @@ export default async function Home() {
     { value: `${stats.projects}+`, label: "Automation Systems Built" },
     { value: `${stats.workflows}+`, label: "Workflows Created" },
     { value: `${stats.services}+`, label: "AI Automation Services" },
-    { value: `${stats.documentation}%`, label: "Documented Systems" },
+    { value: `${stats.documentation}`, label: "Documented Systems" },
   ];
 
   return (
