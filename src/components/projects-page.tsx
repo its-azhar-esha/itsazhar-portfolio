@@ -2,10 +2,20 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, FolderKanban, Play, Search, X } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  FolderKanban,
+  Play,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -14,6 +24,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import {
+  PROJECT_INDUSTRIES,
+  PROJECT_CATEGORIES,
+  PUBLIC_PROJECT_STATUSES,
+} from "@/constants/projects";
 import { getProjects } from "@/lib/projects-data";
 import dynamic from "next/dynamic";
 
@@ -36,6 +52,34 @@ const statusColors: Record<string, string> = {
   Completed: "text-muted-foreground bg-muted-foreground/10 border-muted-foreground/20",
 };
 
+interface FilterChipProps {
+  label: string;
+  active: boolean;
+  count?: number;
+  onClick: () => void;
+}
+
+function FilterChip({ label, active, count, onClick }: FilterChipProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200",
+        active
+          ? "border-primary/50 bg-primary/15 text-foreground shadow-[0_0_12px_-4px_hsl(var(--primary)/0.5)]"
+          : "border-border/60 bg-background/80 text-muted-foreground hover:border-primary/40 hover:bg-accent/30 hover:text-foreground backdrop-blur-sm",
+      )}
+    >
+      <span>{label}</span>
+      {count !== undefined && (
+        <span className={cn("ml-1.5 text-[11px]", count === 0 ? "opacity-40" : "opacity-60")}>
+          ({count})
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -47,8 +91,14 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     const ind = params.get("industry");
     return ind || ALL_LABEL;
   });
+  const [activeCategory, setActiveCategory] = React.useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("category") ?? "";
+  });
+  const [activeStatuses, setActiveStatuses] = React.useState<string[]>([]);
+  const [featuredOnly, setFeaturedOnly] = React.useState(false);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const searchRef = React.useRef<HTMLInputElement>(null);
-  const filterRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
   const [isMac] = React.useState(
     () => typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac"),
   );
@@ -67,14 +117,25 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     });
   }, []);
 
-  const industries = React.useMemo(() => {
-    const set = new Set<string>();
-    set.add(ALL_LABEL);
+  const industryOptions = React.useMemo(() => {
+    const presets = PROJECT_INDUSTRIES as readonly string[];
+    const customs = new Set<string>();
     for (const p of projects) {
       const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
-      for (const ind of inds) set.add(ind);
+      for (const ind of inds) {
+        if (!presets.includes(ind)) customs.add(ind);
+      }
     }
-    return Array.from(set);
+    return [...presets, ...[...customs].sort()];
+  }, [projects]);
+
+  const categoryOptions = React.useMemo(() => {
+    const presets = PROJECT_CATEGORIES as readonly string[];
+    const customs = new Set<string>();
+    for (const p of projects) {
+      if (p.category && !presets.includes(p.category)) customs.add(p.category);
+    }
+    return [...presets, ...[...customs].sort()];
   }, [projects]);
 
   React.useEffect(() => {
@@ -82,6 +143,7 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
       const params = new URLSearchParams(window.location.search);
       const ind = params.get("industry");
       setActiveIndustry(ind && ind !== ALL_LABEL ? ind : ALL_LABEL);
+      setActiveCategory(params.get("category") ?? "");
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -99,13 +161,28 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
   }, [projects]);
 
   const filterProjects = React.useCallback(
-    (industry: string, query: string): Project[] => {
+    (
+      industry: string,
+      category: string,
+      statuses: string[],
+      featuredOnly: boolean,
+      query: string,
+    ): Project[] => {
       let result = projects;
       if (industry !== ALL_LABEL) {
         result = result.filter((p) => {
           const inds = Array.isArray(p.industry) ? p.industry : [p.industry];
           return inds.includes(industry);
         });
+      }
+      if (category) {
+        result = result.filter((p) => p.category === category);
+      }
+      if (statuses.length > 0) {
+        result = result.filter((p) => !!p.status && statuses.includes(p.status));
+      }
+      if (featuredOnly) {
+        result = result.filter((p) => p.featured);
       }
       if (query.trim()) {
         const q = query.toLowerCase();
@@ -122,28 +199,65 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     [projects],
   );
 
+  const updateFilters = React.useCallback((industry: string, category: string) => {
+    setActiveIndustry(industry);
+    setActiveCategory(category);
+    const params = new URLSearchParams(window.location.search);
+    if (industry === ALL_LABEL) {
+      params.delete("industry");
+    } else {
+      params.set("industry", industry);
+    }
+    if (category) {
+      params.set("category", category);
+    } else {
+      params.delete("category");
+    }
+    const qs = params.toString();
+    const url = qs ? `/projects?${qs}` : "/projects";
+    window.history.replaceState(null, "", url);
+  }, []);
+
   const updateIndustry = React.useCallback(
     (industry: string) => {
       if (industry === activeIndustry) return;
-      setActiveIndustry(industry);
-      const params = new URLSearchParams(window.location.search);
-      if (industry === ALL_LABEL) {
-        params.delete("industry");
-      } else {
-        params.set("industry", industry);
-      }
-      const qs = params.toString();
-      const url = qs ? `/projects?${qs}` : "/projects";
-      window.history.replaceState(null, "", url);
+      updateFilters(industry, activeCategory);
     },
-    [activeIndustry],
+    [activeIndustry, activeCategory, updateFilters],
   );
+
+  const updateCategory = React.useCallback(
+    (category: string) => {
+      if (category === activeCategory) return;
+      updateFilters(activeIndustry, category);
+    },
+    [activeCategory, activeIndustry, updateFilters],
+  );
+
+  const toggleStatus = React.useCallback((status: string) => {
+    setActiveStatuses((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status],
+    );
+  }, []);
+
+  const clearAllFilters = React.useCallback(() => {
+    setSearchQuery("");
+    setActiveStatuses([]);
+    setFeaturedOnly(false);
+    updateFilters(ALL_LABEL, "");
+  }, [updateFilters]);
 
   const industryCounts = React.useMemo(() => getIndustryCounts(), [getIndustryCounts]);
 
+  const activeFilterCount =
+    (activeIndustry !== ALL_LABEL ? 1 : 0) +
+    (activeCategory ? 1 : 0) +
+    activeStatuses.length +
+    (featuredOnly ? 1 : 0);
+
   const filtered = React.useMemo(
-    () => filterProjects(activeIndustry, searchQuery),
-    [activeIndustry, searchQuery, filterProjects],
+    () => filterProjects(activeIndustry, activeCategory, activeStatuses, featuredOnly, searchQuery),
+    [activeIndustry, activeCategory, activeStatuses, featuredOnly, searchQuery, filterProjects],
   );
 
   const clearSearch = () => {
@@ -161,27 +275,6 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
-
-  const onFilterKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    let newIndex = -1;
-    if (e.key === "ArrowRight") {
-      newIndex = (index + 1) % industries.length;
-    } else if (e.key === "ArrowLeft") {
-      newIndex = (index - 1 + industries.length) % industries.length;
-    } else if (e.key === "Home") {
-      newIndex = 0;
-    } else if (e.key === "End") {
-      newIndex = industries.length - 1;
-    } else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      updateIndustry(industries[index]);
-      return;
-    }
-    if (newIndex >= 0) {
-      e.preventDefault();
-      filterRefs.current[newIndex]?.focus();
-    }
-  };
 
   if (loading) {
     return (
@@ -276,45 +369,158 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
               )}
             </div>
 
-            <div
-              role="tablist"
-              aria-label="Filter by industry"
-              className="flex flex-wrap justify-center gap-2"
-            >
-              {industries.map((ind, i) => {
-                const count = industryCounts[ind];
-                const isActive = activeIndustry === ind;
-                return (
+            <div className="flex flex-col items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFiltersOpen((open) => !open)}
+                aria-expanded={filtersOpen}
+                className="gap-2"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {content.filters.button}
+                <ChevronDown
+                  className={cn(
+                    "text-muted-foreground h-3.5 w-3.5 transition-transform duration-200",
+                    filtersOpen && "rotate-180",
+                  )}
+                />
+                {activeFilterCount > 0 && (
+                  <span className="bg-primary text-primary-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+
+              {activeFilterCount > 0 && (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {activeIndustry !== ALL_LABEL && (
+                    <FilterChip
+                      label={activeIndustry}
+                      active
+                      onClick={() => updateIndustry(ALL_LABEL)}
+                    />
+                  )}
+                  {activeCategory && (
+                    <FilterChip label={activeCategory} active onClick={() => updateCategory("")} />
+                  )}
+                  {activeStatuses.map((status) => (
+                    <FilterChip
+                      key={status}
+                      label={statusLabelMap[status] || status}
+                      active
+                      onClick={() => toggleStatus(status)}
+                    />
+                  ))}
+                  {featuredOnly && (
+                    <FilterChip
+                      label={content.filters.featuredOnly}
+                      active
+                      onClick={() => setFeaturedOnly(false)}
+                    />
+                  )}
                   <button
-                    key={ind}
-                    ref={(el) => {
-                      filterRefs.current[i] = el;
-                    }}
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-label={`${ind} (${count} project${count === 1 ? "" : "s"})`}
-                    tabIndex={isActive ? 0 : -1}
-                    onClick={() => updateIndustry(ind)}
-                    onKeyDown={(e) => onFilterKeyDown(e, i)}
-                    className={`relative rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
-                      isActive
-                        ? "border-primary/50 bg-primary/15 text-foreground shadow-[0_0_12px_-4px_hsl(var(--primary)/0.5)]"
-                        : "border-border/60 bg-background/80 text-muted-foreground hover:border-primary/40 hover:bg-accent/30 hover:text-foreground backdrop-blur-sm"
-                    }`}
+                    onClick={clearAllFilters}
+                    className="text-muted-foreground hover:text-foreground text-xs font-medium underline-offset-4 transition-colors hover:underline"
                   >
-                    <span>{ind === ALL_LABEL ? content.filters.all : ind}</span>
-                    <span className="ml-1.5 text-[11px] opacity-60">({count})</span>
-                    {isActive && (
-                      <motion.span
-                        layoutId="active-indicator"
-                        className="bg-primary absolute right-2 -bottom-px left-2 h-0.5 rounded-full"
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
+                    {content.filters.clearAll}
                   </button>
-                );
-              })}
+                </div>
+              )}
             </div>
+
+            <AnimatePresence>
+              {filtersOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-border/60 bg-card/60 mx-auto max-w-3xl space-y-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm">
+                    <div>
+                      <p className="text-muted-foreground mb-2.5 text-xs font-medium tracking-wider uppercase">
+                        {content.filters.industries}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <FilterChip
+                          label={content.filters.all}
+                          active={activeIndustry === ALL_LABEL}
+                          count={projects.length}
+                          onClick={() => updateIndustry(ALL_LABEL)}
+                        />
+                        {industryOptions.map((ind) => (
+                          <FilterChip
+                            key={ind}
+                            label={ind}
+                            active={activeIndustry === ind}
+                            count={industryCounts[ind] || 0}
+                            onClick={() => updateIndustry(ind)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-muted-foreground mb-2.5 text-xs font-medium tracking-wider uppercase">
+                        {content.filters.categories}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <FilterChip
+                          label={content.filters.all}
+                          active={!activeCategory}
+                          onClick={() => updateCategory("")}
+                        />
+                        {categoryOptions.map((cat) => (
+                          <FilterChip
+                            key={cat}
+                            label={cat}
+                            active={activeCategory === cat}
+                            onClick={() => updateCategory(cat)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-muted-foreground mb-2.5 text-xs font-medium tracking-wider uppercase">
+                        {content.filters.status}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {PUBLIC_PROJECT_STATUSES.map((status) => (
+                          <FilterChip
+                            key={status}
+                            label={statusLabelMap[status] || status}
+                            active={activeStatuses.includes(status)}
+                            onClick={() => toggleStatus(status)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-border/40 flex items-center justify-between gap-4 border-t pt-4">
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          id="featured-only"
+                          checked={featuredOnly}
+                          onCheckedChange={setFeaturedOnly}
+                        />
+                        <Label htmlFor="featured-only" className="text-sm">
+                          {content.filters.featuredOnly}
+                        </Label>
+                      </div>
+                      <button
+                        onClick={clearAllFilters}
+                        className="text-muted-foreground hover:text-destructive text-xs font-medium transition-colors"
+                      >
+                        {content.filters.clearAll}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {filtered.length === 0 &&
@@ -352,15 +558,7 @@ export function ProjectsPage({ content }: { content: ProjectsPageContent }) {
               <p className="text-muted-foreground mt-2 text-sm">
                 {content.searchEmpty.description}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => {
-                  setSearchQuery("");
-                  updateIndustry(ALL_LABEL);
-                }}
-              >
+              <Button variant="outline" size="sm" className="mt-4" onClick={clearAllFilters}>
                 {content.searchEmpty.clearAll}
               </Button>
             </motion.div>

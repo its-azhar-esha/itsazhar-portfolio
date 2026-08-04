@@ -14,7 +14,7 @@ import {
 } from "@/lib/projects/actions";
 import { createProjectSchema } from "@/lib/validation";
 import { generateSlug } from "@/lib/slug";
-import { PROJECT_INDUSTRIES, PROJECT_CATEGORIES, DB_PROJECT_STATUSES } from "@/constants/projects";
+import { DB_PROJECT_STATUSES } from "@/constants/projects";
 import { ProjectGeneral } from "./project-general";
 import { ProjectContent } from "./project-content";
 import { ProjectMedia } from "./project-media";
@@ -55,8 +55,6 @@ export interface FormFields {
   future_scope: string[];
 }
 
-const VALID_INDUSTRIES = PROJECT_INDUSTRIES as readonly string[];
-const VALID_CATEGORIES = PROJECT_CATEGORIES as readonly string[];
 const VALID_STATUSES = DB_PROJECT_STATUSES as readonly string[];
 
 function defaultFields(project?: DbProject): FormFields {
@@ -65,12 +63,9 @@ function defaultFields(project?: DbProject): FormFields {
     slug: project?.slug ?? "",
     short_description: project?.short_description ?? "",
     description: project?.description ?? "",
-    industry: (project?.industry ?? []).filter((i): i is string => VALID_INDUSTRIES.includes(i)),
+    industry: project?.industry ?? [],
     technologies: project?.technologies?.join(", ") ?? "",
-    category:
-      project?.category && VALID_CATEGORIES.includes(project.category)
-        ? project.category
-        : "Logistics",
+    category: project?.category || "Logistics",
     client: project?.client ?? "",
     demo_url: project?.demo_url ?? "",
     github_url: project?.github_url ?? "",

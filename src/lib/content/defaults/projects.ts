@@ -55,6 +55,13 @@ export interface ProjectsPageContent {
   hero: ProjectsHeroContent;
   filters: {
     all: string;
+    button: string;
+    industries: string;
+    categories: string;
+    status: string;
+    featuredOnly: string;
+    clearAll: string;
+    activeCount: string;
   };
   searchPlaceholder: string;
   statuses: ProjectsStatusLabelsContent;
@@ -73,6 +80,13 @@ export const DEFAULT_PROJECTS_CONTENT: ProjectsPageContent = {
   },
   filters: {
     all: "All",
+    button: "Filter",
+    industries: "Industry",
+    categories: "Category",
+    status: "Status",
+    featuredOnly: "Featured only",
+    clearAll: "Clear all",
+    activeCount: "{count} active",
   },
   searchPlaceholder: "Search projects...",
   statuses: {

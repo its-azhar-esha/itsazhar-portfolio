@@ -2813,3 +2813,63 @@ webhooks are stored in the database.
 - Verified on production https://itsazhar.com: title template live,
   canonical `https://itsazhar.com`, JSON-LD present, GA4 tag present,
   sitemap.xml (31 URLs, itsazhar.com domain) and robots.txt serving.
+
+## 44. Expanded Project Industries/Categories + New Filter Panel (2026-08-04)
+
+### Comprehensive option lists (`src/constants/projects.ts`)
+
+- `PROJECT_INDUSTRIES` expanded from 21 to 60 entries (all original values
+  kept first for backward compatibility; additions cover accounting,
+  advertising, agriculture, automotive, aviation, banking, biotechnology,
+  cybersecurity, energy, gaming, IoT, robotics, SaaS, startups, utilities,
+  wholesale, etc.). `ProjectIndustry` type still derived via `as const`.
+- `PROJECT_CATEGORIES` expanded from 8 to 29 entries (originals kept;
+  additions are solution-type categories: Workflow Automation, AI Agents &
+  Chatbots, Data Integration & APIs, Lead Generation, Sales/Marketing/HR/
+  Accounting Automation, Content Generation, Voice & Call Automation,
+  Analytics & Reporting, Data Extraction & OCR, Web Scraping, CRM
+  Integration, Inventory & Order Management, Internal Tools & Dashboards,
+  Client Portals, Notification & Alerting, Booking & Scheduling, Email &
+  SMS Automation, Document Generation).
+
+### Custom values now allowed (validation + admin form)
+
+- `src/lib/validation/schemas/project.ts`: industry items and category
+  relaxed from `z.enum(PROJECT_*)` to plain strings (`industryItemSchema`,
+  `categorySchema`; trim, 1-80 chars, max 20 industries, industry min 1,
+  category required). `projectFilterSchema.category` relaxed to
+  `z.string()`. DB statuses remain enums.
+- `src/components/admin/projects/project-form.tsx`: removed the
+  `VALID_INDUSTRIES`/`VALID_CATEGORIES` filters in `defaultFields()` — a
+  stored custom industry/category survives editing instead of being
+  dropped or reset to a default.
+- `src/components/admin/projects/project-general.tsx`: below the industry
+  checkbox grid there is now a `TagInput` for custom industries
+  (custom-only subset, merged back into `fields.industry`); the Category
+  select is now a free-text `<input list>` datalist combobox (pick a
+  preset or type a custom category).
+
+### Public Projects page filter panel (`src/components/projects-page.tsx`)
+
+- The always-open industry tab list is gone. A **Filter** button (outline,
+  SlidersHorizontal icon, chevron that rotates, active-filter count badge)
+  toggles an animated collapsible panel.
+- Panel sections: **Industry** (all 60 presets + any custom values found
+  in project data, each with project count; 0-count industries trigger
+  the existing "Coming Soon" CTA), **Category** (presets + customs),
+  **Status** (multi-select: Production Ready / In Development / Prototype
+  / Completed), **Featured only** switch, and a Clear all button.
+- Active filters are shown as removable chips under the Filter button
+  with a Clear all link; the "no results" empty state now clears every
+  filter (search, industry, category, status, featured).
+- URL sync: `?industry=` and `?category=` params (replaceState + popstate
+  both directions); status/featured are session-only.
+- New content keys in `src/lib/content/defaults/projects.ts`
+  (`filters.button/industries/categories/status/featuredOnly/clearAll/
+activeCount`) — deep-merged defaults, so existing DB content rows need
+  no migration; all editable at Admin > Content > Projects.
+
+### Verified
+
+- `npm run lint` clean (1 pre-existing `<img>` warning, markdown.tsx:53).
+- `npm run build` green (70 routes).

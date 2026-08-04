@@ -1,5 +1,17 @@
 import { z } from "zod";
-import { DB_PROJECT_STATUSES, PROJECT_INDUSTRIES, PROJECT_CATEGORIES } from "@/constants/projects";
+import { DB_PROJECT_STATUSES } from "@/constants/projects";
+
+export const industryItemSchema = z
+  .string()
+  .trim()
+  .min(1, "Industry cannot be empty")
+  .max(80, "Industry must be 80 characters or fewer");
+
+export const categorySchema = z
+  .string()
+  .trim()
+  .min(1, "Category is required")
+  .max(80, "Category must be 80 characters or fewer");
 
 export const slugSchema = z
   .string()
@@ -19,16 +31,11 @@ export const createProjectSchema = z.object({
   images: z.array(z.string()).default([]),
   video_url: z.string().nullable().default(null),
   industry: z
-    .array(
-      z.enum(PROJECT_INDUSTRIES as unknown as [string, ...string[]], {
-        error: "One or more selected industries are no longer valid options.",
-      }),
-    )
-    .min(1, "At least one industry is required"),
+    .array(industryItemSchema)
+    .min(1, "At least one industry is required")
+    .max(20, "No more than 20 industries allowed"),
   technologies: z.array(z.string()).default([]),
-  category: z.enum(PROJECT_CATEGORIES as unknown as [string, ...string[]], {
-    error: "Category is not a valid option.",
-  }),
+  category: categorySchema,
   featured: z.boolean().default(false),
   status: z
     .enum(DB_PROJECT_STATUSES as unknown as [string, ...string[]], {
@@ -72,13 +79,7 @@ export const createProjectDraftSchema = createProjectSchema.extend({
     .string()
     .max(500, "Short description must be 500 characters or fewer")
     .default(""),
-  industry: z
-    .array(
-      z.enum(PROJECT_INDUSTRIES as unknown as [string, ...string[]], {
-        error: "One or more selected industries are no longer valid options.",
-      }),
-    )
-    .default([]),
+  industry: z.array(industryItemSchema).max(20, "No more than 20 industries allowed").default([]),
 });
 
 export const updateProjectSchema = createProjectSchema.partial();
@@ -89,7 +90,7 @@ export const projectFilterSchema = z.object({
   industry: z.string().optional(),
   featured: z.boolean().optional(),
   status: z.enum(DB_PROJECT_STATUSES as unknown as [string, ...string[]]).optional(),
-  category: z.enum(PROJECT_CATEGORIES as unknown as [string, ...string[]]).optional(),
+  category: z.string().max(80, "Category must be 80 characters or fewer").optional(),
   sort: z
     .enum(["created_at_desc", "created_at_asc", "title_asc", "title_desc", "featured_desc"])
     .default("created_at_desc"),

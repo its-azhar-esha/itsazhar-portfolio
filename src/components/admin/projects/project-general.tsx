@@ -7,6 +7,8 @@ import { TagInput } from "@/components/ui/tag-input";
 import { PROJECT_INDUSTRIES, PROJECT_CATEGORIES, DB_PROJECT_STATUSES } from "@/constants/projects";
 import type { FormFields } from "./project-form";
 
+const VALID_INDUSTRIES = PROJECT_INDUSTRIES as readonly string[];
+
 interface GeneralSectionProps {
   fields: FormFields;
   errors: Partial<Record<keyof FormFields, string>>;
@@ -66,22 +68,33 @@ export function ProjectGeneral({ fields, errors, onChange }: GeneralSectionProps
               );
             })}
           </div>
+          <TagInput
+            id="custom-industries"
+            value={fields.industry.filter((i) => !VALID_INDUSTRIES.includes(i))}
+            onChange={(tags) => {
+              const presets = fields.industry.filter((i) => VALID_INDUSTRIES.includes(i));
+              onChange({ industry: Array.from(new Set([...presets, ...tags])) });
+            }}
+            placeholder="Type a custom industry and press Enter"
+            hint="Don't see your industry? Add it here."
+          />
           {errors.industry && <p className="text-xs text-red-500">{errors.industry}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <select
+          <input
             id="category"
+            list="project-category-options"
             value={fields.category}
             onChange={(e) => onChange({ category: e.target.value })}
-            className="border-border bg-background text-foreground focus:border-primary/40 focus:ring-primary/20 flex h-10 w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 focus:ring-1 focus:outline-none"
-          >
+            placeholder="Pick a category or type a custom one"
+            className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-primary/20 flex h-10 w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 focus:ring-1 focus:outline-none"
+          />
+          <datalist id="project-category-options">
             {PROJECT_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
+              <option key={cat} value={cat} />
             ))}
-          </select>
+          </datalist>
           {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
         </div>
       </div>
