@@ -3005,7 +3005,7 @@ webhooks are stored in the database.
   (`ai_config` = `{}`, `custom_knowledge` = `""`).
 - Deployed to Vercel production (itsazhar.com) as part of this phase.
 
-## 46. Project Reorder Hardening + Admin AI Plan Preview & Confirmation (2026-08-04, migration `00040`, commits `XXXXXXX` deployed)
+## 46. Project Reorder Hardening + Admin AI Plan Preview & Confirmation (2026-08-04, migration `00040`, commit `5eb820c` deployed)
 
 ### Project drag-and-drop hardening (src/components/admin/projects/project-list.tsx)
 
