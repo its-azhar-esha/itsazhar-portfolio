@@ -3,10 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, Reorder } from "framer-motion";
-import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { Reorder, useDragControls } from "framer-motion";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import type { DbProject } from "@/types/project";
-import { staggerContainer } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { reorderProjectsAction } from "@/lib/projects/actions";
@@ -27,17 +33,32 @@ export function ProjectList({ initialProjects, initialError }: ProjectListProps)
   const [savingOrder, setSavingOrder] = React.useState(false);
   const orderRef = React.useRef(initialProjects);
 
+  const searching = searchQuery.trim() !== "";
+
   const filtered = React.useMemo(
     () =>
       projects.filter((p) =>
-        searchQuery
+        searching
           ? p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.short_description.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.category.toLowerCase().includes(searchQuery.toLowerCase())
           : true,
       ),
-    [projects, searchQuery],
+    [projects, searchQuery, searching],
   );
+
+  async function saveOrder(ordered: DbProject[]) {
+    const orderedIds = ordered.map((p) => p.id);
+    setSavingOrder(true);
+    const result = await reorderProjectsAction(orderedIds);
+    setSavingOrder(false);
+    if (!result.success) {
+      toast.error(`Reorder failed: ${result.error}`);
+      return false;
+    }
+    router.refresh();
+    return true;
+  }
 
   async function handleReorder(next: DbProject[]) {
     const prev = orderRef.current;
@@ -51,16 +72,29 @@ export function ProjectList({ initialProjects, initialError }: ProjectListProps)
     }
     setProjects(next);
     orderRef.current = next;
-    setSavingOrder(true);
-    const result = await reorderProjectsAction(nextOrderedIds);
-    setSavingOrder(false);
-    if (!result.success) {
-      toast.error(`Reorder failed: ${result.error}`);
+    const ok = await saveOrder(next);
+    if (!ok) {
       setProjects(prev);
       orderRef.current = prev;
-      return;
     }
-    router.refresh();
+  }
+
+  /** Moves a project one position up/down in the full list (fallback to drag). */
+  async function moveProject(id: string, direction: -1 | 1) {
+    const index = projects.findIndex((p) => p.id === id);
+    const target = index + direction;
+    if (index === -1 || target < 0 || target >= projects.length) return;
+    const next = [...projects];
+    const [moved] = next.splice(index, 1);
+    next.splice(target, 0, moved);
+    const prev = projects;
+    setProjects(next);
+    orderRef.current = next;
+    const ok = await saveOrder(next);
+    if (!ok) {
+      setProjects(prev);
+      orderRef.current = prev;
+    }
   }
 
   if (initialError) {
@@ -97,12 +131,7 @@ export function ProjectList({ initialProjects, initialError }: ProjectListProps)
           <p className="text-muted-foreground text-sm">No projects match your search.</p>
         </div>
       ) : (
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-3"
-        >
+        <div className="space-y-3">
           <Reorder.Group
             axis="y"
             values={filtered}
@@ -110,22 +139,18 @@ export function ProjectList({ initialProjects, initialError }: ProjectListProps)
             className="space-y-3"
           >
             {filtered.map((project, index) => (
-              <Reorder.Item
+              <ProjectReorderItem
                 key={project.id}
-                value={project}
-                dragListener={searchQuery.trim() === ""}
-                className="cursor-grab active:cursor-grabbing"
-              >
-                <Link href={`/admin/projects/${project.id}/edit`} className="block">
-                  <ProjectCard
-                    project={project}
-                    displayOrder={searchQuery.trim() ? project.order : index + 1}
-                  />
-                </Link>
-              </Reorder.Item>
+                project={project}
+                index={index}
+                total={filtered.length}
+                searching={searching}
+                saving={savingOrder}
+                onMove={moveProject}
+              />
             ))}
           </Reorder.Group>
-        </motion.div>
+        </div>
       )}
       <div className="flex items-center justify-center gap-2">
         {savingOrder && (
@@ -141,9 +166,86 @@ export function ProjectList({ initialProjects, initialError }: ProjectListProps)
         )}
       </div>
       <p className="text-muted-foreground text-center text-[11px]">
-        Drag a project card to a new position to change its display order. The public Projects page
-        and homepage showcase update automatically.
+        Drag a project by its handle (⋮⋮) to a new position, or use the arrows. The public Projects
+        page and homepage showcase update automatically.
       </p>
     </div>
+  );
+}
+
+interface ProjectReorderItemProps {
+  project: DbProject;
+  index: number;
+  total: number;
+  searching: boolean;
+  saving: boolean;
+  onMove: (id: string, direction: -1 | 1) => void;
+}
+
+function ProjectReorderItem({
+  project,
+  index,
+  total,
+  searching,
+  saving,
+  onMove,
+}: ProjectReorderItemProps) {
+  const controls = useDragControls();
+
+  const dragDisabled = searching || saving;
+
+  return (
+    <Reorder.Item value={project} dragListener={false} dragControls={controls} className="relative">
+      <div className="flex items-stretch gap-2">
+        <div
+          className={`flex w-7 shrink-0 flex-col items-center gap-0.5 pt-3 transition-opacity ${
+            dragDisabled ? "pointer-events-none opacity-30" : ""
+          }`}
+        >
+          <button
+            type="button"
+            aria-label={`Drag ${project.title} to reorder`}
+            title="Drag to reorder"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              controls.start(e);
+            }}
+            className="text-muted-foreground hover:text-foreground -my-0.5 cursor-grab touch-none rounded p-0.5 transition-colors active:cursor-grabbing"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="flex flex-col gap-0.5">
+            <button
+              type="button"
+              aria-label={`Move ${project.title} up`}
+              title="Move up"
+              disabled={index === 0}
+              onClick={() => onMove(project.id, -1)}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-0.5 transition-colors disabled:opacity-25"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Move ${project.title} down`}
+              title="Move down"
+              disabled={index === total - 1}
+              onClick={() => onMove(project.id, 1)}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-0.5 transition-colors disabled:opacity-25"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+        <Link
+          href={`/admin/projects/${project.id}/edit`}
+          draggable={false}
+          className="block min-w-0 flex-1"
+        >
+          <ProjectCard project={project} displayOrder={index + 1} />
+        </Link>
+      </div>
+    </Reorder.Item>
   );
 }

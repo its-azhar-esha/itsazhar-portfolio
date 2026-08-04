@@ -547,6 +547,47 @@ export interface Database {
           updated_at?: string;
         };
       };
+      admin_ai_plans: {
+        Row: {
+          id: string;
+          user_id: string;
+          prompt: string;
+          explanation: string;
+          actions: unknown;
+          previews: unknown;
+          results: unknown;
+          status: string;
+          created_at: string;
+          updated_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          prompt?: string;
+          explanation?: string;
+          actions?: unknown;
+          previews?: unknown;
+          results?: unknown;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          prompt?: string;
+          explanation?: string;
+          actions?: unknown;
+          previews?: unknown;
+          results?: unknown;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+          expires_at?: string;
+        };
+      };
       analytics_events: {
         Row: {
           id: string;

@@ -3004,3 +3004,122 @@ webhooks are stored in the database.
 - Migration applied remotely and confirmed via REST probe
   (`ai_config` = `{}`, `custom_knowledge` = `""`).
 - Deployed to Vercel production (itsazhar.com) as part of this phase.
+
+## 46. Project Reorder Hardening + Admin AI Plan Preview & Confirmation (2026-08-04, migration `00040`, commits `XXXXXXX` deployed)
+
+### Project drag-and-drop hardening (src/components/admin/projects/project-list.tsx)
+
+- Root cause addressed: the whole card was the drag surface and wrapped a
+  `<Link>` — unreliable across browsers and prone to accidental navigation /
+  native link-drag interference. Rebuilt:
+  - `dragListener={false}` + per-item `useDragControls` (framer-motion), drag
+    starts ONLY from the dedicated grip handle (`onPointerDown` →
+    `controls.start(e)` with `preventDefault` + `stopPropagation`).
+  - Up/down arrow buttons on each card as a guaranteed fallback (same save
+    path: `reorderProjectsAction(fullIdList)`).
+  - Removed the outer `staggerContainer` motion wrapper (no variant/layout
+    conflicts with Reorder).
+  - Optimistic update with revert + toast on failure; `router.refresh()` on
+    success; grip + arrows disabled while searching or saving.
+
+### Admin AI: preview-first change plans (nothing is applied without approval)
+
+New protocol: the admin chat NEVER mutates directly. Every data-changing
+request becomes a **plan** (list of tool actions + live-data previews) the
+owner reviews, adjusts, then approves via a slide-to-confirm gesture.
+
+#### Database (migration `00040_admin_ai_plans.sql`)
+
+- New table `admin_ai_plans`: id, user_id (FK auth.users, cascade), prompt,
+  explanation, actions jsonb, previews jsonb, results jsonb, status
+  (draft/approved/applied/discarded/expired), created/updated/expires_at
+  (default now() + 2 hours).
+- RLS: owner-only (`auth.uid() = user_id`) + explicit Data API grants
+  (00031 rule). Verified via REST probes: service-role insert reaches FK
+  validation; anon insert rejected by RLS (42501).
+- Hand-synced `src/database.types.ts` (`admin_ai_plans` table).
+
+#### Tool registry (`src/lib/ai/tools/`, new)
+
+- `types.ts`: `ToolDefinition` (id, module, label, description, params spec,
+  `loadCurrent` / `computeProposed` / `previewText` / `apply`), `PlanAction`,
+  `PlanActionPreview`, `PlanEnvelope`, `PlanActionResult`.
+- `registry.ts`: 15 mutating tools, each `apply()` calling the EXISTING server
+  actions (single source of truth: auth, Zod, audit, notifications,
+  revalidation — never duplicated):
+  - projects.create / update / delete / reorder (reorder requires the full
+    title list; resolves titles → ids)
+  - services.create / update / delete
+  - blog.create / update / delete
+  - seo.update (upsert by page_key)
+  - content.hero / content.about (merge into full current content, then
+    saveHeroContentAction / saveAboutContentAction)
+  - leads.update (status by email; new/contacted/closed)
+  - settings.update (full merge into current settings before save)
+  - storage.cleanup (16 categories from the cleanup registry, optional
+    keepDays; preview runs the real scan, apply runs runCleanupAction)
+- Previews: `loadCurrent` reads LIVE state; `computeProposed` merges params;
+  `previewText` renders before/after diff lines (changed fields only).
+
+#### Planner (`src/lib/ai/planner.ts`, new)
+
+- `buildPlannerState()`: live system summary (projects in display order,
+  services, blog, SEO, leads + status counts, hero, about, site settings +
+  section toggles, integrations, keep-alive components, analytics summary,
+  storage scan states). Every read wrapped so the plan flow never dies on a
+  module failure.
+- `planRequest()`: JSON-mode completion (`routeJsonToAI`, temperature 0.2,
+  maxTokens 2000) with strict prompt: tool ids/params only, exact identifiers
+  from state, update tools = only changed fields, informational requests →
+  `actions: []`. `parsePlannerOutput` tolerates fenced JSON.
+- `computePlanPreviews()`: per-action previews with per-action error isolation.
+
+#### Providers / router
+
+- `completeGroq` / `completeOpenRouter` (non-streaming, optional
+  `response_format: json_object`); `routeJsonToAI` walks the same enabled
+  provider chain and returns the first parseable completion.
+
+#### Plans persistence (`src/lib/ai/plans/`, new)
+
+- `repository.ts`: create/update/get draft/get by id/expire stale — session
+  client so RLS applies.
+- `service.ts`: `savePlan` (previews computed, reuses the owner's existing
+  draft id so adjustments replace in place), `approvePlan` (draft + not
+  expired + owner only → applies each action → per-action results → audit
+  `ai.plan.applied` → notification `admin.ai.applied`), `discardPlan`,
+  `getPlanEnvelopeOrNull`.
+
+#### API
+
+- `POST /api/admin/chat` (rewritten): body `{ messages, planId? }`. If the
+  planner returns actions → saves/refreshes the plan and streams
+  `__PLAN__<json>__PLAN_END__` followed by the explanation; else streams the
+  explanation only. `planId` in the body makes the next turn REGENERATE the
+  pending plan (adjustments produce an updated preview).
+- `POST /api/admin/chat/approve` (new): applies an approved plan.
+- `POST /api/admin/chat/discard` (new): discards a draft plan.
+- Both auth-gated; apply path rides the existing action layers.
+
+#### UI
+
+- `src/components/ui/slide-to-confirm.tsx` (new): deliberate drag-to-confirm
+  gesture (pointer-captured, threshold 95%, keyboard Enter fallback) — used
+  for all data-modifying approvals.
+- `src/components/admin/ai/plan-preview.tsx` (new): plan card with per-action
+  Before/After preview columns (module badge, error banners), discard button,
+  SlideToConfirm, applied-results list (per-action ✓/✗), expiry time in BD
+  timezone.
+- `src/components/admin/ai/admin-chat.tsx` (rewritten): plan state in the
+  conversation; envelope extraction from the stream; adjust-by-continuing-
+  chat; approve → `router.refresh()`; new prompt suggestions.
+- Notification event `admin.ai.applied` added to the events registry.
+
+### Verified
+
+- `npm run lint` clean (1 pre-existing `<img>` warning), `npx tsc --noEmit`
+  clean, `npm run build` green (73+ routes).
+- Migration 00040 applied remotely + REST probes (table reachable, service-role
+  insert works, anon blocked by RLS).
+- Public `/api/chat` smoke test still streaming (STREAM_OK) after the changes.
+- Deployed to Vercel production (itsazhar.com) as part of this phase.

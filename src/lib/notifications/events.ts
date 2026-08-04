@@ -50,6 +50,13 @@ export const NOTIFICATION_EVENTS: NotificationEventDef[] = [
     defaultPriority: "low",
   },
   {
+    id: "admin.ai.applied",
+    category: "content",
+    label: "Admin AI plan applied",
+    description: "The Admin AI applied an approved change plan to the CMS.",
+    defaultPriority: "low",
+  },
+  {
     id: "blog.created",
     category: "content",
     label: "Blog post created",

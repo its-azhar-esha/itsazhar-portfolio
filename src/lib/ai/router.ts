@@ -1,5 +1,5 @@
-import { streamGroq } from "./providers/groq";
-import { streamOpenRouter } from "./providers/openrouter";
+import { streamGroq, completeGroq } from "./providers/groq";
+import { streamOpenRouter, completeOpenRouter } from "./providers/openrouter";
 import { getFastestModel } from "./models";
 import { getProviderChain, getAiConfig } from "./config";
 
@@ -67,6 +67,75 @@ export async function routeToAI(
       }
 
       return { stream: response.body, provider: provider.id, model: modelId };
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
+  }
+
+  throw lastError || new Error("All AI providers failed");
+}
+
+interface JsonResult {
+  content: string;
+  provider: AIProvider;
+  model: string;
+}
+
+/**
+ * Non-streaming completion in JSON mode through the configured provider
+ * chain. Returns the raw text content; callers parse the JSON themselves.
+ */
+export async function routeJsonToAI(
+  messages: { role: string; content: string }[],
+  signal?: AbortSignal,
+): Promise<JsonResult> {
+  const chain = await getProviderChain();
+  if (chain.length === 0) {
+    throw new Error("AI is disabled or no providers are enabled");
+  }
+
+  const streamOptions = {
+    temperature: 0.2,
+    maxTokens: 2000,
+    json: true,
+  };
+
+  let lastError: unknown;
+
+  for (const provider of chain) {
+    try {
+      const modelId =
+        provider.model.trim() || getFastestModel(provider.id)?.id || DEFAULT_MODELS[provider.id];
+
+      let response: Response;
+      switch (provider.id) {
+        case "groq":
+          response = await completeGroq(messages, signal, modelId, streamOptions);
+          break;
+        case "openrouter":
+          response = await completeOpenRouter(messages, signal, modelId, streamOptions);
+          break;
+        default:
+          continue;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        lastError = new Error(`${provider.id} returned ${response.status}: ${errorText}`);
+        continue;
+      }
+
+      const data = (await response.json().catch(() => null)) as {
+        choices?: { message?: { content?: string } }[];
+      } | null;
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) {
+        lastError = new Error(`${provider.id} returned an empty completion`);
+        continue;
+      }
+
+      return { content, provider: provider.id, model: modelId };
     } catch (err) {
       lastError = err;
       continue;
