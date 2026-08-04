@@ -2799,3 +2799,17 @@ webhooks are stored in the database.
   siteUrl correct. Vercel env var confirmed.
 - Interrupted by a power outage mid-session; verified all code edits, DB
   rows, env vars and Vercel config intact before continuing.
+
+### GSC + GA4 live (2026-08-04)
+
+- Google Search Console **Domain property** for itsazhar.com: TXT record
+  `google-site-verification=zEJVBu-uC2n1As3ypdwkmPwgxUbnGzowuA_ZmM4Q3t4`
+  added at Spaceship DNS, propagation confirmed via DNS query
+  (`Resolve-DnsName itsazhar.com -Type TXT`). User clicks Verify in GSC,
+  then submits sitemap.xml.
+- **GA4 enabled:** `site_settings.ga4_measurement_id = G-D8LLR94CK7`
+  (stream itsazhar.com, admin-editable at Admin > Settings). Root layout
+  renders the Google tag when set.
+- Verified on production https://itsazhar.com: title template live,
+  canonical `https://itsazhar.com`, JSON-LD present, GA4 tag present,
+  sitemap.xml (31 URLs, itsazhar.com domain) and robots.txt serving.
