@@ -8,7 +8,7 @@
  */
 
 import { routeJsonToAI } from "./router";
-import { TOOLS, getTool, describeTools } from "./tools/registry";
+import { TOOLS, getTool, describeToolsCompact } from "./tools/registry";
 import type { PlanAction, PlanActionPreview } from "./tools/types";
 import { getProjects } from "@/lib/projects";
 import { getServices } from "@/lib/services";
@@ -205,7 +205,7 @@ export interface PlannerOutput {
 }
 
 function buildPlannerSystemPrompt(state: string, pendingPlan?: string): string {
-  const tools = describeTools();
+  const tools = describeToolsCompact();
   const pending =
     pendingPlan && pendingPlan.trim().length > 0
       ? `\n\n## PENDING PLAN (the owner asked to adjust this — return the REVISED full plan replacing it)\n${pendingPlan}`
@@ -229,6 +229,7 @@ Rules:
 - Params must match the tool's param contract exactly (types + enums).
 - Identify existing items with the EXACT titles/emails/page_keys from the CURRENT STATE below (case-insensitive lookup is done server-side, but use the exact spelling).
 - For update tools, include ONLY the fields that change.
+- Never use null or undefined for string params — use an empty string to clear a field (e.g. "subheadline": "").
 - For projects.reorder, orderedTitles must list EVERY project (full list from the state) in the desired order.
 - For delete tools, verify the item exists in the state first; if unsure, set actions: [] and ask the owner to confirm the exact name.
 - If the request is purely informational (summarize, suggest, report, status), set actions: [] and answer in the explanation.

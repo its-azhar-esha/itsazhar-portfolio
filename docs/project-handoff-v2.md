@@ -3123,3 +3123,27 @@ owner reviews, adjusts, then approves via a slide-to-confirm gesture.
   insert works, anon blocked by RLS).
 - Public `/api/chat` smoke test still streaming (STREAM_OK) after the changes.
 - Deployed to Vercel production (itsazhar.com) as part of this phase.
+- **Full local E2E of the plan flow passed (46/47 checks; the 1 "failure" was a
+  limit-8 audit window, verified separately — 11 `ai.plan.applied` rows):
+  sign-in → informational answer (no plan) → plan creation (content.hero) →
+  plan regeneration with the same draft id (adjustment) → approve → DB rows
+  verified via REST → revert plan → approve → verified → blog.create plan
+  discarded (no row created) → multi-action plan (content.hero + settings)
+  approved → verified → reverted → verified → audit + plan-status ledgers
+  checked → zero E2E residue in the DB.** E2E harness used the Supabase auth
+  cookie: `sb-<ref>-auth-token = "base64-" + base64url(JSON of the SESSION
+OBJECT {access_token, refresh_token, expires_at, expires_in, token_type})`
+  (the legacy 5-element array format is rejected by auth-js 2.111's
+  `_isValidSession`).
+- **Bug found & fixed during E2E (important):** the planner prompt was ~6000
+  tokens — `describeTools()` dumped every param's description. One planner call
+  exceeded Groq's free-tier 8000 TPM and OpenRouter was out of credits, so
+  plan requests 500'd (`Failed to process chat request`). Fixed with
+  `describeToolsCompact()` (param names/types/enums only, no descriptions) →
+  prompt now ~2000 tokens. Prompt rule added: never send `null` for string
+  params (use `""`) — a previous run's `subheadline: null` apply failed
+  validation (visible per-action in results, which is the designed behavior).
+- Rate limit note: Groq `openai/gpt-oss-20b` free tier = 8000 TPM → ~2-4
+  planner calls per minute; the E2E retried 429s with a 45s wait and passed.
+  OpenRouter account currently has no credits (402) — add credits or keep
+  Groq as the planner provider.

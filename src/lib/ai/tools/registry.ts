@@ -86,9 +86,7 @@ function diffLines(
   return { before, after };
 }
 
-async function findProjectByTitle(
-  title: string,
-): Promise<
+async function findProjectByTitle(title: string): Promise<
   Result<{
     id: string;
     title: string;
@@ -122,9 +120,7 @@ async function findProjectByTitle(
   });
 }
 
-async function findServiceByTitle(
-  title: string,
-): Promise<
+async function findServiceByTitle(title: string): Promise<
   Result<{
     id: string;
     title: string;
@@ -152,9 +148,7 @@ async function findServiceByTitle(
   });
 }
 
-async function findBlogPostByTitle(
-  title: string,
-): Promise<
+async function findBlogPostByTitle(title: string): Promise<
   Result<{
     id: string;
     title: string;
@@ -182,9 +176,7 @@ async function findBlogPostByTitle(
   });
 }
 
-async function findSeoByPageKey(
-  pageKey: string,
-): Promise<
+async function findSeoByPageKey(pageKey: string): Promise<
   Result<{
     id: string;
     page_key: string;
@@ -1210,6 +1202,29 @@ export function describeTools(): Record<string, unknown> {
         label: t.label,
         description: t.description,
         params: t.params,
+      },
+    ]),
+  );
+}
+
+/** Compact tool contract for the planner prompt (no param descriptions). */
+export function describeToolsCompact(): Record<string, unknown> {
+  return Object.fromEntries(
+    TOOLS.map((t) => [
+      t.id,
+      {
+        module: t.module,
+        label: t.label,
+        description: t.description,
+        params: Object.fromEntries(
+          Object.entries(t.params).map(([name, spec]) => [
+            name,
+            {
+              type: spec.type,
+              enum: "enum" in spec ? spec.enum : undefined,
+            },
+          ]),
+        ),
       },
     ]),
   );
