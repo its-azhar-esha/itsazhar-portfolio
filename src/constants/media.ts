@@ -2,7 +2,7 @@ import type { MediaSort } from "@/types/media";
 
 export const MEDIA_BUCKET = "media" as const;
 
-export const MAX_MEDIA_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+export const MAX_MEDIA_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 export const ALLOWED_IMAGE_MIME_TYPES = [
   "image/jpeg",

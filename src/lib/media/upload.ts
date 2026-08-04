@@ -68,34 +68,162 @@ async function uploadToStorage(
   } = await supabase.auth.getSession();
   if (!session) throw new Error("Authentication required.");
 
-  const url = `${env.supabaseUrl}/storage/v1/object/${MEDIA_BUCKET}/${storagePath}`;
+  const headers = (extra: Record<string, string> = {}) => ({
+    Authorization: `Bearer ${session.access_token}`,
+    apikey: env.supabaseAnonKey,
+    "Tus-Resumable": "1.0.0",
+    ...extra,
+  });
 
-  await new Promise<void>((resolve, reject) => {
+  const toBase64 = (value: string) => btoa(value);
+  const uploadMetadata = [
+    `bucketName ${toBase64(MEDIA_BUCKET)}`,
+    `objectName ${toBase64(storagePath)}`,
+    `contentType ${toBase64(file.type)}`,
+    `cacheControl ${toBase64("3600")}`,
+  ].join(",");
+
+  const create = () =>
+    fetch(`${env.supabaseUrl}/storage/v1/upload/resumable`, {
+      method: "POST",
+      headers: headers({
+        "Upload-Length": String(file.size),
+        "Upload-Metadata": uploadMetadata,
+        "x-upsert": "false",
+      }),
+    });
+
+  const createResponse = await create();
+  if (createResponse.status === 409) {
+    throw new Error("A file with this name already exists. Try again or replace the file.");
+  }
+  if (createResponse.status === 413) {
+    throw new Error(`File exceeds the ${formatBytes(MAX_MEDIA_FILE_SIZE_BYTES)} storage limit.`);
+  }
+  if (!createResponse.ok) {
+    throw new Error(`Upload failed (${createResponse.status}): ${await safeBody(createResponse)}`);
+  }
+
+  const location = createResponse.headers.get("Location");
+  if (!location) throw new Error("Upload failed: storage did not return an upload URL.");
+  const uploadUrl = location.startsWith("/") ? `${env.supabaseUrl}${location}` : location;
+
+  try {
+    await sendChunks(file, uploadUrl, headers, onProgress);
+  } catch (err) {
+    // Best-effort: terminate the resumable upload so no orphaned object lingers.
+    try {
+      await fetch(uploadUrl, { method: "DELETE", headers: headers() });
+    } catch {
+      // ignore cleanup failure
+    }
+    throw err;
+  }
+}
+
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024;
+const TUS_MAX_ATTEMPTS = 3;
+
+async function sendChunks(
+  file: File,
+  uploadUrl: string,
+  headers: (extra?: Record<string, string>) => Record<string, string>,
+  onProgress?: (progress: MediaUploadProgress) => void,
+): Promise<void> {
+  let offset = 0;
+  let attempts = 0;
+
+  while (offset < file.size) {
+    const chunk = file.slice(offset, Math.min(offset + TUS_CHUNK_SIZE, file.size));
+    const status = await patchChunk(uploadUrl, chunk, offset, headers, (loaded) => {
+      onProgress?.({
+        percent: Math.round(((offset + loaded) / file.size) * 100),
+        uploadedBytes: offset + loaded,
+        totalBytes: file.size,
+      });
+    });
+
+    if (status === 204) {
+      attempts = 0;
+      offset = Math.min(offset + chunk.size, file.size);
+      continue;
+    }
+
+    if (status === 413) {
+      throw new Error(`File exceeds the ${formatBytes(MAX_MEDIA_FILE_SIZE_BYTES)} storage limit.`);
+    }
+
+    // Resume from the server's current offset (handles dropped connections).
+    attempts += 1;
+    const serverOffset = await getUploadOffset(uploadUrl, headers);
+    if (serverOffset != null) {
+      if (serverOffset === file.size) return;
+      if (serverOffset > offset) {
+        attempts = 0;
+        offset = serverOffset;
+        continue;
+      }
+    }
+    if (attempts >= TUS_MAX_ATTEMPTS) {
+      throw new Error("Upload stalled after several retries. Check your connection and try again.");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
+  }
+}
+
+function patchChunk(
+  uploadUrl: string,
+  chunk: Blob,
+  offset: number,
+  headers: (extra?: Record<string, string>) => Record<string, string>,
+  onChunkProgress?: (loadedBytes: number) => void,
+): Promise<number> {
+  return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
-    xhr.setRequestHeader("Authorization", `Bearer ${session.access_token}`);
-    xhr.setRequestHeader("apikey", env.supabaseAnonKey);
-    xhr.setRequestHeader("x-upsert", "false");
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.open("PATCH", uploadUrl);
+    xhr.setRequestHeader("Authorization", headers().Authorization);
+    xhr.setRequestHeader("apikey", headers().apikey);
+    xhr.setRequestHeader("Upload-Offset", String(offset));
+    xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
 
     xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable || !onProgress) return;
-      onProgress({
-        percent: Math.round((event.loaded / event.total) * 100),
-        uploadedBytes: event.loaded,
-        totalBytes: event.total,
-      });
+      if (!event.lengthComputable || !onChunkProgress) return;
+      onChunkProgress(event.loaded);
     };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText || "Unknown error"}`));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during upload."));
-    xhr.send(file);
+    xhr.onload = () => resolve(xhr.status);
+    xhr.onerror = () => resolve(0);
+    xhr.onabort = () => resolve(0);
+    xhr.send(chunk);
   });
+}
+
+async function getUploadOffset(
+  uploadUrl: string,
+  headers: (extra?: Record<string, string>) => Record<string, string>,
+): Promise<number | null> {
+  try {
+    const response = await fetch(uploadUrl, { method: "HEAD", headers: headers() });
+    if (!response.ok) return null;
+    const value = response.headers.get("Upload-Offset");
+    return value === null ? null : Number.parseInt(value, 10);
+  } catch {
+    return null;
+  }
+}
+
+async function safeBody(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    if (!text) return "Unknown error";
+    try {
+      const parsed = JSON.parse(text) as { error?: string; message?: string };
+      return parsed.message || parsed.error || text.slice(0, 200);
+    } catch {
+      return text.slice(0, 200);
+    }
+  } catch {
+    return "Unknown error";
+  }
 }
 
 /**

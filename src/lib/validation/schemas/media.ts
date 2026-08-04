@@ -5,6 +5,9 @@ import {
   MEDIA_BUCKET,
   MEDIA_VALIDATION,
 } from "@/constants/media";
+import { formatBytes } from "@/lib/media/utils";
+
+const MAX_MEDIA_FILE_SIZE_LABEL = formatBytes(MAX_MEDIA_FILE_SIZE_BYTES);
 
 export const mediaFolderSchema = z
   .string()
@@ -47,7 +50,7 @@ export const createMediaRecordSchema = z.object({
     .number()
     .int("Size must be a whole number")
     .nonnegative("Size cannot be negative")
-    .max(MAX_MEDIA_FILE_SIZE_BYTES, "File exceeds the 10 MB limit"),
+    .max(MAX_MEDIA_FILE_SIZE_BYTES, `File exceeds the ${MAX_MEDIA_FILE_SIZE_LABEL} limit`),
   width: z.number().int().positive().nullable().default(null),
   height: z.number().int().positive().nullable().default(null),
   alt_text: z
@@ -132,7 +135,7 @@ export const replaceMediaRecordSchema = z.object({
     .number()
     .int("Size must be a whole number")
     .nonnegative("Size cannot be negative")
-    .max(MAX_MEDIA_FILE_SIZE_BYTES, "File exceeds the 10 MB limit"),
+    .max(MAX_MEDIA_FILE_SIZE_BYTES, `File exceeds the ${MAX_MEDIA_FILE_SIZE_LABEL} limit`),
   width: z.number().int().positive().nullable().default(null),
   height: z.number().int().positive().nullable().default(null),
 });
