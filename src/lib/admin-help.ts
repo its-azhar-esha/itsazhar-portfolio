@@ -1134,6 +1134,37 @@ export const ADMIN_HELP: Record<string, HelpEntry> = {
 
   /* ─────────────────────────── Integrations ─────────────────────────── */
 
+  "ai-page": entry(
+    "ai-page",
+    "AI page",
+    "Two tools: a CMS assistant that chats with your content, and the AI configuration controlling what the assistant knows and which providers power it.",
+    [
+      s("what", "What this page does", [
+        "The Assistant tab is a chat with your CMS content (projects, services, SEO, hero, about, blog, leads). The Configuration tab lets you write custom knowledge, toggle which content sources the AI may use, choose AI providers, set their priority and model, and test provider connections.",
+      ]),
+      s("why", "Why it exists", [
+        "The AI assistant needs to be accurate about your business. Custom knowledge lets you teach it facts that are not in the CMS, and the source toggles stop it from answering with content you don't want shared.",
+      ]),
+      s("how", "How custom knowledge works", [
+        "Everything you write in the Custom Knowledge box is always included in the assistant's context when the Custom Knowledge source is enabled. Write markdown — bio, services, background, business details, pricing philosophy, anything.",
+      ]),
+      s("how", "How the provider chain works", [
+        "Providers are tried in priority order (1 = primary). The first one that answers wins; the next provider is used when it fails. Each provider can pin a specific model, or stay on Auto (the fastest verified model).",
+      ]),
+      s("notes", "Testing a connection", [
+        "Test Connection validates the API key and discovers the available models, which then appear in that provider's model dropdown.",
+      ]),
+      s("effects", "Turning the assistant off", [
+        "The public chat returns fallback knowledge only, and the CMS assistant replies that it is disabled. No provider credits are used.",
+      ]),
+      s("best", "Best practices", [
+        "Keep Custom Knowledge concise and factual — the AI trusts it.",
+        "Put your fastest provider first and a reliable fallback second.",
+        "Keys are managed on the Integrations page, not here.",
+      ]),
+    ],
+  ),
+
   "integrations-page": entry(
     "integrations-page",
     "Integrations page",

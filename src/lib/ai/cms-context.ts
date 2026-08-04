@@ -3,6 +3,10 @@ import { getPublicProjectsAction } from "@/lib/projects/actions";
 import { getPublicBlogPostsAction } from "@/lib/blog/actions";
 import { getPublicResourcesAction, getPublicTemplatesAction } from "@/lib/hub/actions";
 import { createLead } from "@/lib/leads/repository";
+import { getEnabledKnowledgeSources, getCustomKnowledge } from "@/lib/ai/config";
+import { getPublicHeroContent } from "@/lib/hero/public";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { SETTINGS_ROW_ID } from "@/types/settings";
 
 const CACHE_TTL_MS = 60_000;
 const CAPTURE_TTL_MS = 10 * 60_000;
@@ -83,22 +87,141 @@ async function loadCmsCache(): Promise<CmsCache> {
 /**
  * Live CMS-backed knowledge for the public AI chat. Falls back to an empty
  * string when Supabase is unavailable (static knowledge still applies).
+ * Which sections are included is controlled by the admin AI configuration's
+ * knowledge-source toggles.
  */
 export async function buildCmsKnowledge(message: string): Promise<string> {
   try {
-    const ctx = await loadCmsCache();
-    const sections = [`## LIVE SERVICES\n${ctx.services}`, `## LIVE PROJECTS\n${ctx.projects}`];
-    if (/blog|article|post|news|insight|read/i.test(message)) {
+    const [flags, ctx, customKnowledge] = await Promise.all([
+      getEnabledKnowledgeSources(),
+      loadCmsCache(),
+      getCustomKnowledge(),
+    ]);
+
+    const sections: string[] = [];
+
+    if (flags.custom && customKnowledge.trim()) {
+      sections.push(`## CUSTOM KNOWLEDGE (ABOUT AZHAR & HIS BUSINESS)\n${customKnowledge.trim()}`);
+    }
+
+    if (flags.website) {
+      const websiteBlock = await loadWebsiteSection();
+      if (websiteBlock) sections.push(websiteBlock);
+    }
+
+    if (flags.services) {
+      sections.push(`## LIVE SERVICES\n${ctx.services}`);
+    }
+    if (flags.projects) {
+      sections.push(`## LIVE PROJECTS\n${ctx.projects}`);
+    }
+    if (flags.blog && /blog|article|post|news|insight|read/i.test(message)) {
       sections.push(`## RECENT BLOG POSTS\n${ctx.blog}`);
     }
-    if (/hub|resource|template|download|tool|prompt|workflow template|playground/i.test(message)) {
+    if (
+      flags.hub &&
+      /hub|resource|template|download|tool|prompt|workflow template|playground/i.test(message)
+    ) {
       sections.push(`## AUTOMATION HUB RESOURCES\n${ctx.hub}`);
       sections.push(`## PLAYGROUND TEMPLATES\n${ctx.playground}`);
     }
+
     return sections.join("\n\n");
   } catch {
     return "";
   }
+}
+
+interface WebsiteSection {
+  title: string;
+  tagline: string;
+  description: string;
+  location: string;
+  email: string;
+  bookingUrl: string | null;
+  socials: string[];
+  heroHeadline: string;
+  heroHighlight: string;
+  heroSubheadline: string;
+}
+
+let websiteCache: { at: number; value: WebsiteSection | null } | null = null;
+
+async function loadWebsiteSection(): Promise<string | null> {
+  const now = Date.now();
+  if (websiteCache && now - websiteCache.at < CACHE_TTL_MS) {
+    return websiteCache.value ? formatWebsiteSection(websiteCache.value) : null;
+  }
+
+  let value: WebsiteSection | null = null;
+  try {
+    const [settingsResult, hero] = await Promise.all([
+      createAdminClient()
+        .from("site_settings")
+        .select(
+          "site_name, site_title, tagline, site_description, location, contact_email, booking_url, social_github, social_linkedin, social_twitter, social_fiverr, social_instagram, social_youtube",
+        )
+        .eq("id", SETTINGS_ROW_ID)
+        .maybeSingle(),
+      getPublicHeroContent(),
+    ]);
+    const settings = (settingsResult.data ?? null) as {
+      site_name?: string | null;
+      site_title?: string | null;
+      tagline?: string | null;
+      site_description?: string | null;
+      location?: string | null;
+      contact_email?: string | null;
+      booking_url?: string | null;
+      social_github?: string | null;
+      social_linkedin?: string | null;
+      social_twitter?: string | null;
+      social_fiverr?: string | null;
+      social_instagram?: string | null;
+      social_youtube?: string | null;
+    } | null;
+    const socials = [
+      settings?.social_github,
+      settings?.social_linkedin,
+      settings?.social_twitter,
+      settings?.social_fiverr,
+      settings?.social_instagram,
+      settings?.social_youtube,
+    ].filter((url): url is string => typeof url === "string" && url.trim() !== "");
+    value = {
+      title: settings?.site_title || settings?.site_name || "",
+      tagline: settings?.tagline || "",
+      description: settings?.site_description || "",
+      location: settings?.location || "",
+      email: settings?.contact_email || "",
+      bookingUrl: settings?.booking_url || null,
+      socials,
+      heroHeadline: hero?.basic?.headline || "",
+      heroHighlight: hero?.basic?.highlight || "",
+      heroSubheadline: hero?.basic?.subheadline || "",
+    };
+  } catch {
+    value = null;
+  }
+
+  websiteCache = { at: now, value };
+  return value ? formatWebsiteSection(value) : null;
+}
+
+function formatWebsiteSection(value: WebsiteSection): string {
+  const lines: string[] = [];
+  if (value.title) lines.push(`- Title: ${value.title}`);
+  if (value.tagline) lines.push(`- Tagline: ${value.tagline}`);
+  if (value.description) lines.push(`- Description: ${value.description}`);
+  if (value.location) lines.push(`- Location: ${value.location}`);
+  if (value.email) lines.push(`- Email: ${value.email}`);
+  if (value.bookingUrl) lines.push(`- Booking link: ${value.bookingUrl}`);
+  if (value.heroHeadline) lines.push(`- Hero headline: ${value.heroHeadline}`);
+  if (value.heroHighlight) lines.push(`- Hero highlight: ${value.heroHighlight}`);
+  if (value.heroSubheadline) lines.push(`- Hero subheadline: ${value.heroSubheadline}`);
+  if (value.socials.length > 0) lines.push(`- Social profiles: ${value.socials.join(", ")}`);
+  if (lines.length === 0) return "";
+  return `## WEBSITE INFO\n${lines.join("\n")}`;
 }
 
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;

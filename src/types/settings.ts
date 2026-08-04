@@ -40,6 +40,45 @@ export interface MonitoringConfig {
   webhooks: MonitoringWebhook[];
 }
 
+export type AiProviderId = "groq" | "openrouter";
+
+export interface AiProviderConfig {
+  id: AiProviderId;
+  /** Whether this provider participates in the chat fallback chain. */
+  enabled: boolean;
+  /** Explicit model id ("" = auto: fastest verified model for the provider). */
+  model: string;
+  /** Lower = higher priority. 1 = primary. */
+  priority: number;
+}
+
+export interface AiKnowledgeSources {
+  /** Custom knowledge section written by the owner (bio, services, business details). */
+  custom: boolean;
+  /** Live website copy: site identity, hero and about sections. */
+  website: boolean;
+  /** Live services from the CMS. */
+  services: boolean;
+  /** Live projects from the CMS. */
+  projects: boolean;
+  /** Recent blog posts from the CMS. */
+  blog: boolean;
+  /** Automation Hub resources + Playground templates. */
+  hub: boolean;
+  /** Static FAQ files bundled with the project (fallback content). */
+  faq: boolean;
+}
+
+export interface AiConfig {
+  /** Master switch: when off, the AI chat returns fallback knowledge only. */
+  enabled: boolean;
+  temperature: number;
+  maxTokens: number;
+  /** Ordered provider chain — only enabled providers are used, in priority order. */
+  providers: AiProviderConfig[];
+  knowledge: AiKnowledgeSources;
+}
+
 export interface SiteSettings {
   id: string;
   site_name: string;
@@ -80,6 +119,9 @@ export interface SiteSettings {
   dx_config: DxConfig;
   monitoring_config: MonitoringConfig;
   notification_config: NotificationConfig;
+  ai_config: AiConfig;
+  /** Free-form markdown the AI assistant always knows. */
+  custom_knowledge: string;
   created_at: string;
   updated_at: string;
 }
@@ -119,6 +161,29 @@ export const DEFAULT_MONITORING_CONFIG: MonitoringConfig = {
   healthCheckUrl: "",
   backupUrl: "",
   webhooks: [],
+};
+
+export const DEFAULT_AI_PROVIDERS: AiProviderConfig[] = [
+  { id: "groq", enabled: true, model: "", priority: 1 },
+  { id: "openrouter", enabled: true, model: "", priority: 2 },
+];
+
+export const DEFAULT_AI_KNOWLEDGE_SOURCES: AiKnowledgeSources = {
+  custom: true,
+  website: true,
+  services: true,
+  projects: true,
+  blog: true,
+  hub: true,
+  faq: true,
+};
+
+export const DEFAULT_AI_CONFIG: AiConfig = {
+  enabled: true,
+  temperature: 0.3,
+  maxTokens: 1024,
+  providers: DEFAULT_AI_PROVIDERS.map((p) => ({ ...p })),
+  knowledge: { ...DEFAULT_AI_KNOWLEDGE_SOURCES },
 };
 
 /** Coerce a stored nav_order value into a clean NavItemConfig[]. */
@@ -178,6 +243,62 @@ export function normalizeDxConfig(value: unknown): DxConfig {
 function numberOr(value: unknown, fallback: number, min: number, max: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+/** Coerce a stored ai_config value into AiConfig. Unknown/missing values fall back to defaults. */
+export function normalizeAiConfig(value: unknown): AiConfig {
+  if (typeof value !== "object" || value === null) return { ...DEFAULT_AI_CONFIG };
+  const candidate = value as Record<string, unknown>;
+
+  const providers: AiProviderConfig[] = [];
+  if (Array.isArray(candidate.providers)) {
+    const seen = new Set<AiProviderId>();
+    for (const entry of candidate.providers) {
+      if (typeof entry !== "object" || entry === null) continue;
+      const provider = entry as Record<string, unknown>;
+      const id = provider.id;
+      if (id !== "groq" && id !== "openrouter") continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      providers.push({
+        id,
+        enabled: provider.enabled !== false,
+        model: typeof provider.model === "string" ? provider.model.trim().slice(0, 120) : "",
+        priority: numberOr(provider.priority, 99, 1, 99),
+      });
+    }
+  }
+  for (const def of DEFAULT_AI_PROVIDERS) {
+    if (!providers.some((p) => p.id === def.id)) providers.push({ ...def });
+  }
+  providers.sort((a, b) => a.priority - b.priority);
+
+  const knowledgeRaw =
+    typeof candidate.knowledge === "object" && candidate.knowledge !== null
+      ? (candidate.knowledge as Record<string, unknown>)
+      : {};
+  const knowledge: AiKnowledgeSources = {
+    custom: knowledgeRaw.custom !== false,
+    website: knowledgeRaw.website !== false,
+    services: knowledgeRaw.services !== false,
+    projects: knowledgeRaw.projects !== false,
+    blog: knowledgeRaw.blog !== false,
+    hub: knowledgeRaw.hub !== false,
+    faq: knowledgeRaw.faq !== false,
+  };
+
+  return {
+    enabled: candidate.enabled !== false,
+    temperature: floatOr(candidate.temperature, 0.3, 0, 2),
+    maxTokens: numberOr(candidate.maxTokens, 1024, 256, 16384),
+    providers,
+    knowledge,
+  };
+}
+
+function floatOr(value: unknown, fallback: number, min: number, max: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
 }
 
 /** Coerce a stored monitoring_config value into MonitoringConfig. */
@@ -253,4 +374,6 @@ export const DEFAULT_SITE_SETTINGS: Omit<SiteSettings, "id" | "created_at" | "up
   dx_config: DEFAULT_DX_CONFIG,
   monitoring_config: DEFAULT_MONITORING_CONFIG,
   notification_config: DEFAULT_NOTIFICATION_CONFIG,
+  ai_config: DEFAULT_AI_CONFIG,
+  custom_knowledge: "",
 };

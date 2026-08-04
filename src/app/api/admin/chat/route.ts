@@ -8,6 +8,7 @@ import { getAdminHeroContent } from "@/lib/hero";
 import { getAdminAboutContent } from "@/lib/about";
 import { getBlogPosts } from "@/lib/blog/repository";
 import { getLeads } from "@/lib/leads/repository";
+import { getAiConfig, getCustomKnowledge, getEnabledKnowledgeSources } from "@/lib/ai/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,21 +37,28 @@ CURRENT CMS CONTENT:
 ${context}`;
 }
 
-async function buildCmsContext(): Promise<string> {
+async function buildCmsContext(
+  flags: Awaited<ReturnType<typeof getEnabledKnowledgeSources>>,
+  customKnowledge: string,
+): Promise<string> {
   const sections: string[] = [];
+
+  if (flags.custom && customKnowledge.trim()) {
+    sections.push(`## CUSTOM KNOWLEDGE (ABOUT AZHAR & HIS BUSINESS)\n${customKnowledge.trim()}`);
+  }
 
   const [projectsResult, servicesResult, seoResult, hero, about, postsResult, leadsResult] =
     await Promise.all([
-      getProjects({ page: 1, pageSize: 50 }),
-      getServices(),
-      getAllSeo(),
-      getAdminHeroContent(),
-      getAdminAboutContent(),
-      getBlogPosts({}),
+      flags.projects ? getProjects({ page: 1, pageSize: 50 }) : Promise.resolve(null),
+      flags.services ? getServices() : Promise.resolve(null),
+      flags.website ? getAllSeo() : Promise.resolve(null),
+      flags.website ? getAdminHeroContent() : Promise.resolve(null),
+      flags.website ? getAdminAboutContent() : Promise.resolve(null),
+      flags.blog ? getBlogPosts({}) : Promise.resolve(null),
       getLeads({ page: 1, pageSize: 10 }),
     ]);
 
-  if (projectsResult.success) {
+  if (flags.projects && projectsResult?.success) {
     const items = projectsResult.data.items;
     const lines = items.length
       ? items.map(
@@ -59,11 +67,11 @@ async function buildCmsContext(): Promise<string> {
         )
       : ["- (no projects yet)"];
     sections.push(`## PROJECTS (${items.length})\n${lines.join("\n")}`);
-  } else {
+  } else if (flags.projects) {
     sections.push("## PROJECTS\n(unavailable — could not load)");
   }
 
-  if (servicesResult.success) {
+  if (flags.services && servicesResult?.success) {
     const items = servicesResult.data;
     const lines = items.length
       ? items.map(
@@ -72,25 +80,25 @@ async function buildCmsContext(): Promise<string> {
         )
       : ["- (no services yet)"];
     sections.push(`## SERVICES (${items.length})\n${lines.join("\n")}`);
-  } else {
+  } else if (flags.services) {
     sections.push("## SERVICES\n(unavailable — could not load)");
   }
 
-  if (seoResult.success) {
+  if (flags.website && seoResult?.success) {
     const lines = seoResult.data.map(
       (s) => `- ${s.page_key}: "${s.title}" — ${s.description ?? "no description"}`,
     );
     sections.push(`## SEO METADATA (${seoResult.data.length})\n${lines.join("\n") || "- (none)"}`);
-  } else {
+  } else if (flags.website) {
     sections.push("## SEO METADATA\n(unavailable — could not load)");
   }
 
-  if (hero) {
+  if (flags.website && hero) {
     sections.push(
       `## HERO SECTION\n- Headline: ${hero.basic.headline}\n- Highlight: ${hero.basic.highlight}\n- Subheadline: ${hero.basic.subheadline}\n- Availability: ${hero.basic.availability}`,
     );
   }
-  if (about) {
+  if (flags.website && about) {
     const paragraphs = Array.isArray(about.biography?.paragraphs)
       ? about.biography.paragraphs.slice(0, 2).join(" ")
       : "";
@@ -99,7 +107,7 @@ async function buildCmsContext(): Promise<string> {
     );
   }
 
-  if (postsResult.success) {
+  if (flags.blog && postsResult?.success) {
     const items = postsResult.data;
     const lines = items.length
       ? items.map(
@@ -108,11 +116,11 @@ async function buildCmsContext(): Promise<string> {
         )
       : ["- (no blog posts yet)"];
     sections.push(`## BLOG POSTS (${items.length})\n${lines.join("\n")}`);
-  } else {
+  } else if (flags.blog) {
     sections.push("## BLOG POSTS\n(unavailable — could not load)");
   }
 
-  if (leadsResult.success) {
+  if (leadsResult?.success) {
     const items = leadsResult.data.items;
     const lines = items.length
       ? items.map(
@@ -143,7 +151,25 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Messages are required" }, { status: 400 });
     }
 
-    const context = await buildCmsContext();
+    const [config, flags, customKnowledge] = await Promise.all([
+      getAiConfig(),
+      getEnabledKnowledgeSources(),
+      getCustomKnowledge(),
+    ]);
+    if (!config.enabled) {
+      return Response.json(
+        {
+          content:
+            "The AI assistant is currently disabled in AI Configuration. Enable it there and try again.",
+        },
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const context = await buildCmsContext(flags, customKnowledge);
     const systemPrompt = buildAdminSystemPrompt(context);
 
     const apiMessages = [

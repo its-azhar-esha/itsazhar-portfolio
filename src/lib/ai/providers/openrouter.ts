@@ -5,11 +5,13 @@ const MAX_RETRIES = 1;
 
 import { fetchWithRetry, combineAbortSignals } from "./shared";
 import { resolveApiKey } from "@/lib/integrations/repository";
+import type { StreamOptions } from "./groq";
 
 export async function streamOpenRouter(
   messages: { role: string; content: string }[],
   signal?: AbortSignal,
   model?: string,
+  options?: StreamOptions,
 ): Promise<Response> {
   const apiKey = await resolveApiKey("openrouter");
   if (!apiKey) {
@@ -38,8 +40,8 @@ export async function streamOpenRouter(
         body: JSON.stringify({
           model: model || DEFAULT_MODEL,
           messages,
-          temperature: 0.3,
-          max_tokens: 1024,
+          temperature: options?.temperature ?? 0.3,
+          max_tokens: options?.maxTokens ?? 1024,
           stream: true,
         }),
         signal: combinedSignal,

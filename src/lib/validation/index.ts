@@ -42,6 +42,14 @@ export {
 } from "./schemas/settings";
 
 export {
+  aiConfigSchema,
+  aiProviderConfigSchema,
+  aiKnowledgeSourcesSchema,
+  saveAiConfigInputSchema,
+  testAiProviderInputSchema,
+} from "./schemas/ai";
+
+export {
   notificationConfigSchema,
   notificationRecipientSchema,
   saveNotificationConfigInputSchema,

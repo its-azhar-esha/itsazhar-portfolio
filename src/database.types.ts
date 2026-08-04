@@ -377,6 +377,8 @@ export interface Database {
           dx_config: unknown;
           monitoring_config: unknown;
           notification_config: unknown;
+          ai_config: unknown;
+          custom_knowledge: string;
           created_at: string;
           updated_at: string;
         };
@@ -463,6 +465,8 @@ export interface Database {
           dx_config?: unknown;
           monitoring_config?: unknown;
           notification_config?: unknown;
+          ai_config?: unknown;
+          custom_knowledge?: string;
           created_at?: string;
           updated_at?: string;
         };

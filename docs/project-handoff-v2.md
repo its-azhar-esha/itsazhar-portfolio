@@ -2917,3 +2917,90 @@ webhooks are stored in the database.
 - `npm run lint` clean.
 - `npx tsc --noEmit` clean.
 - `npm run build` green (70+ routes).
+
+## 45. AI Configuration — custom knowledge, knowledge sources, provider chain & model discovery (2026-08-04, migration `00039`, commit `a67a2ad` deployed)
+
+### Database (migration `00039_ai_config.sql`)
+
+- `site_settings.ai_config` (jsonb, default `{}`) + `site_settings.custom_knowledge`
+  (text, default `''`). ALTER on an existing table — column inheritance keeps the
+  existing grants from 00031, no new GRANT statements needed.
+- Hand-synced `src/database.types.ts` (`ai_config: unknown`,
+  `custom_knowledge: string` on Row/Insert/Update).
+
+### Types & validation
+
+- `src/types/settings.ts`: `AiConfig`, `AiProviderConfig`, `AiKnowledgeSources`,
+  `DEFAULT_AI_CONFIG` (groq priority 1, openrouter priority 2, all sources on,
+  temperature 0.3, maxTokens 1024 — mirrors the previous hardcoded values),
+  `normalizeAiConfig()` (lenient: unknown/missing values fall back to defaults,
+  dedupes providers, fills missing ones, clamps numbers). `SiteSettings` now
+  carries `ai_config` + `custom_knowledge`; the settings repository maps them.
+- `src/lib/validation/schemas/ai.ts` (new): `aiConfigSchema`,
+  `saveAiConfigInputSchema` (custom knowledge max 20k chars),
+  `testAiProviderInputSchema`; exported from `@/lib/validation`.
+
+### Runtime config loader (`src/lib/ai/config.ts`, new)
+
+- `getAiConfig()` / `getCustomKnowledge()` / `getEnabledKnowledgeSources()` /
+  `getProviderChain()` read site_settings via the admin client (works without a
+  user session, e.g. public chat), normalized, cached 30s,
+  `invalidateAiConfigCache()` clears the cache after an admin save. Never throws.
+
+### Router & providers are now config-driven
+
+- `src/lib/ai/router.ts`: `routeToAI` reads the enabled provider chain (priority
+  order) + temperature/maxTokens from `ai_config`; per-provider model =
+  `provider.model` (pinned) → `getFastestModel(provider)` → hardcoded default.
+  Throws "AI is disabled or no providers are enabled" when the master switch is
+  off or every provider is disabled.
+- `streamGroq` / `streamOpenRouter` accept `options.temperature/maxTokens`
+  (defaults unchanged: 0.3 / 1024).
+
+### Knowledge sources are toggleable
+
+- `src/lib/ai/cms-context.ts` `buildCmsKnowledge(message)` now honors the
+  knowledge toggles: `custom` (always first section), `website` (site identity +
+  hero, newly fetched and cached 60s), `services`, `projects`, `blog` (still
+  message-regex gated), `hub` (hub + playground, regex gated).
+- `src/app/api/chat/route.ts`: respects the `faq` toggle for the static
+  file-based knowledge fallback (`findRelevantKnowledge`), and when
+  `ai_config.enabled` is false it returns the knowledge fallback without calling
+  any provider (no credits burned).
+- `src/app/api/admin/chat/route.ts`: builds its CMS context from the same
+  toggles (+ custom knowledge), and answers with a "disabled in AI
+  Configuration" message when the master switch is off.
+
+### Admin server actions (`src/lib/ai/actions.ts`, new)
+
+- `getAiConfigAction()` — auth-gated; returns `ai_config` (with per-provider
+  `keyStatus`: stored-key vs env vs missing, masked preview) + custom knowledge.
+- `saveAiConfigAction()` — auth + Zod; saves via the settings repository
+  (touches only `ai_config`/`custom_knowledge`), invalidates the cache,
+  revalidates `/admin/ai`, logs audit (`ai.config.updated`), fires the new
+  `ai.config.updated` notification event.
+- `testAiProviderAction({ id })` — auth + Zod; resolves the key (stored secret →
+  env) and calls the provider's `/models` endpoint (Groq: 15 models, OpenRouter:
+  338 with current keys — verified). Returns `{ provider, latencyMs, models }`
+  used for both Test Connection and model-dropdown discovery. Missing key →
+  actionable error pointing at Integrations.
+
+### Admin UI (`/admin/ai`)
+
+- The page is now two tabs: **Assistant** (existing `AdminChat`, unchanged) and
+  **Configuration** (`src/components/admin/ai/ai-config.tsx`, new).
+- Configuration sections: master enable switch + temperature + max tokens;
+  Custom Knowledge markdown editor (with char count); 7 knowledge-source
+  toggles; provider cards (enable switch, priority ↑/↓, model dropdown —
+  populated by Test Connection, "Auto" = fastest verified model — key status
+  badge, Manage key → `/admin/integrations`, Test Connection with latency +
+  model count). Save/Reset with dirty detection; errors surface via toast.
+- Help content registered in `src/lib/admin-help.ts` (`ai-page`).
+
+### Verified
+
+- `npm run lint` clean; `npx tsc --noEmit` clean; `npm run build` green.
+- Both provider `/models` endpoints probed with the current keys.
+- Migration applied remotely and confirmed via REST probe
+  (`ai_config` = `{}`, `custom_knowledge` = `""`).
+- Deployed to Vercel production (itsazhar.com) as part of this phase.

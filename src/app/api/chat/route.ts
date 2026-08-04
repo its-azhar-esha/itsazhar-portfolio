@@ -3,6 +3,7 @@ import { routeToAI, buildSystemPrompt } from "@/lib/ai/router";
 import { findRelevantKnowledge, detectIntent } from "@/lib/ai/knowledge";
 import { buildCmsKnowledge, captureChatLead } from "@/lib/ai/cms-context";
 import { checkChatRateLimit } from "@/lib/ai/rate-limit";
+import { getAiConfig, getEnabledKnowledgeSources } from "@/lib/ai/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +55,11 @@ async function buildKnowledgeResponse(message: string): Promise<{
   suggestions: string[];
 }> {
   const intent = detectIntent(message);
-  const [cms, staticKnowledge] = [await buildCmsKnowledge(message), findRelevantKnowledge(message)];
+  const [flags, cms] = await Promise.all([
+    getEnabledKnowledgeSources(),
+    buildCmsKnowledge(message),
+  ]);
+  const staticKnowledge = flags.faq ? findRelevantKnowledge(message) : "";
   const knowledge = [cms, staticKnowledge].filter(Boolean).join("\n\n---\n\n");
   const suggestions = pickSuggestions(intent, []);
   return { content: knowledge, intent, suggestions };
@@ -81,6 +86,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const config = await getAiConfig();
+    if (!config.enabled) {
+      const fallback = await buildKnowledgeResponse(
+        (await req.json().catch(() => ({})))?.messages?.slice(-1)[0]?.content || "",
+      );
+      return Response.json(fallback);
+    }
+
     const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -95,9 +108,10 @@ export async function POST(req: NextRequest) {
 
     const intent = detectIntent(userMessage);
     const cmsKnowledge = await buildCmsKnowledge(userMessage);
-    const knowledge = [cmsKnowledge, findRelevantKnowledge(userMessage)]
-      .filter(Boolean)
-      .join("\n\n---\n\n");
+    const staticKnowledge = (await getEnabledKnowledgeSources()).faq
+      ? findRelevantKnowledge(userMessage)
+      : "";
+    const knowledge = [cmsKnowledge, staticKnowledge].filter(Boolean).join("\n\n---\n\n");
 
     await captureChatLead(messages, intent);
 

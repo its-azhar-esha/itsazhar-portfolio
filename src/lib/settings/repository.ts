@@ -8,6 +8,7 @@ import {
   normalizeAnalyticsConfig,
   normalizeDxConfig,
   normalizeMonitoringConfig,
+  normalizeAiConfig,
 } from "@/types/settings";
 import { normalizeNotificationConfig } from "@/types/notifications";
 import type { Result } from "@/lib/result";
@@ -58,6 +59,8 @@ function rowToSiteSettings(
     dx_config: normalizeDxConfig(row.dx_config),
     monitoring_config: normalizeMonitoringConfig(row.monitoring_config),
     notification_config: normalizeNotificationConfig(row.notification_config),
+    ai_config: normalizeAiConfig(row.ai_config),
+    custom_knowledge: row.custom_knowledge ?? "",
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

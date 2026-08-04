@@ -1,10 +1,16 @@
 import { streamGroq } from "./providers/groq";
 import { streamOpenRouter } from "./providers/openrouter";
 import { getFastestModel } from "./models";
+import { getProviderChain, getAiConfig } from "./config";
 
 export type AIProvider = "groq" | "openrouter";
 
-const providerChain: AIProvider[] = ["groq", "openrouter"];
+export type { AiProviderConfig } from "@/types/settings";
+
+const DEFAULT_MODELS: Record<AIProvider, string> = {
+  groq: "llama-3.3-70b-versatile",
+  openrouter: "meta-llama/llama-3.1-8b-instruct",
+};
 
 interface StreamResult {
   stream: ReadableStream<Uint8Array>;
@@ -12,41 +18,55 @@ interface StreamResult {
   model: string;
 }
 
+/**
+ * Routes a chat request through the configured provider chain (admin AI
+ * configuration): providers are tried in priority order and the first one
+ * that answers wins. Model, temperature and max tokens come from the saved
+ * ai_config, falling back to verified defaults when unset.
+ */
 export async function routeToAI(
   messages: { role: string; content: string }[],
   signal?: AbortSignal,
 ): Promise<StreamResult> {
+  const [chain, config] = await Promise.all([getProviderChain(), getAiConfig()]);
+  if (chain.length === 0) {
+    throw new Error("AI is disabled or no providers are enabled");
+  }
+
+  const streamOptions = {
+    temperature: config.temperature,
+    maxTokens: config.maxTokens,
+  };
+
   let lastError: unknown;
 
-  for (const provider of providerChain) {
+  for (const provider of chain) {
     try {
-      const model = getFastestModel(provider);
       const modelId =
-        model?.id ||
-        (provider === "groq" ? "llama-3.3-70b-versatile" : "meta-llama/llama-3.1-8b-instruct");
+        provider.model.trim() || getFastestModel(provider.id)?.id || DEFAULT_MODELS[provider.id];
 
       let response: Response;
-      switch (provider) {
+      switch (provider.id) {
         case "groq":
-          response = await streamGroq(messages, signal, modelId);
+          response = await streamGroq(messages, signal, modelId, streamOptions);
           break;
         case "openrouter":
-          response = await streamOpenRouter(messages, signal, modelId);
+          response = await streamOpenRouter(messages, signal, modelId, streamOptions);
           break;
       }
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
-        lastError = new Error(`${provider} returned ${response.status}: ${errorText}`);
+        lastError = new Error(`${provider.id} returned ${response.status}: ${errorText}`);
         continue;
       }
 
       if (!response.body) {
-        lastError = new Error(`${provider} returned empty body`);
+        lastError = new Error(`${provider.id} returned empty body`);
         continue;
       }
 
-      return { stream: response.body, provider, model: modelId };
+      return { stream: response.body, provider: provider.id, model: modelId };
     } catch (err) {
       lastError = err;
       continue;

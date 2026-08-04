@@ -141,6 +141,14 @@ export const NOTIFICATION_EVENTS: NotificationEventDef[] = [
     defaultPriority: "low",
   },
   {
+    id: "ai.config.updated",
+    category: "content",
+    label: "AI configuration updated",
+    description:
+      "The AI assistant configuration (knowledge sources, providers, custom knowledge) was changed.",
+    defaultPriority: "low",
+  },
+  {
     id: "content.updated",
     category: "content",
     label: "Page content updated",
