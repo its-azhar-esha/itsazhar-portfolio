@@ -1,0 +1,183 @@
+[
+  {
+    "id": "afeda33c-9784-44e4-8a7e-3d576290a019",
+    "page_key": "about",
+    "title": "About Azhar Mahmud — ItsAzhar | AI Automation Expert",
+    "description": "Meet Azhar (ItsAzhar): an AI Automation Expert and n8n Developer building AI agents, custom workflow automation, and business process automation for companies worldwide.",
+    "keywords": [
+      "about",
+      "AI automation expert",
+      "automation specialist",
+      "n8n developer",
+      "AI agent developer",
+      "AI consultant",
+      "workflow automation",
+      "business automation",
+      "ItsAzhar",
+      "Azhar Mahmud"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/about",
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-04T07:56:15.384077+00:00"
+  },
+  {
+    "id": "c0d8f98f-5b65-47f0-b799-af58c0723a93",
+    "page_key": "projects",
+    "title": "Automation Projects & Case Studies | Azhar (ItsAzhar)",
+    "description": "Real n8n workflow automation, AI agent, and API integration projects by Azhar (ItsAzhar) — AI automation systems that eliminate repetitive work and improve operational efficiency.",
+    "keywords": [
+      "projects",
+      "AI automation projects",
+      "workflow automation",
+      "n8n projects",
+      "AI agent projects",
+      "API integration projects",
+      "business automation",
+      "process automation",
+      "ItsAzhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/projects",
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-04T07:56:15.487371+00:00"
+  },
+  {
+    "id": "f69f3049-b8b7-42b7-93b4-91e6ede528db",
+    "page_key": "services",
+    "title": "AI Automation Services | n8n Workflows & AI Agents — ItsAzhar",
+    "description": "AI automation services by Azhar (ItsAzhar): n8n workflow automation, AI agents, API integrations, and custom business process automation that eliminate repetitive work and scale your business.",
+    "keywords": [
+      "AI automation services",
+      "AI automation expert",
+      "n8n expert",
+      "n8n developer",
+      "AI agent developer",
+      "AI consultant",
+      "API integration",
+      "custom automation",
+      "process automation",
+      "workflow automation",
+      "business automation",
+      "automation freelancer",
+      "ItsAzhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/services",
+    "robots": "index,follow",
+    "created_at": "2026-08-04T07:56:15.596494+00:00",
+    "updated_at": "2026-08-04T07:56:15.596494+00:00"
+  },
+  {
+    "id": "f35c610b-313f-4c46-ac5c-ef5253240310",
+    "page_key": "contact",
+    "title": "Contact Azhar (ItsAzhar) | Book a Free Automation Audit",
+    "description": "Hire an AI automation freelancer. Book a free 15-minute automation audit with Azhar (ItsAzhar) — find automation opportunities in your business workflow, no pressure, no obligation.",
+    "keywords": [
+      "contact",
+      "automation audit",
+      "hire automation freelancer",
+      "AI automation expert",
+      "free consultation",
+      "business workflow",
+      "ItsAzhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/contact",
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-04T07:56:15.701109+00:00"
+  },
+  {
+    "id": "71116022-374c-4c5a-a2e5-54399b9b65a8",
+    "page_key": "home",
+    "title": "Azhar (ItsAzhar) | AI Automation Expert & n8n Developer",
+    "description": "AI Automation Expert at ItsAzhar — AI agents, n8n workflow automation, and API integrations to work and scale your business. Free automation audit.",
+    "keywords": [
+      "AI automation",
+      "AI automation expert",
+      "automation specialist",
+      "automation freelancer",
+      "workflow automation",
+      "business automation",
+      "n8n expert",
+      "n8n developer",
+      "AI agent developer",
+      "API integration",
+      "custom automation",
+      "ItsAzhar",
+      "Azhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com",
+    "robots": "index,follow",
+    "created_at": "2026-07-31T11:33:34.718359+00:00",
+    "updated_at": "2026-08-04T22:59:23.605462+00:00"
+  },
+  {
+    "id": "5d77026a-2cfe-49a6-a947-9d30c0b4447c",
+    "page_key": "blog",
+    "title": "AI Automation Blog | n8n, AI Agents & Workflow Guides — ItsAzhar",
+    "description": "Actionable guides on AI automation, n8n workflows, AI agents, API integrations and business process automation by Azhar (ItsAzhar), an AI Automation Expert.",
+    "keywords": [
+      "blog",
+      "AI automation",
+      "n8n workflows",
+      "n8n expert",
+      "AI agents",
+      "API integration",
+      "workflow automation",
+      "business automation",
+      "process automation",
+      "ItsAzhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/blog",
+    "robots": "index,follow",
+    "created_at": "2026-08-04T07:56:15.801782+00:00",
+    "updated_at": "2026-08-04T07:56:15.801782+00:00"
+  },
+  {
+    "id": "88498b7f-c826-4238-aebb-3d21003a1f4f",
+    "page_key": "hub",
+    "title": "Automation Hub | Free n8n Templates, AI Agents & Tools — ItsAzhar",
+    "description": "Free n8n templates, AI agents, prompts and automation tools from Azhar (ItsAzhar). Copy, adapt and ship workflow automation in minutes.",
+    "keywords": [
+      "automation hub",
+      "n8n templates",
+      "AI agents",
+      "prompts",
+      "workflow automation",
+      "business automation",
+      "custom automation",
+      "ItsAzhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/hub",
+    "robots": "index,follow",
+    "created_at": "2026-08-04T07:56:15.908856+00:00",
+    "updated_at": "2026-08-04T07:56:15.908856+00:00"
+  },
+  {
+    "id": "1086ecd3-7997-407d-85c9-836511083b95",
+    "page_key": "playground",
+    "title": "Workflow Playground | Visual n8n-Style Automation Builder — ItsAzhar",
+    "description": "Visual workflow builder with copy-paste-ready automation templates from Azhar (ItsAzhar). Build, share and remix n8n-style automation flows in your browser.",
+    "keywords": [
+      "workflow playground",
+      "visual builder",
+      "automation templates",
+      "n8n",
+      "workflow automation",
+      "custom automation",
+      "ItsAzhar"
+    ],
+    "og_image": null,
+    "canonical_url": "https://itsazhar.com/playground",
+    "robots": "index,follow",
+    "created_at": "2026-08-04T07:56:16.008206+00:00",
+    "updated_at": "2026-08-04T07:56:16.008206+00:00"
+  }
+]

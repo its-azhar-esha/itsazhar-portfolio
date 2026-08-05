@@ -1,0 +1,62 @@
+[
+  {
+    "id": "f5fa10da-df96-4093-a683-8115c354e46c",
+    "slug": "fleet-intelligence-system",
+    "title": "Fleet Intelligence System",
+    "subtitle": "Logistics AI",
+    "challenge": "Manual fleet monitoring was reactive, slow, and prone to missed incidents.",
+    "solution": "A real-time AI system that analyzes fleet activity, detects risks, and provides instant operational insights.",
+    "workflow": [
+      "Tracks vehicle and driver data",
+      "AI analyzes route behavior, delays, and anomalies",
+      "Automatically flags issues and sends alerts",
+      "Built with n8n + Supabase + LLM-based analysis"
+    ],
+    "impact": "Transformed manual fleet monitoring into an intelligent automated safety system.",
+    "icon": "fleet",
+    "display_order": 1,
+    "status": "published",
+    "created_at": "2026-07-31T13:38:59.940516+00:00",
+    "updated_at": "2026-08-02T11:47:04.002514+00:00"
+  },
+  {
+    "id": "0afa8a1f-98e2-4831-a709-8baf4ab7e6a3",
+    "slug": "lease-intelligence-system",
+    "title": "Lease Intelligence System",
+    "subtitle": "Real Estate AI",
+    "challenge": "Manual lease review was slow, inconsistent, and easy to miss critical clauses.",
+    "solution": "Automated extraction of important lease information from PDFs with structured summaries.",
+    "workflow": [
+      "Extracts clauses like rent, renewal, and termination",
+      "Processes PDF documents automatically",
+      "Generates structured summaries",
+      "Stores business data securely"
+    ],
+    "impact": "Reduces manual document review and helps prevent missed contract details.",
+    "icon": "lease",
+    "display_order": 2,
+    "status": "published",
+    "created_at": "2026-07-31T13:38:59.940516+00:00",
+    "updated_at": "2026-08-02T11:47:04.002514+00:00"
+  },
+  {
+    "id": "551bc277-364c-49a6-8e60-283ed5dc8ba3",
+    "slug": "education-automation-system",
+    "title": "Education Automation System",
+    "subtitle": "EdTech SaaS",
+    "challenge": "Manual school processes were scattered, error-prone, and difficult to scale.",
+    "solution": "An automation-first system built using n8n workflows for school operations.",
+    "workflow": [
+      "Handles student/admin workflows",
+      "Automates notifications",
+      "Processes data using AI",
+      "Uses PostgreSQL database"
+    ],
+    "impact": "Shows how scalable SaaS-like systems can be created using automation-first architecture.",
+    "icon": "education",
+    "display_order": 3,
+    "status": "published",
+    "created_at": "2026-07-31T13:38:59.940516+00:00",
+    "updated_at": "2026-08-02T11:47:04.002514+00:00"
+  }
+]

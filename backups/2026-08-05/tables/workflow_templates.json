@@ -1,0 +1,316 @@
+[
+  {
+    "id": "eee103ef-e783-4171-8fd3-52cf3de8694d",
+    "title": "Lead Scoring & Slack Alert",
+    "slug": "lead-scoring-slack-alert",
+    "description": "Score inbound leads with an LLM and alert your team on the good ones.",
+    "category_id": "bba171f7-e285-42aa-831c-8ab5ab9a09c6",
+    "difficulty": "beginner",
+    "tags": [
+      "leads",
+      "ai",
+      "slack"
+    ],
+    "thumbnail": null,
+    "nodes": [
+      {
+        "id": "webhook-1",
+        "type": "webhook",
+        "config": {
+          "path": "lead-in"
+        },
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "ai-1",
+        "type": "ai_chat",
+        "config": {
+          "prompt": "Score this lead 1-10 and return JSON with score, reason. Lead: {{webhook-1.body}}"
+        },
+        "position": {
+          "x": 260,
+          "y": 0
+        }
+      },
+      {
+        "id": "router-1",
+        "type": "router",
+        "config": {
+          "rules": "score >= 7 -> high, else low"
+        },
+        "position": {
+          "x": 520,
+          "y": 0
+        }
+      },
+      {
+        "id": "slack-1",
+        "type": "slack",
+        "config": {
+          "channel": "#sales-leads"
+        },
+        "position": {
+          "x": 780,
+          "y": -60
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "webhook-1",
+        "target": "ai-1"
+      },
+      {
+        "id": "e2",
+        "source": "ai-1",
+        "target": "router-1"
+      },
+      {
+        "id": "e3",
+        "source": "router-1",
+        "target": "slack-1"
+      }
+    ],
+    "canvas": {
+      "bgColor": "#0c0a14"
+    },
+    "walkthrough": [
+      {
+        "title": "Start",
+        "description": "Every flow needs a trigger. The Webhook node waits for an incoming HTTP request."
+      },
+      {
+        "title": "Score it",
+        "description": "The AI Chat node reads the lead payload and returns a 1-10 score with a reason."
+      },
+      {
+        "title": "Route it",
+        "description": "The Router sends high scores to the sales Slack channel."
+      },
+      {
+        "title": "Extend it",
+        "description": "Add a Data Store node to log every lead for later analysis."
+      }
+    ],
+    "featured": true,
+    "display_order": 1,
+    "status": "published",
+    "views_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "keywords": [
+      "lead scoring",
+      "ai",
+      "slack alert"
+    ],
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:10.081064+00:00"
+  },
+  {
+    "id": "d33cc96f-3648-426e-9108-1be7e2a69f25",
+    "title": "AI Content Brief Generator",
+    "slug": "ai-content-brief-generator",
+    "description": "Turn a topic idea into a structured content brief with outline, audience and angle.",
+    "category_id": "bba171f7-e285-42aa-831c-8ab5ab9a09c6",
+    "difficulty": "beginner",
+    "tags": [
+      "content",
+      "ai",
+      "marketing"
+    ],
+    "thumbnail": null,
+    "nodes": [
+      {
+        "id": "webhook-1",
+        "type": "webhook",
+        "config": {
+          "path": "brief-in"
+        },
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "ai-1",
+        "type": "ai_agent",
+        "config": {
+          "prompt": "You are a content strategist. Turn the topic into a brief with outline, target audience, angle and 3 headline options. Topic: {{webhook-1.body.topic}}"
+        },
+        "position": {
+          "x": 260,
+          "y": 0
+        }
+      },
+      {
+        "id": "email-1",
+        "type": "email",
+        "config": {
+          "to": "{{webhook-1.body.email}}"
+        },
+        "position": {
+          "x": 520,
+          "y": 0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "webhook-1",
+        "target": "ai-1"
+      },
+      {
+        "id": "e2",
+        "source": "ai-1",
+        "target": "email-1"
+      }
+    ],
+    "canvas": {
+      "bgColor": "#0c0a14"
+    },
+    "walkthrough": [
+      {
+        "title": "Trigger",
+        "description": "A webhook receives the topic and the creator's email."
+      },
+      {
+        "title": "Generate",
+        "description": "The AI Agent persona applies content-strategy best practices."
+      },
+      {
+        "title": "Deliver",
+        "description": "The brief is emailed back automatically."
+      }
+    ],
+    "featured": true,
+    "display_order": 2,
+    "status": "published",
+    "views_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "keywords": [
+      "content brief",
+      "ai agent",
+      "marketing"
+    ],
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:10.081064+00:00"
+  },
+  {
+    "id": "57e5e0de-c17d-455f-ac3b-d718950ff6e4",
+    "title": "Daily Digest & Store",
+    "slug": "daily-digest-and-store",
+    "description": "Collect data from an API every morning, clean it with a code step and archive it.",
+    "category_id": "00492311-cca0-4a8a-8e86-8058ed2030f4",
+    "difficulty": "intermediate",
+    "tags": [
+      "data",
+      "scheduler",
+      "archive"
+    ],
+    "thumbnail": null,
+    "nodes": [
+      {
+        "id": "schedule-1",
+        "type": "schedule",
+        "config": {
+          "cron": "0 9 * * *"
+        },
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "http-1",
+        "type": "http_request",
+        "config": {
+          "url": "https://api.example.com/daily",
+          "method": "GET"
+        },
+        "position": {
+          "x": 260,
+          "y": 0
+        }
+      },
+      {
+        "id": "code-1",
+        "type": "code",
+        "config": {
+          "code": "return items.map(i => ({ id: i.id, value: Number(i.value) }));"
+        },
+        "position": {
+          "x": 520,
+          "y": 0
+        }
+      },
+      {
+        "id": "store-1",
+        "type": "data_store",
+        "config": {
+          "operation": "write"
+        },
+        "position": {
+          "x": 780,
+          "y": 0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "schedule-1",
+        "target": "http-1"
+      },
+      {
+        "id": "e2",
+        "source": "http-1",
+        "target": "code-1"
+      },
+      {
+        "id": "e3",
+        "source": "code-1",
+        "target": "store-1"
+      }
+    ],
+    "canvas": {
+      "bgColor": "#0c0a14"
+    },
+    "walkthrough": [
+      {
+        "title": "Schedule",
+        "description": "Runs every day at 09:00 server time."
+      },
+      {
+        "title": "Fetch",
+        "description": "The HTTP Request node pulls the latest data."
+      },
+      {
+        "title": "Clean",
+        "description": "A code step normalizes the payload."
+      },
+      {
+        "title": "Archive",
+        "description": "The data store keeps a growing history."
+      }
+    ],
+    "featured": false,
+    "display_order": 3,
+    "status": "published",
+    "views_count": 0,
+    "seo_title": null,
+    "seo_description": null,
+    "keywords": [
+      "data pipeline",
+      "scheduler",
+      "archive"
+    ],
+    "created_at": "2026-07-31T17:30:07.293059+00:00",
+    "updated_at": "2026-08-02T11:47:10.081064+00:00"
+  }
+]
