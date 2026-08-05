@@ -796,50 +796,53 @@ export function AboutPageClient({ content, stats }: AboutPageClientProps) {
             </p>
           </motion.div>
           <div className="mx-auto mt-10 grid max-w-lg gap-3">
-            {socialLinks.map((s, i) => (
-              <motion.a
-                key={s.name}
-                href={s.placeholder ? undefined : s.url}
-                target={s.placeholder ? undefined : "_blank"}
-                rel={s.placeholder ? undefined : "noopener noreferrer"}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.25 }}
-                whileHover={{
-                  x: 6,
-                  y: -2,
-                  borderColor: "hsl(var(--primary) / 0.3)",
-                  boxShadow: "0 4px 20px -8px hsl(var(--primary)/0.15)",
-                  transition: springSoft,
-                }}
-                whileTap={{ scale: 0.98, transition: springSoft }}
-                className={`group border-border/60 bg-card/60 hover:border-primary/40 hover:shadow-primary/10 flex items-center gap-3 rounded-lg border px-4 py-3 backdrop-blur-sm transition-all duration-200 hover:shadow-md ${s.placeholder ? "cursor-default opacity-70" : ""}`}
-                aria-label={s.placeholder ? `${s.name} (coming soon)` : `${s.name} profile`}
-              >
-                <motion.div
-                  whileHover={{ scale: 1.15 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200"
+            {socialLinks.map((s, i) => {
+              const isMailto = s.url.startsWith("mailto:");
+              return (
+                <motion.a
+                  key={s.name}
+                  href={s.placeholder ? undefined : s.url}
+                  target={s.placeholder || isMailto ? undefined : "_blank"}
+                  rel={s.placeholder || isMailto ? undefined : "noopener noreferrer"}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05, duration: 0.25 }}
+                  whileHover={{
+                    x: 6,
+                    y: -2,
+                    borderColor: "hsl(var(--primary) / 0.3)",
+                    boxShadow: "0 4px 20px -8px hsl(var(--primary)/0.15)",
+                    transition: springSoft,
+                  }}
+                  whileTap={{ scale: 0.98, transition: springSoft }}
+                  className={`group border-border/60 bg-card/60 hover:border-primary/40 hover:shadow-primary/10 flex items-center gap-3 rounded-lg border px-4 py-3 backdrop-blur-sm transition-all duration-200 hover:shadow-md ${s.placeholder ? "cursor-default opacity-70" : ""}`}
+                  aria-label={s.placeholder ? `${s.name} (coming soon)` : `${s.name} profile`}
                 >
-                  {s.name === "Email" ? (
-                    <Mail className="h-4 w-4" />
-                  ) : (
-                    socialIcons[s.name] || <ExternalLink className="h-4 w-4" />
+                  <motion.div
+                    whileHover={{ scale: 1.15 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200"
+                  >
+                    {s.name === "Email" ? (
+                      <Mail className="h-4 w-4" />
+                    ) : (
+                      socialIcons[s.name] || <ExternalLink className="h-4 w-4" />
+                    )}
+                  </motion.div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{s.name}</p>
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                      {s.username}
+                      {s.placeholder ? " (Coming Soon)" : ""}
+                    </p>
+                  </div>
+                  {!s.placeholder && (
+                    <ExternalLink className="text-muted-foreground group-hover:text-primary h-3.5 w-3.5 shrink-0 transition-all duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
                   )}
-                </motion.div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{s.name}</p>
-                  <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                    {s.username}
-                    {s.placeholder ? " (Coming Soon)" : ""}
-                  </p>
-                </div>
-                {!s.placeholder && (
-                  <ExternalLink className="text-muted-foreground group-hover:text-primary h-3.5 w-3.5 shrink-0 transition-all duration-200 group-hover:translate-x-[3px] group-hover:-translate-y-[2px]" />
-                )}
-              </motion.a>
-            ))}
+                </motion.a>
+              );
+            })}
           </div>
           {resume?.url ? (
             <div className="mt-8 text-center">
