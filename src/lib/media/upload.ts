@@ -29,7 +29,7 @@ export function validateMediaFile(file: File): string | null {
   const mime = file.type;
   if (!ALLOWED_MEDIA_MIME_TYPES.includes(mime as (typeof ALLOWED_MEDIA_MIME_TYPES)[number])) {
     const label = mime || "unknown";
-    return `Unsupported file type "${label}". Allowed: images (JPG, PNG, WebP, GIF, AVIF), videos (MP4, WebM, MOV) and documents (PDF, TXT).`;
+    return `Unsupported file type "${label}". Allowed: images (JPG, PNG, WebP, GIF, AVIF, SVG), videos (MP4, WebM, MOV, MKV, OGV), audio (MP3, WAV, OGG, M4A, AAC, FLAC), documents (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, CSV, TXT, MD) and archives (ZIP).`;
   }
   if (file.size <= 0) return "File is empty.";
   if (file.size > MAX_MEDIA_FILE_SIZE_BYTES) {

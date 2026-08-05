@@ -24,6 +24,7 @@ const KIND_TABS = [
   { value: "all", label: "All" },
   { value: "image", label: "Images" },
   { value: "video", label: "Videos" },
+  { value: "audio", label: "Audio" },
   { value: "document", label: "Documents" },
 ] as const;
 
@@ -69,7 +70,10 @@ function PickerDialog({
 }) {
   const [search, setSearch] = React.useState("");
   const [kind, setKind] = React.useState<KindTab>(() =>
-    typeFilter === "image" || typeFilter === "video" || typeFilter === "document"
+    typeFilter === "image" ||
+    typeFilter === "video" ||
+    typeFilter === "audio" ||
+    typeFilter === "document"
       ? typeFilter
       : "all",
   );

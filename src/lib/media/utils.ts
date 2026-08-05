@@ -7,7 +7,10 @@ export function getMediaKind(mimeType: string): MediaKind {
   if (
     mimeType === "application/pdf" ||
     mimeType.includes("document") ||
-    mimeType.includes("text/")
+    mimeType.includes("text/") ||
+    mimeType.includes("excel") ||
+    mimeType.includes("powerpoint") ||
+    mimeType === "application/zip"
   ) {
     return "document";
   }

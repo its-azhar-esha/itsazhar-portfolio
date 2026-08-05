@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FileIcon, ImageIcon } from "lucide-react";
+import { FileIcon, ImageIcon, MusicIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MediaFile } from "@/types/media";
 
@@ -40,7 +40,9 @@ export function MediaImage({
         aria-hidden="true"
         className={cn("bg-muted/50 flex items-center justify-center", className)}
       >
-        {media && !isImage ? (
+        {media && media.mime_type.startsWith("audio/") ? (
+          <MusicIcon className="text-muted-foreground h-6 w-6" />
+        ) : media && !isImage ? (
           <FileIcon className="text-muted-foreground h-6 w-6" />
         ) : (
           <ImageIcon className="text-muted-foreground h-6 w-6" />

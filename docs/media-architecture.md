@@ -6,8 +6,8 @@ should integrate with it.
 ## Overview
 
 - **Storage:** Supabase Storage, public bucket `media`, flat layout of
-  `{uuid}.{ext}` filenames (50 MB upload limit — Supabase Free plan maximum,
-  images only).
+  `{uuid}.{ext}` filenames (50 MB upload limit — Supabase Free plan maximum;
+  images, videos, audio, documents and archives).
 - **Metadata:** `media_files` table (see `supabase/migrations/00006_create_media_files.sql`),
   holding filename, storage path, public URL, mime type, size, dimensions,
   alt text, caption, and timestamps.

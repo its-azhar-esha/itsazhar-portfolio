@@ -86,7 +86,7 @@ function kindFilter(kind: MediaKind): { column: "mime_type"; value: string } | n
 }
 
 const DOCUMENT_MIME_FILTER =
-  "mime_type.ilike.application/pdf,mime_type.ilike.%document%,mime_type.ilike.text/%";
+  "mime_type.ilike.application/pdf,mime_type.ilike.%document%,mime_type.ilike.%excel%,mime_type.ilike.%powerpoint%,mime_type.ilike.text/%,mime_type.ilike.application/zip";
 
 export async function getMedia(query: GetMediaQuery = {}): Promise<Result<MediaPage>> {
   try {

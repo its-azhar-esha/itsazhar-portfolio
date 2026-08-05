@@ -40,7 +40,7 @@ export const createMediaRecordSchema = z.object({
   public_url: z.string().url("Must be a valid URL").nullable().default(null),
   mime_type: z.enum(ALLOWED_MEDIA_MIME_TYPES, {
     error:
-      "Unsupported file type. Allowed: images (JPG, PNG, WebP, GIF, AVIF), videos (MP4, WebM, MOV) and documents (PDF, TXT).",
+      "Unsupported file type. Allowed: images, videos, audio, documents and archives (see the Media Library for the full list).",
   }),
   extension: z
     .string()
@@ -125,7 +125,7 @@ export const replaceMediaRecordSchema = z.object({
   public_url: z.string().url("Must be a valid URL").nullable().default(null),
   mime_type: z.enum(ALLOWED_MEDIA_MIME_TYPES, {
     error:
-      "Unsupported file type. Allowed: images (JPG, PNG, WebP, GIF, AVIF), videos (MP4, WebM, MOV) and documents (PDF, TXT).",
+      "Unsupported file type. Allowed: images, videos, audio, documents and archives (see the Media Library for the full list).",
   }),
   extension: z
     .string()

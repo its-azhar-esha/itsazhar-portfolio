@@ -5,12 +5,12 @@ import Image from "next/image";
 import { CheckCircle2, Loader2, Upload, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  ALLOWED_IMAGE_MIME_TYPES,
+  ALLOWED_MEDIA_MIME_TYPES,
   MAX_MEDIA_FILE_SIZE_BYTES,
   MIME_EXTENSIONS,
 } from "@/constants/media";
 import { uploadMediaFile, validateMediaFile } from "@/lib/media/upload";
-import { formatBytes } from "@/lib/media/utils";
+import { formatBytes, getMediaKind, kindLabel } from "@/lib/media/utils";
 import type { MediaFile } from "@/types/media";
 
 interface UploadItem {
@@ -26,7 +26,7 @@ interface MediaUploaderProps {
   multiple?: boolean;
   folder?: string;
   tags?: string[];
-  /** Restricts which files the picker/validation accept (defaults to images). */
+  /** Restricts which files the picker/validation accept (defaults to all supported types). */
   acceptMimeTypes?: readonly string[];
   onUploaded?: (media: MediaFile[]) => void;
   onError?: (message: string) => void;
@@ -37,7 +37,7 @@ export function MediaUploader({
   multiple = true,
   folder,
   tags,
-  acceptMimeTypes = ALLOWED_IMAGE_MIME_TYPES,
+  acceptMimeTypes = ALLOWED_MEDIA_MIME_TYPES,
   onUploaded,
   onError,
   className,
@@ -47,11 +47,18 @@ export function MediaUploader({
   const [busy, setBusy] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const acceptedExtensions = acceptMimeTypes
-    .map((mime) => MIME_EXTENSIONS[mime])
-    .filter(Boolean)
-    .join(", ")
-    .toUpperCase();
+  const acceptedKinds = React.useMemo(
+    () => [...new Set(acceptMimeTypes.map((mime) => getMediaKind(mime)))],
+    [acceptMimeTypes],
+  );
+  const acceptedLabel =
+    acceptedKinds.length === 1
+      ? acceptMimeTypes
+          .map((mime) => MIME_EXTENSIONS[mime])
+          .filter(Boolean)
+          .join(", ")
+          .toUpperCase()
+      : acceptedKinds.map((kind) => kindLabel(kind)).join(", ");
 
   React.useEffect(() => {
     return () => {
@@ -171,7 +178,7 @@ export function MediaUploader({
         <div>
           <p className="text-sm font-medium">Drop files here or click to upload</p>
           <p className="text-muted-foreground mt-1 text-xs">
-            {acceptedExtensions} — up to {formatBytes(MAX_MEDIA_FILE_SIZE_BYTES)} each
+            {acceptedLabel} — up to {formatBytes(MAX_MEDIA_FILE_SIZE_BYTES)} each
             {multiple ? ", multiple files allowed" : ""}
           </p>
         </div>
