@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
             "style-src 'self' 'unsafe-inline'",
             `img-src 'self' data: blob: ${supabaseOrigin ?? "https://*.supabase.co"} https://www.google-analytics.com`,
+            `media-src 'self' ${supabaseOrigin ?? "https://*.supabase.co"}`,
             "font-src 'self' data:",
             `connect-src 'self' ${supabaseOrigin ?? "https://*.supabase.co"} https://www.google-analytics.com https://api.groq.com https://openrouter.ai`,
             "frame-src 'none'",

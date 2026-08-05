@@ -1,4 +1,16 @@
 import type { MediaKind } from "@/types/media";
+import { ALLOWED_VIDEO_MIME_TYPES, MIME_EXTENSIONS } from "@/constants/media";
+
+const VIDEO_MIME_BY_EXTENSION: Record<string, string> = Object.fromEntries(
+  Object.entries(MIME_EXTENSIONS).filter(([mime]) =>
+    (ALLOWED_VIDEO_MIME_TYPES as readonly string[]).includes(mime),
+  ),
+);
+
+export function getVideoSourceType(url: string): string {
+  const ext = url.split("?")[0].split("#")[0].split(".").pop()?.toLowerCase() ?? "";
+  return VIDEO_MIME_BY_EXTENSION[ext] ?? "video/mp4";
+}
 
 export function getMediaKind(mimeType: string): MediaKind {
   if (mimeType.startsWith("image/")) return "image";

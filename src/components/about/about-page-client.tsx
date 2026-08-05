@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { spring, springSoft, fadeIn } from "@/lib/motion";
+import { getVideoSourceType } from "@/lib/media/utils";
 import { useChat } from "@/providers";
 import type { AboutContent } from "@/types/about";
 
@@ -208,12 +209,11 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
             muted
             loop
             playsInline
-            poster="/about-poster.jpg"
             preload="none"
             className="h-full w-full object-cover"
             aria-label="Intro video"
           >
-            <source src={videoUrl} type="video/mp4" />
+            <source src={videoUrl} type={getVideoSourceType(videoUrl)} />
           </video>
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -268,7 +268,7 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
                   className="h-full w-full"
                   aria-label="Intro video expanded view"
                 >
-                  <source src={videoUrl} type="video/mp4" />
+                  <source src={videoUrl} type={getVideoSourceType(videoUrl)} />
                 </video>
               </div>
             </motion.div>
