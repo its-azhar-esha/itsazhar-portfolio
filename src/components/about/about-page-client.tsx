@@ -164,8 +164,10 @@ function RotatingText({ roles }: { roles: string[] }) {
 function IntroVideo({ videoUrl }: { videoUrl: string }) {
   const [expanded, setExpanded] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false);
+  const [playing, setPlaying] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const inlineVideoRef = React.useRef<HTMLVideoElement>(null);
+  const overlayVideoRef = React.useRef<HTMLVideoElement>(null);
 
   React.useEffect(() => {
     if (!ref.current) return;
@@ -179,20 +181,34 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
     return () => observer.disconnect();
   }, []);
 
+  const handleExpand = () => {
+    inlineVideoRef.current?.pause();
+    setPlaying(false);
+    setExpanded(true);
+  };
+
+  const handleClose = () => {
+    overlayVideoRef.current?.pause();
+    setExpanded(false);
+  };
+
   React.useEffect(() => {
     if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setExpanded(false);
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
 
-  const handleExpand = () => {
-    setExpanded(true);
-    if (videoRef.current) {
-      videoRef.current.muted = false;
-      videoRef.current.controls = true;
+  const handleOverlayClick = () => {
+    const video = inlineVideoRef.current;
+    if (!video) return;
+    if (playing) {
+      handleExpand();
+    } else {
+      video.muted = false;
+      void video.play();
     }
   };
 
@@ -204,12 +220,14 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
       >
         {loaded ? (
           <video
-            ref={videoRef}
+            ref={inlineVideoRef}
             autoPlay
             muted
             loop
             playsInline
             preload="none"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
             className="h-full w-full object-cover"
             aria-label="Intro video"
           >
@@ -221,16 +239,20 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
           </div>
         )}
         <button
-          onClick={handleExpand}
+          onClick={handleOverlayClick}
           className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/10 transition-all duration-300 hover:bg-black/20"
-          aria-label="Expand video with sound"
+          aria-label={playing ? "Expand video with sound" : "Play intro video"}
         >
           <motion.div
             animate={{ scale: [1, 1.08, 1] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             className="bg-background/90 flex h-12 w-12 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-transform duration-300 hover:scale-110"
           >
-            <Play className="text-foreground ml-0.5 h-5 w-5" />
+            {playing ? (
+              <ExternalLink className="text-foreground h-5 w-5" />
+            ) : (
+              <Play className="text-foreground ml-0.5 h-5 w-5" />
+            )}
           </motion.div>
         </button>
       </div>
@@ -244,7 +266,7 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
             exit="hidden"
             transition={{ duration: 0.2 }}
             className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl"
-            onClick={() => setExpanded(false)}
+            onClick={handleClose}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
@@ -255,14 +277,14 @@ function IntroVideo({ videoUrl }: { videoUrl: string }) {
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={() => setExpanded(false)}
+                onClick={handleClose}
                 className="text-muted-foreground hover:text-foreground absolute -top-10 right-4 flex items-center gap-1.5 text-sm transition-colors"
               >
                 <X className="h-4 w-4" /> Close
               </button>
               <div className="aspect-video overflow-hidden rounded-xl border bg-black shadow-2xl">
                 <video
-                  ref={videoRef}
+                  ref={overlayVideoRef}
                   controls
                   autoPlay
                   className="h-full w-full"
