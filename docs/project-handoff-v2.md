@@ -3216,3 +3216,11 @@ application/offset+octet-stream`. **`Tus-Resumable: 1.0.0` is required on
   such asset exists — it 404'd).
 - Verified: live `/about` CSP now carries `media-src 'self'
 https://quekecvmdbzpxqglztsa.supabase.co`; deployed to itsazhar.com.
+- **Follow-up (commit `a3720c9`):** the intro video and its popup previously
+  shared one `videoRef`, and `handleExpand` unmuted the INLINE video through
+  that ref before the popup mounted — so the inline loop kept playing (with
+  sound) behind the popup. Now: separate refs; opening the popup pauses the
+  inline video; closing (X / backdrop / Escape) leaves it paused; the overlay
+  button resumes the inline video (with sound) when paused and opens the
+  popup when playing, so never two videos play at once. Playback state is
+  tracked via `onPlay`/`onPause`; the button icon switches Play/ExternalLink.
