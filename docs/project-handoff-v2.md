@@ -3153,3 +3153,66 @@ OBJECT {access_token, refresh_token, expires_at, expires_in, token_type})`
   planner calls per minute; the E2E retried 429s with a 45s wait and passed.
   OpenRouter account currently has no credits (402) — add credits or keep
   Groq as the planner provider.
+
+## 47. Media uploads: 50 MB limit + TUS resumable uploads (2026-08-05, migration `00041`, commits `ca3b786` + `5f45175`)
+
+### 50 MB cap (Supabase Free plan global limit)
+
+- `MAX_MEDIA_FILE_SIZE_BYTES` raised 10 MB → 50 MB (`src/constants/media.ts`).
+  Supabase Free caps single-file uploads at 50 MB project-wide; >50 MB needs
+  Pro. Migration `00041_raise_media_upload_limit.sql` raises the `media`
+  bucket `file_size_limit` to 52428800 (verified live via `selectFileOptions`).
+- Uploads are resumable with the TUS protocol (no new deps; hand-rolled
+  client in `src/lib/media/upload.ts`):
+  - Creation: `POST /storage/v1/upload/resumable` with `Upload-Length`,
+    `Upload-Metadata` (base64 `bucketName`/`objectName`/`contentType`/
+    `cacheControl`), `x-upsert: false`, `Tus-Resumable: 1.0.0`; the upload URL
+    comes from the `Location` header (HTTP 201, NOT a JSON body). Over-limit
+    files get 413 at creation.
+  - Chunks: 6 MB; PATCH with `Upload-Offset` + `Content-Type:
+application/offset+octet-stream`. **`Tus-Resumable: 1.0.0` is required on
+    EVERY request (create/PATCH/HEAD) — the XHR `patchChunk` originally
+    omitted it, so every chunk returned `412 Tus-Resumable Required` and the
+    UI reported "Upload stalled after several retries" (fixed in `5f45175`,
+    verified live: 412 without the header, 204 with it).
+  - Resume: `HEAD` returns the current `Upload-Offset`. Stalled-state errors
+    now include the last HTTP status for debugging.
+
+## 48. Media library: all file types + Intro Video media field (2026-08-05, commits `1f81409` + `25d39cd`)
+
+- The library accepts images (JPG/PNG/WebP/GIF/AVIF/SVG), videos
+  (MP4/WebM/MOV/MKV/OGV), audio (MP3/WAV/OGG/M4A/AAC/FLAC), documents
+  (PDF/DOC/DOCX/XLS/XLSX/PPT/PPTX/CSV/TXT/MD) and ZIP. Single source of
+  truth: `src/constants/media.ts` (`ALLOWED_*_MIME_TYPES`, `MIME_EXTENSIONS`)
+  drives the file dialog, client-side check, Zod enum and UI copy. The bucket
+  allows all MIME types (`allowed_mime_types: null`), so no storage change
+  was needed.
+- Root cause of "Unsupported file type video/mp4": `MediaUploader` defaulted
+  to images-only; it now defaults to `ALLOWED_MEDIA_MIME_TYPES` and fields
+  restrict downward via `acceptMimeTypes`.
+- `MediaField` gained a `typeFilter` prop (restricts the picker kind,
+  uploader MIME types, renders a `<video>` preview for video fields). The
+  About "Intro Video" field now uses `MediaField typeFilter="video"` instead
+  of a plain URL input; `getPublicAboutContent` resolves `introVideoUrl`
+  media references via `resolveMediaValue`.
+- Picker gained an Audio tab; `getMediaKind` + the document DB filter cover
+  office/archive MIMEs; `formatBytes` handles large files.
+
+## 49. Intro video playback fix — CSP `media-src` + dynamic source type (2026-08-05, commit `d50159c`)
+
+- Symptom: intro video (43.7 MB MP4) uploaded fine and the about page
+  received the correct resolved `introVideoUrl`, but the video never
+  appeared/played. Root cause: the CSP had NO `media-src` directive, so
+  `<video>` fell back to `default-src 'self'` and the browser silently
+  blocked the Supabase-hosted file (images worked only because `img-src`
+  explicitly lists the origin).
+- Fix in `next.config.ts`: `media-src 'self' <supabase-origin>` added
+  (derived from `NEXT_PUBLIC_SUPABASE_URL` like `img-src`/`connect-src`).
+- Also in `about-page-client.tsx` `IntroVideo`: removed the hardcoded
+  `type="video/mp4"` on both `<source>` elements (would break WebM/MOV/MKV/
+  OGV uploads) in favor of `getVideoSourceType(url)` (new helper in
+  `src/lib/media/utils.ts`, derives MIME from the file extension via
+  `MIME_EXTENSIONS`); removed the `poster="/about-poster.jpg"` attribute (no
+  such asset exists — it 404'd).
+- Verified: live `/about` CSP now carries `media-src 'self'
+https://quekecvmdbzpxqglztsa.supabase.co`; deployed to itsazhar.com.

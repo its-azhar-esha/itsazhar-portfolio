@@ -76,6 +76,15 @@ deleted media gracefully renders a missing-state placeholder.
   hostname (`NEXT_PUBLIC_SUPABASE_URL`), so storage URLs are optimizable.
 - Optimized images are served from the same origin (`/_next/image`) —
   consistent with the existing CSP (`img-src 'self' ...`).
+- Raw media (non-optimizable, e.g. `<video>`) is fetched directly from
+  Supabase storage; the CSP carries an explicit
+  `media-src 'self' <supabase-origin>` directive (added with the intro video
+  fix), since without it `media` falls back to `default-src 'self'` and the
+  browser silently blocks every video/audio element.
+- For `<video>/<audio>` elements prefer `getVideoSourceType(url)`
+  (`src/lib/media/utils.ts`) for the `<source type>` attribute instead of a
+  hardcoded MIME — it derives the type from the file extension so
+  WebM/MOV/MKV/OGV uploads play too.
 - Filenames are immutable UUIDs, so storage URLs are cache-friendly
   (`public_url` never changes for a given row); future CDN use only needs a
   domain swap in `remotePatterns` and the `public_url` values.
