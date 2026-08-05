@@ -14,6 +14,10 @@ export async function getPublicAboutContent(): Promise<AboutContent> {
       const resolved = await resolveMediaValue(content.basic.profileImage);
       if (resolved) content.basic.profileImage = resolved;
     }
+    if (content.basic?.introVideoUrl) {
+      const resolved = await resolveMediaValue(content.basic.introVideoUrl);
+      if (resolved) content.basic.introVideoUrl = resolved;
+    }
     return content;
   } catch {
     return DEFAULT_ABOUT_CONTENT;

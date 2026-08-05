@@ -366,15 +366,13 @@ export function AboutEditor({ initial }: AboutEditorProps) {
                     value={fields.profileImage}
                     onChange={(value) => handleChange({ profileImage: value ?? "" })}
                   />
-                  <div className="space-y-2">
-                    <Label htmlFor="introVideoUrl">Intro Video URL</Label>
-                    <Input
-                      id="introVideoUrl"
-                      value={fields.introVideoUrl}
-                      onChange={(e) => handleChange({ introVideoUrl: e.target.value })}
-                      placeholder="/intro.mp4"
-                    />
-                  </div>
+                  <MediaField
+                    label="Intro Video"
+                    description="Choose a video from the library, upload a new one, or paste an external URL."
+                    typeFilter="video"
+                    value={fields.introVideoUrl}
+                    onChange={(value) => handleChange({ introVideoUrl: value ?? "" })}
+                  />
                 </div>
               </SectionCard>
             </TabsContent>

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { resolveMediaUrlAction } from "@/lib/media/actions";
 import { isMediaReference, toMediaReference } from "@/lib/media/reference";
+import { ALLOWED_DOCUMENT_MIME_TYPES, ALLOWED_VIDEO_MIME_TYPES } from "@/constants/media";
+import type { MediaKind } from "@/types/media";
 import { MediaImage } from "./media-image";
 import { MediaPicker } from "./media-picker";
 import { MediaUploader } from "./media-uploader";
@@ -18,6 +20,8 @@ interface MediaFieldProps {
   onChange: (value: string | null) => void;
   previewClassName?: string;
   allowPasteUrl?: boolean;
+  /** Restricts the picker/uploader to one media kind (e.g. "video"). */
+  typeFilter?: MediaKind;
 }
 
 export function MediaField({
@@ -27,6 +31,7 @@ export function MediaField({
   onChange,
   previewClassName,
   allowPasteUrl = true,
+  typeFilter,
 }: MediaFieldProps) {
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -36,6 +41,13 @@ export function MediaField({
 
   const rawValue = value && value.trim() !== "" ? value.trim() : null;
   const missingReference = rawValue !== null && isMediaReference(rawValue) && previewUrl === null;
+
+  const uploaderMimeTypes =
+    typeFilter === "video"
+      ? ALLOWED_VIDEO_MIME_TYPES
+      : typeFilter === "document"
+        ? ALLOWED_DOCUMENT_MIME_TYPES
+        : undefined;
 
   React.useEffect(() => {
     let active = true;
@@ -78,12 +90,21 @@ export function MediaField({
         <div
           className={`bg-muted/40 border-border/40 relative w-full overflow-hidden rounded-lg border ${previewClassName ?? "aspect-video max-w-xs"}`}
         >
-          <MediaImage
-            src={previewUrl}
-            alt={label ?? "Selected media"}
-            fill
-            sizes="(max-width: 448px) 100vw, 448px"
-          />
+          {typeFilter === "video" ? (
+            <video
+              src={previewUrl}
+              controls
+              preload="metadata"
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <MediaImage
+              src={previewUrl}
+              alt={label ?? "Selected media"}
+              fill
+              sizes="(max-width: 448px) 100vw, 448px"
+            />
+          )}
         </div>
       ) : rawValue ? (
         <div className="border-destructive/40 flex w-full max-w-xs flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-4 text-center">
@@ -146,7 +167,12 @@ export function MediaField({
 
       {uploadOpen && (
         <div className="max-w-md">
-          <MediaUploader multiple={false} onUploaded={handleUploaded} onError={() => undefined} />
+          <MediaUploader
+            multiple={false}
+            acceptMimeTypes={uploaderMimeTypes}
+            onUploaded={handleUploaded}
+            onError={() => undefined}
+          />
         </div>
       )}
 
@@ -168,6 +194,7 @@ export function MediaField({
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
+        typeFilter={typeFilter}
         onSelect={(media) => handlePicked(media.id)}
       />
     </div>

@@ -439,7 +439,8 @@ reconcile it to the app's `active` convention.
 
 - `MediaField` — form input: choose existing / upload new / paste URL /
   remove, live preview, missing-reference state (used by hero, about,
-  projects, SEO forms)
+  projects, SEO forms). `typeFilter="video"` restricts picker + uploader to
+  videos and renders a `<video>` preview (About "Intro Video" uses it)
 - `MediaPicker` — modal grid picker with search; returns `MediaFile`
 - `MediaUploader` — drag-drop multi-upload with progress
 - `MediaImage` — next/image renderer; `fill` mode, sizes, placeholders for
