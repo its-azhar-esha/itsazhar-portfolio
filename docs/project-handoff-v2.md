@@ -3224,3 +3224,20 @@ https://quekecvmdbzpxqglztsa.supabase.co`; deployed to itsazhar.com.
   button resumes the inline video (with sound) when paused and opens the
   popup when playing, so never two videos play at once. Playback state is
   tracked via `onPlay`/`onPause`; the button icon switches Play/ExternalLink.
+
+## 50. About page completion — all social links live (2026-08-05, commit `e1c9762`)
+
+- Audited every About section against live DB content: hero, intro video,
+  bio, build steps, tools marquee, industries, timeline, principles, stats
+  (live counts via `getPublicStats`) and CTA are all fully implemented with
+  real content. The only placeholders were social links: Email, YouTube and
+  Instagram had real URLs but `placeholder: true`, so they rendered dimmed
+  with "(Coming Soon)" (8 links, 3 flagged).
+- Cleared `placeholder` for Email/YouTube/Instagram in the live
+  `content_entries` (key=about) — all 8 links now active; verified the
+  served page contains no "Coming Soon" and all hrefs.
+- UI consistency: `mailto:` links no longer set `target="_blank"` (was
+  opening a blank tab); mailto links open in place.
+- Resume: the button stays hidden when `resume.url` is empty and is fully
+  manageable from `/admin/content/about` (Label + URL fields; empty URL
+  hides it again) — no code change needed.
