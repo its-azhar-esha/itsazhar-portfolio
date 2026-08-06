@@ -1,0 +1,223 @@
+[
+  {
+    "id": "6289ecdd-be6e-4114-b42c-b5c9be44d4df",
+    "slug": "document-intelligence-systems",
+    "title": "Document Intelligence Systems",
+    "short_description": "Extract, classify, summarize, and process business documents automatically using AI-powered document intelligence.",
+    "content": {
+      "highlights": [
+        "OCR Processing",
+        "PDF Automation",
+        "Document Classification",
+        "Data Extraction",
+        "AI Summarization",
+        "Invoice Processing",
+        "Contract Analysis",
+        "Workflow Automation"
+      ]
+    },
+    "icon": "file_text",
+    "featured": true,
+    "display_order": 3,
+    "status": "published",
+    "seo_title": "AI Document Intelligence & Processing Solutions",
+    "seo_description": "Automate document processing using AI to extract data, classify documents, summarize content, and streamline business workflows.",
+    "seo_keywords": [
+      "Document Intelligence",
+      "AI Document Processing",
+      "OCR",
+      "Invoice Automation",
+      "Contract Analysis",
+      "PDF Processing",
+      "AI OCR",
+      "Document Automation"
+    ],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-05T13:07:17.295538+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "0d691ac2-0007-4147-a1f9-b9f616ad395b",
+    "slug": "business-process-automation",
+    "title": "Business Process Automation",
+    "short_description": "Transform manual business operations into efficient automated workflows that improve productivity and reduce operational costs.",
+    "content": {
+      "highlights": [
+        "Process Optimization",
+        "Workflow Automation",
+        "Task Automation",
+        "Business Operations",
+        "Process Mapping",
+        "AI Automation",
+        "Productivity",
+        "Digital Transformation"
+      ]
+    },
+    "icon": "building2",
+    "featured": true,
+    "display_order": 5,
+    "status": "published",
+    "seo_title": "Business Process Automation Services | AI Workflow Solutions",
+    "seo_description": "Automate business processes with AI-powered workflows to improve efficiency, reduce costs, eliminate repetitive work, and scale operations.",
+    "seo_keywords": [
+      "Business Process Automation",
+      "BPA",
+      "Workflow Automation",
+      "AI Automation",
+      "Process Optimization",
+      "Business Automation",
+      "Digital Transformation"
+    ],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-05T13:08:22.987358+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "2088b147-c344-4ca9-bbf3-f64fbb412137",
+    "slug": "custom-ai-automation-solutions",
+    "title": "Custom AI Automation Solutions",
+    "short_description": "Get custom AI automation solutions tailored to your business goals, workflows, and operational challenges.",
+    "content": {
+      "highlights": [
+        "Custom AI Solutions",
+        "AI Consulting",
+        "Workflow Design",
+        "AI Integration",
+        "Business Automation",
+        "Scalable Systems",
+        "Process Optimization",
+        "End-to-End Automation"
+      ]
+    },
+    "icon": "cpu",
+    "featured": true,
+    "display_order": 5,
+    "status": "published",
+    "seo_title": "Custom AI Automation Solutions for Business Growth",
+    "seo_description": "Build custom AI automation solutions tailored to your business processes, helping you automate operations, improve efficiency, and scale faster.",
+    "seo_keywords": [
+      "Custom AI Solutions",
+      "AI Automation",
+      "Business AI",
+      "Workflow Automation",
+      "AI Integration",
+      "Intelligent Automation",
+      "AI Consulting",
+      "Business Automation"
+    ],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-05T13:09:13.366248+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "9aede0d2-2690-44d4-b92a-369549e7f84a",
+    "slug": "ai-agents-intelligent-assistants",
+    "title": "AI Agent & Intelligent Assistants",
+    "short_description": "Build intelligent AI agents that automate customer support, business operations, and repetitive tasks to improve productivity and reduce manual work.",
+    "content": {
+      "highlights": [
+        "Custom AI Agents",
+        "Customer Support Automation",
+        "AI Task Automation",
+        "Multi-Step Workflows",
+        "Tool & API Integration",
+        "24/7 AI Assistance",
+        "Business Process Automation",
+        "Intelligent Decision Making"
+      ]
+    },
+    "icon": "bot",
+    "featured": true,
+    "display_order": 1,
+    "status": "published",
+    "seo_title": "Custom AI Agents & Intelligent Assistants for Businesses",
+    "seo_description": "Build AI agents and intelligent assistants to automate customer support, business operations, workflows, and repetitive tasks for faster growth.",
+    "seo_keywords": [
+      "AI Agents",
+      "AI Assistant",
+      "Intelligent Assistant",
+      "Business AI",
+      "AI Automation",
+      "AI Agent Development",
+      "Workflow Automation",
+      "Customer Support AI"
+    ],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-05T13:05:15.511657+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "11565077-6b2c-430e-bfd3-e3d6a415687e",
+    "slug": "workflow-automation-n8n",
+    "title": "Workflow Automation with n8n",
+    "short_description": "Automate repetitive business processes with scalable n8n workflows that connect your apps, data, and AI tools seamlessly.",
+    "content": {
+      "highlights": [
+        "n8n Automation",
+        "Custom Workflows",
+        "AI Integration",
+        "API Connections",
+        "Process Automation",
+        "Cloud Automation",
+        "Webhooks",
+        "Business Workflows"
+      ]
+    },
+    "icon": "workflow",
+    "featured": true,
+    "display_order": 2,
+    "status": "published",
+    "seo_title": "n8n Workflow Automation Services for Businesses",
+    "seo_description": "Automate business workflows with n8n using AI, APIs, webhooks, and custom integrations to improve productivity and reduce manual work.",
+    "seo_keywords": [
+      "n8n",
+      "n8n Automation",
+      "Workflow Automation",
+      "Business Automation",
+      "AI Workflow",
+      "Process Automation",
+      "API Automation",
+      "Webhooks"
+    ],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-05T13:06:05.40586+00:00",
+    "scheduled_for": null
+  },
+  {
+    "id": "eee8a426-1dd5-4024-b92f-fb8e617523b4",
+    "slug": "api-system-integration",
+    "title": "API & System Integration",
+    "short_description": "Connect your applications, databases, and third-party services to create reliable and fully integrated business systems.",
+    "content": {
+      "highlights": [
+        "REST APIs",
+        "Third-Party Integrations",
+        "Database Integration",
+        "CRM Integration",
+        "Webhooks",
+        "Cloud Services",
+        "Secure Data Sync",
+        "Custom APIs"
+      ]
+    },
+    "icon": "cable",
+    "featured": true,
+    "display_order": 3,
+    "status": "published",
+    "seo_title": "API & System Integration Services for Modern Businesses",
+    "seo_description": "Connect APIs, databases, CRMs, and cloud services to automate data flow and build scalable business integrations.",
+    "seo_keywords": [
+      "API Integration",
+      "System Integration",
+      "REST API",
+      "CRM Integration",
+      "Business Integration",
+      "API Development",
+      "Webhooks",
+      "Data Synchronization"
+    ],
+    "created_at": "2026-07-31T12:43:41.57513+00:00",
+    "updated_at": "2026-08-05T13:06:45.376755+00:00",
+    "scheduled_for": null
+  }
+]
