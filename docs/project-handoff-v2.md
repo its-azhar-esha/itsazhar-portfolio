@@ -3241,3 +3241,25 @@ https://quekecvmdbzpxqglztsa.supabase.co`; deployed to itsazhar.com.
 - Resume: the button stays hidden when `resume.url` is empty and is fully
   manageable from `/admin/content/about` (Label + URL fields; empty URL
   hides it again) — no code change needed.
+
+## 51. Home profile photo — admin-managed (2026-08-05, commit `97810c1`)
+
+- The home "Hi, I'm Azhar" card (the `About` section on `/`) previously
+  showed a static Sparkles placeholder — no photo field existed anywhere.
+- The generic page content editor (`page-content-editor.tsx`) gained a
+  **`media` field type** (`FieldType` + `FieldInput`) that renders the
+  standard `MediaField` (library pick, upload, URL paste, preview, remove)
+  with `typeFilter="image"`.
+- `HomeAboutContent` gained `photo: string` (`DEFAULT_HOME_CONTENT` → `""`);
+  `Home` (server) resolves `media:<uuid>` refs at render time via
+  `resolveMediaValue` before passing copy to the client `About` component,
+  which renders the photo with `MediaImage` (fill, `sizes=160px`) and keeps
+  the Sparkles box as empty-state fallback.
+- Admin UX: `/admin/content/home` → About Section → "Photo" field shows the
+  current image, supports change/remove. `pageContentSchema` is a catchall,
+  so the new key persists.
+- Data: created the `home` content_entries row (was defaults-only) with
+  `about.photo = media:484c7ce2-cb69-4626-840f-eafe77ce2bfd` (existing
+  library image "Azhar", 1246×1262 PNG). Verified live: `/` renders the
+  optimized `<img>` (alt "Photo of Azhar") from the storage public_url; the
+  row's public_url serves 200 image/png.
