@@ -10,7 +10,7 @@ import {
   Share2,
 } from "lucide-react";
 
-export type FieldType = "text" | "textarea" | "tags" | "links";
+export type FieldType = "text" | "textarea" | "tags" | "links" | "media";
 
 export interface FieldDef {
   /** Dot-path of the field relative to its group object, e.g. "audit.title". */
@@ -88,6 +88,12 @@ export const PAGE_CONTENT_DEFINITIONS: PageContentDefinition[] = [
         title: "About Section",
         description: "The short about teaser on the homepage.",
         fields: [
+          {
+            key: "about.photo",
+            label: "Photo",
+            type: "media",
+            hint: "Your profile photo shown in the about card. Pick from the media library or upload a new image.",
+          },
           { key: "about.name", label: "Name", type: "text" },
           { key: "about.heading", label: "Heading", type: "text" },
           { key: "about.role", label: "Role", type: "text" },

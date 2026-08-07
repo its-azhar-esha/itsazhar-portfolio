@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MediaImage } from "@/components/media/media-image";
 import { scaleIn, cardEntrance, roleShuffle } from "@/lib/motion";
 import Link from "next/link";
 import type { HomeAboutContent } from "@/lib/content/defaults/home";
@@ -52,14 +53,24 @@ export function About({ copy }: { copy: HomeAboutContent }) {
             className="flex justify-center md:col-span-2 md:justify-end"
           >
             <div className="group border-border/60 from-primary/15 via-primary/5 to-background hover:border-primary/30 hover:shadow-primary/5 relative h-40 w-40 overflow-hidden rounded-2xl border bg-gradient-to-br transition-all duration-300 hover:shadow-lg">
-              <div className="flex h-full w-full items-center justify-center">
-                <div className="text-center">
-                  <div className="bg-primary/20 mx-auto flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110">
-                    <Sparkles className="text-primary h-6 w-6" />
+              {copy.photo ? (
+                <MediaImage
+                  src={copy.photo}
+                  alt={`Photo of ${copy.name}`}
+                  fill
+                  sizes="160px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <div className="text-center">
+                    <div className="bg-primary/20 mx-auto flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110">
+                      <Sparkles className="text-primary h-6 w-6" />
+                    </div>
+                    <p className="text-muted-foreground mt-2 text-xs font-medium">{copy.name}</p>
                   </div>
-                  <p className="text-muted-foreground mt-2 text-xs font-medium">{copy.name}</p>
                 </div>
-              </div>
+              )}
             </div>
           </motion.div>
 

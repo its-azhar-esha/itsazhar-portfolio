@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
+import { MediaField } from "@/components/media/media-field";
 import { savePageContentAction } from "@/lib/content/actions";
 import { isPlainObject } from "@/lib/content/merge";
 import type { GroupDef } from "@/lib/content/schemas";
@@ -216,7 +217,7 @@ function FieldInput({
     key: string;
     label: string;
     hint?: string;
-    type?: "text" | "textarea" | "tags" | "links";
+    type?: "text" | "textarea" | "tags" | "links" | "media";
   };
   value: unknown;
   onChange: (value: unknown) => void;
@@ -224,6 +225,20 @@ function FieldInput({
 }) {
   const type = field.type ?? "text";
   const id = `field-${field.key.replace(/\./g, "-")}`;
+
+  if (type === "media") {
+    return (
+      <div className="space-y-2 sm:col-span-2">
+        <Label>{field.label}</Label>
+        <MediaField
+          value={asString(value) || null}
+          onChange={(v) => onChange(v)}
+          typeFilter="image"
+        />
+        {field.hint && <p className="text-muted-foreground text-xs">{field.hint}</p>}
+      </div>
+    );
+  }
 
   if (type === "textarea") {
     return (

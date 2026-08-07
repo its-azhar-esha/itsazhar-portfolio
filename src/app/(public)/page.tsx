@@ -16,6 +16,7 @@ import { getPublicCaseStudiesAction } from "@/lib/case-studies";
 import { getPublicTestimonialsAction } from "@/lib/testimonials";
 import { getPublicSiteSettings } from "@/lib/settings";
 import { getPublicPageContent } from "@/lib/content";
+import { resolveMediaValue } from "@/lib/media/repository";
 import { DEFAULT_HOME_CONTENT, type HomePageContent } from "@/lib/content/defaults/home";
 import {
   DEFAULT_PROJECTS_CONTENT,
@@ -46,6 +47,12 @@ export default async function Home() {
     getPublicPageContent<HomePageContent>("home", DEFAULT_HOME_CONTENT),
     getPublicPageContent<ProjectsPageContent>("projects", DEFAULT_PROJECTS_CONTENT),
   ]);
+
+  const photo = homeContent.about.photo;
+  if (photo && photo.startsWith("media:")) {
+    const resolved = await resolveMediaValue(photo);
+    homeContent.about.photo = resolved ?? "";
+  }
 
   const heroMetrics: HeroMetric[] = [
     { value: `${stats.projects}+`, label: "Automation Systems Built" },

@@ -28,6 +28,7 @@ export interface HomeTestimonialsContent {
 
 export interface HomeAboutContent {
   name: string;
+  photo: string;
   heading: string;
   role: string;
   intro: string;
@@ -98,6 +99,7 @@ export const DEFAULT_HOME_CONTENT: HomePageContent = {
   },
   about: {
     name: "Azhar",
+    photo: "",
     heading: "Hi, I'm Azhar",
     role: "AI Automation Specialist",
     intro:
