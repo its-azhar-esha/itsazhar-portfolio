@@ -1,0 +1,157 @@
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "site_name": "Azhar",
+    "tagline": "AI Automation Expert & n8n Developer",
+    "location": "Remote, Worldwide",
+    "contact_email": "azhar@itsazhar.com",
+    "contact_phone": "",
+    "social_github": "https://github.com/its-azhar-esha",
+    "social_linkedin": null,
+    "social_twitter": null,
+    "social_fiverr": "https://www.fiverr.com/s/KeNpKXb",
+    "footer_text": "© 2026 Azhar (itsazhar.com). All rights reserved.",
+    "maintenance_mode": false,
+    "show_ai_chat": true,
+    "featured_projects_enabled": true,
+    "featured_services_enabled": true,
+    "ga4_measurement_id": "G-D8LLR94CK7",
+    "gtm_id": "",
+    "clarity_project_id": "",
+    "created_at": "2026-07-31T11:50:56.974166+00:00",
+    "updated_at": "2026-08-04T22:18:57.383212+00:00",
+    "show_hero": true,
+    "show_showcase": true,
+    "show_services": true,
+    "show_case_studies": true,
+    "show_about": true,
+    "show_testimonials": false,
+    "show_contact": true,
+    "site_title": "Azhar (ItsAzhar) | AI Automation Expert & n8n Developer",
+    "site_description": "AI Automation Expert at ItsAzhar — AI agents, n8n workflow automation, and API integrations that eliminate repetitive work and help businesses scale faster.",
+    "logo": null,
+    "booking_url": null,
+    "social_instagram": null,
+    "social_youtube": null,
+    "show_blog": true,
+    "show_hub": true,
+    "show_playground": true,
+    "nav_order": [
+      {
+        "href": "/",
+        "label": "Home",
+        "enabled": true
+      },
+      {
+        "href": "/#services",
+        "label": "Services",
+        "enabled": true
+      },
+      {
+        "href": "/projects",
+        "label": "Projects",
+        "enabled": true
+      },
+      {
+        "href": "/about",
+        "label": "About",
+        "enabled": true
+      },
+      {
+        "href": "/#contact",
+        "label": "Contact",
+        "enabled": true
+      },
+      {
+        "href": "/blog",
+        "label": "Blog",
+        "enabled": true
+      },
+      {
+        "href": "/hub",
+        "label": "Hub",
+        "enabled": true
+      },
+      {
+        "href": "/playground",
+        "label": "Playground",
+        "enabled": true
+      }
+    ],
+    "analytics_config": {
+      "enabled": true,
+      "windowDays": 30,
+      "retentionDays": 90,
+      "trackSearchKeywords": true
+    },
+    "dx_config": {
+      "seoDescMax": 160,
+      "seoDescMin": 120,
+      "seoTitleMax": 70,
+      "linkCheckMaxUrls": 25,
+      "linkCheckTimeoutMs": 8000,
+      "recordHealthChecks": true
+    },
+    "monitoring_config": {
+      "siteUrl": "https://itsazhar.com",
+      "webhooks": [],
+      "backupUrl": "",
+      "healthCheckUrl": ""
+    },
+    "notification_config": {
+      "events": {},
+      "enabled": true,
+      "categories": {
+        "leads": true,
+        "system": true,
+        "content": true,
+        "security": true,
+        "monitoring": true
+      },
+      "priorities": {
+        "backup.ok": "high",
+        "health.ok": "high",
+        "health.failed": "critical",
+        "backup.partial": "critical",
+        "settings.updated": "high"
+      },
+      "recipients": [
+        {
+          "id": "2fa0a691-22c2-45d4-90e7-ffe6285f766d",
+          "label": "Owner",
+          "chatId": "7444460828",
+          "enabled": true
+        }
+      ]
+    },
+    "ai_config": {
+      "enabled": true,
+      "knowledge": {
+        "faq": true,
+        "hub": true,
+        "blog": true,
+        "custom": true,
+        "website": true,
+        "projects": true,
+        "services": true
+      },
+      "maxTokens": 1024,
+      "providers": [
+        {
+          "id": "groq",
+          "model": "",
+          "enabled": true,
+          "priority": 1
+        },
+        {
+          "id": "openrouter",
+          "model": "",
+          "enabled": true,
+          "priority": 2
+        }
+      ],
+      "temperature": 0.3
+    },
+    "custom_knowledge": "Name: Azhar\n\nFull Name: Azhar Mahmud Alif\n\nNationality: Bangladeshi\n\nCountry: Bangladesh\n\nHometown: Noakhali, Bangladesh\n\nOccupation: AI Automation Developer\n\nSpecialization:\n- AI Automation\n- n8n Workflow Automation\n- AI Agent Development\n- Full-Stack Web Development\n- API Integration\n\nEducation:\nCurrently pursuing a Bachelor of Science (B.Sc.) in Computer Science and Engineering (CSE) through Siddheswari College.\n\nLanguages:\n- Bengali (Native)\n- English (Professional Working Proficiency)\n\nInterests:\n- Artificial Intelligence\n- Workflow Automation\n- Software Engineering\n- Web Development\n- Backend Development\n- Building SaaS Products\n- Learning New Technologies\n\nMission:\nTo build AI-powered solutions that automate business processes, improve productivity, and solve real-world problems.\n\nWorking Style:\nI enjoy building clean, scalable, and production-ready software. I focus on understanding problems first and then designing practical, efficient solutions.\n\nCareer Goal:\nTo become a world-class AI Automation Engineer and Full-Stack Developer while creating impactful software products and helping businesses automate their workflows."
+  }
+]
