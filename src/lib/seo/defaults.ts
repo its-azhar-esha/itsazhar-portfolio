@@ -174,4 +174,13 @@ export const DEFAULT_SEO: Record<string, DefaultSeo> = {
     canonical_url: `${SITE_URL}/playground`,
     og_image: null,
   },
+  terms: {
+    title: "Terms & Conditions | ItsAzhar — AI Automation",
+    description:
+      "Terms and conditions for using the website and the AI automation services provided by Azhar Mahmud (ItsAzhar).",
+    keywords: ["terms", "conditions", "ItsAzhar", "legal"],
+    robots: "index,follow",
+    canonical_url: `${SITE_URL}/terms`,
+    og_image: null,
+  },
 };

@@ -8,9 +8,10 @@ import {
   Boxes,
   Workflow,
   Share2,
+  Scale,
 } from "lucide-react";
 
-export type FieldType = "text" | "textarea" | "tags" | "links" | "media";
+export type FieldType = "text" | "textarea" | "tags" | "links" | "media" | "sections";
 
 export interface FieldDef {
   /** Dot-path of the field relative to its group object, e.g. "audit.title". */
@@ -612,6 +613,44 @@ export const PAGE_CONTENT_DEFINITIONS: PageContentDefinition[] = [
         fields: [
           { key: "maintenance.title", label: "Title", type: "text" },
           { key: "maintenance.description", label: "Description", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "terms",
+    title: "Terms & Conditions",
+    description: "The public Terms & Conditions page. Edits publish instantly.",
+    icon: Scale,
+    href: "/admin/content/terms",
+    groups: [
+      {
+        title: "Page",
+        description: "Header and overview of the terms page.",
+        fields: [
+          { key: "title", label: "Page title", type: "text" },
+          { key: "intro", label: "Intro", type: "textarea" },
+          { key: "lastUpdated", label: "Last updated label", type: "text" },
+        ],
+      },
+      {
+        title: "Sections",
+        description: "Numbered sections of the terms. Each has a title and body.",
+        fields: [
+          {
+            key: "sections",
+            label: "Sections",
+            type: "sections",
+            hint: "Add, edit, reorder-free list: each entry is a heading + paragraph.",
+          },
+        ],
+      },
+      {
+        title: "Contact Block",
+        description: "The closing contact note at the bottom of the page.",
+        fields: [
+          { key: "contactTitle", label: "Heading", type: "text" },
+          { key: "contactBody", label: "Body", type: "textarea" },
         ],
       },
     ],

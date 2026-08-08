@@ -173,6 +173,14 @@ export function Footer({ settings, logoUrl, content }: FooterProps) {
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-muted-foreground text-xs">{settings.footer_text}</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/terms"
+              className="text-muted-foreground hover:text-foreground text-xs transition-colors duration-200"
+            >
+              Terms &amp; Conditions
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

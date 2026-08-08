@@ -9,6 +9,7 @@ import { DEFAULT_BLOG_CONTENT } from "./defaults/blog";
 import { DEFAULT_HUB_CONTENT } from "./defaults/hub";
 import { DEFAULT_PLAYGROUND_CONTENT } from "./defaults/playground";
 import { DEFAULT_SHARED_CONTENT } from "./defaults/shared";
+import { DEFAULT_TERMS_CONTENT } from "./defaults/terms";
 
 export const MOCK_CONTENT: ContentEntry[] = [
   {
@@ -97,6 +98,15 @@ export const MOCK_CONTENT: ContentEntry[] = [
     key: "shared",
     title: "Shared Site",
     content: DEFAULT_SHARED_CONTENT as unknown as Record<string, unknown>,
+    status: "published",
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "c11",
+    key: "terms",
+    title: "Terms & Conditions",
+    content: DEFAULT_TERMS_CONTENT as unknown as Record<string, unknown>,
     status: "published",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",

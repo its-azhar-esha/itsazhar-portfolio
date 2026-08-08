@@ -54,6 +54,13 @@ function asLinks(value: unknown): { label: string; href: string }[] {
     .map((v) => ({ label: asString(v.label), href: asString(v.href) }));
 }
 
+function asSections(value: unknown): { title: string; body: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isPlainObject)
+    .map((v) => ({ title: asString(v.title), body: asString(v.body) }));
+}
+
 function SectionCard({
   title,
   description,
@@ -121,6 +128,12 @@ export function PageContentEditor({
     updateAt(path, next);
   }
 
+  function updateSectionAt(path: string, index: number, patch: { title?: string; body?: string }) {
+    const sections = asSections(getByPath(content, path));
+    const next = sections.map((section, i) => (i === index ? { ...section, ...patch } : section));
+    updateAt(path, next);
+  }
+
   async function handleSave() {
     setSaving(true);
     setMessage(null);
@@ -176,6 +189,7 @@ export function PageContentEditor({
                     value={getByPath(content, field.key)}
                     onChange={(value) => updateAt(field.key, value)}
                     onLinkChange={(index, patch) => updateLinkAt(field.key, index, patch)}
+                    onSectionChange={(index, patch) => updateSectionAt(field.key, index, patch)}
                   />
                 ))}
               </div>
@@ -212,16 +226,18 @@ function FieldInput({
   value,
   onChange,
   onLinkChange,
+  onSectionChange,
 }: {
   field: {
     key: string;
     label: string;
     hint?: string;
-    type?: "text" | "textarea" | "tags" | "links" | "media";
+    type?: "text" | "textarea" | "tags" | "links" | "media" | "sections";
   };
   value: unknown;
   onChange: (value: unknown) => void;
   onLinkChange: (index: number, patch: { label?: string; href?: string }) => void;
+  onSectionChange: (index: number, patch: { title?: string; body?: string }) => void;
 }) {
   const type = field.type ?? "text";
   const id = `field-${field.key.replace(/\./g, "-")}`;
@@ -235,6 +251,53 @@ function FieldInput({
           onChange={(v) => onChange(v)}
           typeFilter="image"
         />
+        {field.hint && <p className="text-muted-foreground text-xs">{field.hint}</p>}
+      </div>
+    );
+  }
+
+  if (type === "sections") {
+    const sections = asSections(value);
+    return (
+      <div className="space-y-2 sm:col-span-2">
+        <Label>{field.label}</Label>
+        <div className="space-y-4">
+          {sections.map((section, i) => (
+            <div key={i} className="border-border/50 bg-card/50 space-y-2 rounded-lg border p-4">
+              <Input
+                value={section.title}
+                onChange={(e) => onSectionChange(i, { title: e.target.value })}
+                placeholder="Section title"
+              />
+              <Textarea
+                value={section.body}
+                onChange={(e) => onSectionChange(i, { body: e.target.value })}
+                placeholder="Section body"
+                className="min-h-[90px]"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive gap-1.5"
+                onClick={() => onChange(sections.filter((_, index) => index !== i))}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remove section
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => onChange([...sections, { title: "", body: "" }])}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add section
+          </Button>
+        </div>
         {field.hint && <p className="text-muted-foreground text-xs">{field.hint}</p>}
       </div>
     );
