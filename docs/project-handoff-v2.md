@@ -3263,3 +3263,26 @@ https://quekecvmdbzpxqglztsa.supabase.co`; deployed to itsazhar.com.
   library image "Azhar", 1246×1262 PNG). Verified live: `/` renders the
   optimized `<img>` (alt "Photo of Azhar") from the storage public_url; the
   row's public_url serves 200 image/png.
+
+## 52. Terms & Conditions page — CMS-managed (2026-08-05, commit `51079cf`)
+
+- New public page `/terms` (`src/app/(public)/terms/page.tsx`) — server
+  component rendering `getPublicPageContent<TermsPageContent>("terms",
+DEFAULT_TERMS_CONTENT)`: hero (badge, title, last-updated, intro), numbered
+  sections, and a contact block. Not in the navbar; linked from the footer
+  bottom bar (next to `footer_text`) via a static "Terms & Conditions" link.
+- Fully CMS-driven, same pipeline as other page content:
+  - `DEFAULT_TERMS_CONTENT` + `TermsPageContent` (`defaults/terms.ts`),
+    registered in `defaults/index.ts`, `page-defaults.ts`, `mock-data.ts`.
+  - Schema definition in `schemas.ts` (icon `Scale`), served by the existing
+    dynamic route `/admin/content/terms` with the generic `PageContentEditor`.
+  - New generic field type **`sections`** (array of title + body pairs) in
+    `page-content-editor.tsx` — add/remove/edit sections without code
+    changes; reusable for future legal/FAQ pages.
+  - Edits publish instantly: `savePageContentAction` revalidates the layout.
+- SEO: `terms` entry in `DEFAULT_SEO` (index,follow, canonical `/terms`);
+  `/terms` added to the sitemap (priority 0.3).
+- Data: `content_entries` row `terms` seeded with title/intro/lastUpdated/
+  contact; section list falls back to defaults via deepMerge until first
+  admin save. Verified live: page renders title/intro/sections/contact,
+  footer link present, sitemap entry present.
