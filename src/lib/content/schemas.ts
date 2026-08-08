@@ -9,6 +9,7 @@ import {
   Workflow,
   Share2,
   Scale,
+  Shield,
 } from "lucide-react";
 
 export type FieldType = "text" | "textarea" | "tags" | "links" | "media" | "sections";
@@ -636,6 +637,44 @@ export const PAGE_CONTENT_DEFINITIONS: PageContentDefinition[] = [
       {
         title: "Sections",
         description: "Numbered sections of the terms. Each has a title and body.",
+        fields: [
+          {
+            key: "sections",
+            label: "Sections",
+            type: "sections",
+            hint: "Add, edit, reorder-free list: each entry is a heading + paragraph.",
+          },
+        ],
+      },
+      {
+        title: "Contact Block",
+        description: "The closing contact note at the bottom of the page.",
+        fields: [
+          { key: "contactTitle", label: "Heading", type: "text" },
+          { key: "contactBody", label: "Body", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "privacy",
+    title: "Privacy Policy",
+    description: "The public Privacy Policy page. Edits publish instantly.",
+    icon: Shield,
+    href: "/admin/content/privacy",
+    groups: [
+      {
+        title: "Page",
+        description: "Header and overview of the privacy policy page.",
+        fields: [
+          { key: "title", label: "Page title", type: "text" },
+          { key: "intro", label: "Intro", type: "textarea" },
+          { key: "lastUpdated", label: "Last updated label", type: "text" },
+        ],
+      },
+      {
+        title: "Sections",
+        description: "Numbered sections of the privacy policy. Each has a title and body.",
         fields: [
           {
             key: "sections",

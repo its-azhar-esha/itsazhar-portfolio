@@ -7,6 +7,7 @@ import { DEFAULT_HUB_CONTENT } from "./defaults/hub";
 import { DEFAULT_PLAYGROUND_CONTENT } from "./defaults/playground";
 import { DEFAULT_SHARED_CONTENT } from "./defaults/shared";
 import { DEFAULT_TERMS_CONTENT } from "./defaults/terms";
+import { DEFAULT_PRIVACY_CONTENT } from "./defaults/privacy";
 
 /** Maps a page content key to its default content object. */
 export const PAGE_DEFAULTS: Record<string, Record<string, unknown>> = {
@@ -19,4 +20,5 @@ export const PAGE_DEFAULTS: Record<string, Record<string, unknown>> = {
   playground: DEFAULT_PLAYGROUND_CONTENT as unknown as Record<string, unknown>,
   shared: DEFAULT_SHARED_CONTENT as unknown as Record<string, unknown>,
   terms: DEFAULT_TERMS_CONTENT as unknown as Record<string, unknown>,
+  privacy: DEFAULT_PRIVACY_CONTENT as unknown as Record<string, unknown>,
 };

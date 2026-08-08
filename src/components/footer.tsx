@@ -180,6 +180,12 @@ export function Footer({ settings, logoUrl, content }: FooterProps) {
             >
               Terms &amp; Conditions
             </Link>
+            <Link
+              href="/privacy"
+              className="text-muted-foreground hover:text-foreground text-xs transition-colors duration-200"
+            >
+              Privacy Policy
+            </Link>
           </div>
         </div>
       </div>

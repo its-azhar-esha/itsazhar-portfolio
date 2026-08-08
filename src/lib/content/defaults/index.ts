@@ -7,3 +7,4 @@ export { DEFAULT_HUB_CONTENT, type HubPageContent } from "./hub";
 export { DEFAULT_PLAYGROUND_CONTENT, type PlaygroundPageContent } from "./playground";
 export { DEFAULT_SHARED_CONTENT, type SharedContent } from "./shared";
 export { DEFAULT_TERMS_CONTENT, type TermsPageContent } from "./terms";
+export { DEFAULT_PRIVACY_CONTENT, type PrivacyPageContent } from "./privacy";

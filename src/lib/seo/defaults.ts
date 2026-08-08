@@ -183,4 +183,13 @@ export const DEFAULT_SEO: Record<string, DefaultSeo> = {
     canonical_url: `${SITE_URL}/terms`,
     og_image: null,
   },
+  privacy: {
+    title: "Privacy Policy | ItsAzhar — AI Automation",
+    description:
+      "How the website collects, uses and protects visitor data. Privacy policy for the AI automation services provided by Azhar Mahmud (ItsAzhar).",
+    keywords: ["privacy", "privacy policy", "ItsAzhar", "legal", "data protection"],
+    robots: "index,follow",
+    canonical_url: `${SITE_URL}/privacy`,
+    og_image: null,
+  },
 };

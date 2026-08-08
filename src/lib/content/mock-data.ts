@@ -10,6 +10,7 @@ import { DEFAULT_HUB_CONTENT } from "./defaults/hub";
 import { DEFAULT_PLAYGROUND_CONTENT } from "./defaults/playground";
 import { DEFAULT_SHARED_CONTENT } from "./defaults/shared";
 import { DEFAULT_TERMS_CONTENT } from "./defaults/terms";
+import { DEFAULT_PRIVACY_CONTENT } from "./defaults/privacy";
 
 export const MOCK_CONTENT: ContentEntry[] = [
   {
@@ -107,6 +108,15 @@ export const MOCK_CONTENT: ContentEntry[] = [
     key: "terms",
     title: "Terms & Conditions",
     content: DEFAULT_TERMS_CONTENT as unknown as Record<string, unknown>,
+    status: "published",
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "c12",
+    key: "privacy",
+    title: "Privacy Policy",
+    content: DEFAULT_PRIVACY_CONTENT as unknown as Record<string, unknown>,
     status: "published",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
