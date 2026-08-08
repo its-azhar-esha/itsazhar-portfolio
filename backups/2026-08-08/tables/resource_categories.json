@@ -1,0 +1,35 @@
+[
+  {
+    "id": "89ab1b9f-b7fb-4873-b1d8-987c2f6d246f",
+    "name": "Templates",
+    "slug": "templates",
+    "description": "Ready-to-use automation templates you can copy and adapt.",
+    "icon": "layout-template",
+    "display_order": 1,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:06.250055+00:00"
+  },
+  {
+    "id": "fbb59d3e-d024-4ef5-b8b4-f90c6480aba9",
+    "name": "AI Agents",
+    "slug": "ai-agents",
+    "description": "Configurable AI agent packs for real business workflows.",
+    "icon": "bot",
+    "display_order": 2,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:06.250055+00:00"
+  },
+  {
+    "id": "953c8ee3-737d-45e6-be9a-8e142b1f7099",
+    "name": "Prompts & Guides",
+    "slug": "prompts-guides",
+    "description": "Prompt libraries and step-by-step automation guides.",
+    "icon": "book-open",
+    "display_order": 3,
+    "status": "published",
+    "created_at": "2026-07-31T17:30:04.065575+00:00",
+    "updated_at": "2026-08-02T11:47:06.250055+00:00"
+  }
+]

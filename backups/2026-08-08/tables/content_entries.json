@@ -1,0 +1,596 @@
+[
+  {
+    "id": "d3af197e-0fa8-4b32-8eb4-20ecc4e34de6",
+    "key": "hero",
+    "title": "Hero Section",
+    "content": {
+      "seo": {
+        "title": "AI Automation & Intelligent Systems",
+        "description": "I design and build intelligent automation systems that eliminate repetitive work, streamline operations, and help businesses scale faster."
+      },
+      "basic": {
+        "headline": "Automate anything.",
+        "location": "",
+        "highlight": "Scale everything.",
+        "subheadline": "I design and build intelligent automation systems that eliminate repetitive work, streamline operations, and help businesses scale faster. From AI agents and n8n workflows to custom integrations, I turn complex processes into reliable automated systems.",
+        "availability": "Available for Automation Projects"
+      },
+      "badges": [
+        "AI Agents",
+        "n8n",
+        "APIs",
+        "Workflow Automation",
+        "Business Systems"
+      ],
+      "actions": {
+        "primary": {
+          "href": "/contact",
+          "label": "Book a Free 15-Min Audit"
+        },
+        "secondary": {
+          "href": "/projects",
+          "label": "View Projects"
+        }
+      },
+      "background": {
+        "image": "",
+        "video": ""
+      }
+    },
+    "status": "published",
+    "created_at": "2026-08-04T18:14:13.522196+00:00",
+    "updated_at": "2026-08-04T19:42:07.300043+00:00"
+  },
+  {
+    "id": "ddfb72ee-a08c-48eb-908b-40318609baa4",
+    "key": "about",
+    "title": "About Page",
+    "content": {
+      "seo": {
+        "title": "About Me - AI Automation Specialist",
+        "description": "I build intelligent automation systems that help businesses eliminate repetitive work, streamline operations, and scale efficiently using AI, workflows, and modern integrations."
+      },
+      "basic": {
+        "name": "Azhar",
+        "title": "AI Automation Specialist",
+        "tagline": "About Me",
+        "profileImage": "media:484c7ce2-cb69-4626-840f-eafe77ce2bfd",
+        "introVideoUrl": "media:a70414ea-d733-4f10-9210-f53935ffa4d2"
+      },
+      "tools": [
+        {
+          "icon": "openai",
+          "name": "OpenAI",
+          "category": "AI"
+        },
+        {
+          "icon": "claude",
+          "name": "Claude",
+          "category": "AI"
+        },
+        {
+          "name": "Anthropic",
+          "category": "AI"
+        },
+        {
+          "name": "Google Gemini",
+          "category": "AI"
+        },
+        {
+          "name": "Groq",
+          "category": "AI"
+        },
+        {
+          "name": "OpenRouter",
+          "category": "AI"
+        },
+        {
+          "name": "DeepSeek",
+          "category": "AI"
+        },
+        {
+          "name": "Qwen",
+          "category": "AI"
+        },
+        {
+          "name": "Llama",
+          "category": "AI"
+        },
+        {
+          "name": "Mistral",
+          "category": "AI"
+        },
+        {
+          "name": "Cohere",
+          "category": "AI"
+        },
+        {
+          "name": "Perplexity",
+          "category": "AI"
+        },
+        {
+          "name": "Ollama",
+          "category": "AI"
+        },
+        {
+          "name": "LM Studio",
+          "category": "AI"
+        },
+        {
+          "name": "Hugging Face",
+          "category": "AI"
+        },
+        {
+          "icon": "n8n",
+          "name": "n8n",
+          "category": "Automation"
+        },
+        {
+          "name": "Make",
+          "category": "Automation"
+        },
+        {
+          "name": "Zapier",
+          "category": "Automation"
+        },
+        {
+          "name": "Pipedream",
+          "category": "Automation"
+        },
+        {
+          "name": "Activepieces",
+          "category": "Automation"
+        },
+        {
+          "name": "Node-RED",
+          "category": "Automation"
+        },
+        {
+          "name": "Apache Airflow",
+          "category": "Automation"
+        },
+        {
+          "icon": "nextjs",
+          "name": "Next.js",
+          "category": "Development"
+        },
+        {
+          "icon": "react",
+          "name": "React",
+          "category": "Development"
+        },
+        {
+          "icon": "typescript",
+          "name": "TypeScript",
+          "category": "Development"
+        },
+        {
+          "name": "JavaScript",
+          "category": "Development"
+        },
+        {
+          "icon": "tailwind",
+          "name": "Tailwind CSS",
+          "category": "Development"
+        },
+        {
+          "name": "Framer Motion",
+          "category": "Development"
+        },
+        {
+          "name": "Node.js",
+          "category": "Development"
+        },
+        {
+          "name": "Express.js",
+          "category": "Development"
+        },
+        {
+          "icon": "python",
+          "name": "Python",
+          "category": "Development"
+        },
+        {
+          "name": "FastAPI",
+          "category": "Development"
+        },
+        {
+          "icon": "docker",
+          "name": "Docker",
+          "category": "Development"
+        },
+        {
+          "name": "Git",
+          "category": "Development"
+        },
+        {
+          "icon": "github",
+          "name": "GitHub",
+          "category": "Development"
+        },
+        {
+          "name": "GitHub Actions",
+          "category": "Development"
+        },
+        {
+          "icon": "vercel",
+          "name": "Vercel",
+          "category": "Development"
+        },
+        {
+          "name": "Netlify",
+          "category": "Development"
+        },
+        {
+          "name": "Cloudflare",
+          "category": "Development"
+        },
+        {
+          "icon": "postgresql",
+          "name": "PostgreSQL",
+          "category": "Databases"
+        },
+        {
+          "name": "MySQL",
+          "category": "Databases"
+        },
+        {
+          "name": "SQLite",
+          "category": "Databases"
+        },
+        {
+          "icon": "supabase",
+          "name": "Supabase",
+          "category": "Databases"
+        },
+        {
+          "name": "Firebase",
+          "category": "Databases"
+        },
+        {
+          "name": "MongoDB",
+          "category": "Databases"
+        },
+        {
+          "name": "Redis",
+          "category": "Databases"
+        },
+        {
+          "name": "Prisma",
+          "category": "Databases"
+        },
+        {
+          "name": "Google Workspace",
+          "category": "Business"
+        },
+        {
+          "name": "Google Sheets",
+          "category": "Business"
+        },
+        {
+          "name": "Slack",
+          "category": "Business"
+        },
+        {
+          "name": "Discord",
+          "category": "Business"
+        },
+        {
+          "name": "Notion",
+          "category": "Business"
+        },
+        {
+          "name": "Airtable",
+          "category": "Business"
+        },
+        {
+          "name": "Trello",
+          "category": "Business"
+        },
+        {
+          "name": "ClickUp",
+          "category": "Business"
+        },
+        {
+          "name": "Calendly",
+          "category": "Business"
+        },
+        {
+          "name": "HubSpot",
+          "category": "CRM & Sales"
+        },
+        {
+          "name": "Salesforce",
+          "category": "CRM & Sales"
+        },
+        {
+          "icon": "stripe",
+          "name": "Stripe",
+          "category": "CRM & Sales"
+        },
+        {
+          "name": "PayPal",
+          "category": "CRM & Sales"
+        },
+        {
+          "name": "WhatsApp Business",
+          "category": "Communication"
+        },
+        {
+          "name": "Telegram",
+          "category": "Communication"
+        },
+        {
+          "name": "Twilio",
+          "category": "Communication"
+        },
+        {
+          "name": "Resend",
+          "category": "Communication"
+        },
+        {
+          "name": "SendGrid",
+          "category": "Communication"
+        },
+        {
+          "name": "REST API",
+          "category": "API & Integration"
+        },
+        {
+          "name": "GraphQL",
+          "category": "API & Integration"
+        },
+        {
+          "name": "Webhooks",
+          "category": "API & Integration"
+        },
+        {
+          "name": "OAuth",
+          "category": "API & Integration"
+        },
+        {
+          "name": "Postman",
+          "category": "API & Integration"
+        },
+        {
+          "name": "Sentry",
+          "category": "Monitoring"
+        },
+        {
+          "name": "Better Stack",
+          "category": "Monitoring"
+        },
+        {
+          "name": "UptimeRobot",
+          "category": "Monitoring"
+        },
+        {
+          "name": "Grafana",
+          "category": "Monitoring"
+        },
+        {
+          "name": "Google Analytics",
+          "category": "Analytics"
+        },
+        {
+          "name": "Plausible",
+          "category": "Analytics"
+        },
+        {
+          "name": "Microsoft Clarity",
+          "category": "Analytics"
+        },
+        {
+          "icon": "figma",
+          "name": "Figma",
+          "category": "Design"
+        },
+        {
+          "name": "Canva",
+          "category": "Design"
+        },
+        {
+          "name": "FFmpeg",
+          "category": "Media"
+        },
+        {
+          "name": "Cloudinary",
+          "category": "Media"
+        },
+        {
+          "name": "AWS S3",
+          "category": "Storage & Deployment"
+        },
+        {
+          "name": "Cloudflare R2",
+          "category": "Storage & Deployment"
+        },
+        {
+          "name": "Railway",
+          "category": "Storage & Deployment"
+        },
+        {
+          "name": "Render",
+          "category": "Storage & Deployment"
+        },
+        {
+          "name": "DigitalOcean",
+          "category": "Storage & Deployment"
+        },
+        {
+          "name": "Linux",
+          "category": "Storage & Deployment"
+        },
+        {
+          "name": "NGINX",
+          "category": "Storage & Deployment"
+        }
+      ],
+      "resume": {
+        "url": "",
+        "label": "Download Resume"
+      },
+      "timeline": [
+        {
+          "year": "2022",
+          "title": "Started My Freelancing Journey",
+          "description": "Began working as a freelancer, gaining real-world experience in client communication, project management, and delivering digital services."
+        },
+        {
+          "year": "2023",
+          "title": "Worked as a Virtual Assistant",
+          "description": "Supported businesses as a Virtual Assistant, managing daily operations, administrative tasks, and productivity workflows."
+        },
+        {
+          "year": "2024",
+          "title": "Started Learning Programming",
+          "description": "Focused on programming fundamentals, APIs, databases, and modern web technologies to build practical software solutions."
+        },
+        {
+          "year": "2025",
+          "title": "Specialized in AI Automation",
+          "description": "Started building AI-powered automation workflows with n8n, integrating AI models, APIs, and business systems."
+        },
+        {
+          "year": "2026 - Present",
+          "title": "Building AI Automation Solutions",
+          "description": "Developing production-ready AI automation systems that help businesses automate workflows, improve efficiency, and scale operations."
+        }
+      ],
+      "biography": {
+        "roles": [
+          "Building AI Agents",
+          "Automating Businesses",
+          "Connecting Systems",
+          "Saving Thousands of Hours",
+          "Creating Intelligent Workflows"
+        ],
+        "headline": "I build intelligent automation systems that help businesses eliminate repetitive work, streamline operations, and scale efficiently using AI, workflows, and modern integrations.",
+        "paragraphs": [
+          "I'm an AI Automation Specialist from Bangladesh - I build systems that connect AI agents, automate workflows, and eliminate repetitive work for businesses worldwide.",
+          "My focus is on producing reliable, production-ready automation that saves time, reduces errors, and scales with your business. Every system I deliver is designed to run without constant maintenance."
+        ],
+        "visionStatement": "A world where no one wastes time on work a machine can do better.",
+        "missionStatement": "Make automation accessible and practical for every business - from solo founders to growing enterprises."
+      },
+      "buildSteps": [
+        {
+          "icon": "Search",
+          "title": "Discover",
+          "description": "Learn about your business, understand your workflow, and identify the best automation opportunities."
+        },
+        {
+          "icon": "Layers",
+          "title": "Design",
+          "description": "Create a clear automation strategy and design a reliable workflow tailored to your business needs."
+        },
+        {
+          "icon": "Cpu",
+          "title": "Build",
+          "description": "Develop and integrate AI-powered workflows, APIs, and connected systems for seamless automation."
+        },
+        {
+          "icon": "Settings",
+          "title": "Launch & Improve",
+          "description": "Test, deploy, monitor, and continuously optimize your automation for reliable long-term performance."
+        }
+      ],
+      "industries": [
+        "Healthcare",
+        "Finance",
+        "Business",
+        "Logistics",
+        "Real Estate",
+        "Education",
+        "E-Commerce",
+        "Marketing",
+        "Customer Support",
+        "Document Intelligence"
+      ],
+      "principles": [
+        {
+          "title": "Solve Real Business Problems",
+          "description": "I build automation systems that eliminate repetitive work, improve efficiency, and help businesses operate more effectively."
+        },
+        {
+          "title": "Keep It Simple",
+          "description": "Simple workflows are easier to understand, maintain, and scale. Every solution is designed with long-term reliability in mind."
+        },
+        {
+          "title": "Automation That Scales",
+          "description": "From a single workflow to complete business systems, every automation is built to support future growth and new integrations."
+        },
+        {
+          "title": "Technology with Purpose",
+          "description": "The right technology should solve problems, save time, and create measurable business value-not add unnecessary complexity."
+        }
+      ],
+      "socialLinks": [
+        {
+          "url": "mailto:azhar@itsazhar.com",
+          "name": "Email",
+          "username": "azhar@itsazhar.com",
+          "placeholder": false
+        },
+        {
+          "url": "https://linkedin.com/in/azharmahmudalif",
+          "name": "LinkedIn",
+          "username": "linkedin.com/in/azharmahmudalif",
+          "placeholder": false
+        },
+        {
+          "url": "https://github.com/azharmahmudalif",
+          "name": "GitHub",
+          "username": "github.com/azharmahmudalif",
+          "placeholder": false
+        },
+        {
+          "url": "https://fiverr.com/azhar_m_alif",
+          "name": "Fiverr",
+          "username": "fiverr.com/azhar_m_alif",
+          "placeholder": false
+        },
+        {
+          "url": "https://upwork.com/freelancers/azhar",
+          "name": "Upwork",
+          "username": "upwork.com/freelancers/azhar",
+          "placeholder": false
+        },
+        {
+          "url": "https://x.com/azhar_m_alif",
+          "name": "X / Twitter",
+          "username": "@azhar_m_alif",
+          "placeholder": false
+        },
+        {
+          "url": "https://youtube.com/@azhar_m_alif",
+          "name": "YouTube",
+          "username": "@azhar_m_alif",
+          "placeholder": false
+        },
+        {
+          "url": "https://instagram.com/azhar_m_alif",
+          "name": "Instagram",
+          "username": "@azhar_m_alif",
+          "placeholder": false
+        }
+      ]
+    },
+    "status": "published",
+    "created_at": "2026-08-05T07:24:00.407488+00:00",
+    "updated_at": "2026-08-07T16:15:26.202001+00:00"
+  },
+  {
+    "id": "d744966c-49ce-4289-8c8b-1af5f3e15ca4",
+    "key": "home",
+    "title": "Home Page",
+    "content": {
+      "about": {
+        "photo": "media:484c7ce2-cb69-4626-840f-eafe77ce2bfd"
+      }
+    },
+    "status": "published",
+    "created_at": "2026-08-07T16:24:23.727987+00:00",
+    "updated_at": "2026-08-07T16:24:23.727987+00:00"
+  }
+]
