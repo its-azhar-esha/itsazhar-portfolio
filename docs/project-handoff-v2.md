@@ -3286,3 +3286,50 @@ DEFAULT_TERMS_CONTENT)`: hero (badge, title, last-updated, intro), numbered
   contact; section list falls back to defaults via deepMerge until first
   admin save. Verified live: page renders title/intro/sections/contact,
   footer link present, sitemap entry present.
+
+## 53. Blog post sources — admin-managed reference links (2026-08-08, migration `00042`, commit `6e99644`)
+
+- New `blog_posts.sources` jsonb column (default `'[]'`), format
+  `[{"title": string, "url": string}]`. Same table → existing grants/RLS
+  cover it automatically. `DbBlogPost`/`PublicBlogPost`/`MockBlogPost` carry
+  `sources: BlogSource[]` (`BlogSource` in `src/types/blog.ts`).
+- Validation in `createBlogPostSchema` (`src/lib/validation/schemas/blog.ts`):
+  array of `{title (1–200 chars), url (valid http(s) URL)}`, max 20 entries,
+  default `[]`.
+- Admin: blog form (`src/components/admin/blog/blog-form.tsx`) gained a
+  **Sources** editor after Categories/Tags — per-row title + URL inputs,
+  add/remove, and up/down reordering (ArrowUp/ArrowDown/Trash2/Plus icons);
+  empty state shows helper text. Errors surface under the section.
+- Public: `/blog/[slug]` renders a numbered **Sources** list (title linked,
+  ExternalLink icon) between the tag chips and the author card, hidden when
+  empty. Mock data maps `sources ?? []`.
+- Seeded live sources (real doc URLs) for the 4 posts that match the mock
+  set (n8n docs, Anthropic building-effective-agents, OpenAI function
+  calling, n8n error-handling); the other 7 posts start empty and are
+  filled from the admin editor. `00024`-style re-seed not needed.
+- Verified live: `/blog/[slug]` shows both source links (REST-verified DB
+  rows + served HTML), `/admin/blog/[id]/edit` renders the Sources editor
+  with the seeded values (auth-cookie E2E, UUID route param), lint/tsc/build
+  green. Deployed to itsazhar.com.
+
+## 54. Privacy Policy page — CMS-managed (2026-08-08, commit `2bdd7e7`)
+
+- New public page `/privacy` (`src/app/(public)/privacy/page.tsx`) mirroring
+  the `/terms` pattern: hero (badge, title, last-updated, intro), numbered
+  sections, contact block. Linked from the footer next to Terms.
+- Fully CMS-driven: `DEFAULT_PRIVACY_CONTENT` + `PrivacyPageContent`
+  (`src/lib/content/defaults/privacy.ts`) registered in `defaults/index.ts`,
+  `page-defaults.ts`, `mock-data.ts`; schema in `schemas.ts` (icon `Shield`)
+  served by `/admin/content/privacy` with the generic `PageContentEditor`.
+- Content written from verified site facts: contact form fields, AI chat
+  (Groq + OpenRouter fallback, hashed-IP rate limit), GA4 `G-D8LLR94CK7`
+  (GTM/Clarity empty in DB — not claimed), Supabase/Vercel hosting, backups,
+  analytics retention, data rights.
+- SEO: `privacy` entry in `src/lib/seo/defaults.ts`; `/privacy` added to the
+  sitemap (priority 0.3).
+- Data: seeded `content_entries` row `privacy` (published, full 9 sections)
+  and `seo_metadata` rows for BOTH `terms` + `privacy` (terms previously had
+  no SEO row) via service-role REST — both now manageable in `/admin/seo`.
+- Verified live: `/privacy` 200 with title/GA4/contact content, footer link
+  on homepage, sitemap entry, `/admin/content/privacy` + `/admin/content/terms`
+  - `/admin/seo` load with an admin session.
