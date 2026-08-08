@@ -1,5 +1,5 @@
 import type { BlogPostStatus } from "@/constants/blog";
-import type { PublicBlogPost } from "@/types/blog";
+import type { BlogSource, PublicBlogPost } from "@/types/blog";
 
 export interface MockBlogPost {
   slug: string;
@@ -9,6 +9,7 @@ export interface MockBlogPost {
   cover_image: string | null;
   categories: string[];
   tags: string[];
+  sources?: BlogSource[];
   author: string;
   status: BlogPostStatus;
   featured: boolean;
@@ -54,6 +55,13 @@ export const MOCK_BLOG_POSTS: MockBlogPost[] = [
     cover_image: null,
     categories: ["ai-agents", "workflow-design"],
     tags: ["ai agents", "n8n", "automation strategy"],
+    sources: [
+      { title: "n8n docs — Workflows", url: "https://docs.n8n.io/workflows/" },
+      {
+        title: "Anthropic — What are AI agents?",
+        url: "https://www.anthropic.com/research/building-effective-agents",
+      },
+    ],
     author: "Azhar",
     status: "published",
     featured: true,
@@ -214,6 +222,7 @@ export function toPublicBlogPost(post: MockBlogPost): PublicBlogPost {
     coverImage: post.cover_image,
     categories: post.categories,
     tags: post.tags,
+    sources: post.sources ?? [],
     author: post.author,
     featured: post.featured,
     publishedAt: post.published_at,

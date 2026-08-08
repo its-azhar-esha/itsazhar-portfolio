@@ -1,5 +1,10 @@
 import type { BlogPostStatus } from "@/constants/blog";
 
+export interface BlogSource {
+  title: string;
+  url: string;
+}
+
 export interface DbBlogPost {
   id: string;
   title: string;
@@ -9,6 +14,7 @@ export interface DbBlogPost {
   cover_image: string | null;
   categories: string[];
   tags: string[];
+  sources: BlogSource[];
   author: string;
   status: BlogPostStatus;
   featured: boolean;
@@ -35,6 +41,7 @@ export interface PublicBlogPost {
   coverImage: string | null;
   categories: string[];
   tags: string[];
+  sources: BlogSource[];
   author: string;
   featured: boolean;
   publishedAt: string;

@@ -149,6 +149,7 @@ function publicFromDb(post: DbBlogPost): PublicBlogPost {
     coverImage: post.cover_image,
     categories: post.categories,
     tags: post.tags,
+    sources: post.sources,
     author: post.author,
     featured: post.featured,
     publishedAt: post.published_at ?? post.created_at,

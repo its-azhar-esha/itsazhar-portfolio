@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { DbBlogPost } from "@/types/blog";
+import type { DbBlogPost, BlogSource } from "@/types/blog";
 import {
   createBlogPostAction,
   updateBlogPostAction,
@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { TagInput } from "@/components/ui/tag-input";
 import { MediaField } from "@/components/media/media-field";
 import { ConfirmDialog } from "@/components/admin/projects/confirm-dialog";
-import { Eye, FileText } from "lucide-react";
+import { Eye, FileText, ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 interface FormFields {
   title: string;
@@ -34,6 +34,7 @@ interface FormFields {
   cover_image: string;
   categories: string[];
   tags: string[];
+  sources: BlogSource[];
   featured: boolean;
   status: string;
   publishedAt: string;
@@ -55,6 +56,7 @@ function defaultFields(post?: DbBlogPost): FormFields {
     cover_image: post?.cover_image ?? "",
     categories: post?.categories ?? [],
     tags: post?.tags ?? [],
+    sources: post?.sources ?? [],
     featured: post?.featured ?? false,
     status: post?.status ?? "draft",
     publishedAt: post?.published_at ?? "",
@@ -90,6 +92,7 @@ function fieldsToJson(fields: FormFields): Record<string, unknown> {
     cover_image: fields.cover_image || null,
     categories: fields.categories,
     tags: fields.tags,
+    sources: fields.sources,
     featured: fields.featured,
     status: fields.status,
     seo_title: fields.seo_title || null,
@@ -144,6 +147,28 @@ export function BlogForm({ post }: BlogFormProps) {
     handleChange({ slug: value });
   }
 
+  function updateSource(index: number, patch: Partial<BlogSource>) {
+    handleChange({
+      sources: fields.sources.map((source, i) => (i === index ? { ...source, ...patch } : source)),
+    });
+  }
+
+  function addSource() {
+    handleChange({ sources: [...fields.sources, { title: "", url: "" }] });
+  }
+
+  function removeSource(index: number) {
+    handleChange({ sources: fields.sources.filter((_, i) => i !== index) });
+  }
+
+  function moveSource(index: number, direction: -1 | 1) {
+    const next = [...fields.sources];
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    handleChange({ sources: next });
+  }
+
   function validate(): boolean {
     const result = createBlogPostSchema.safeParse(fieldsToJson(fields));
     if (!result.success) {
@@ -151,8 +176,7 @@ export function BlogForm({ post }: BlogFormProps) {
       for (const issue of result.error.issues) {
         const rawKey = String(issue.path[0] ?? "");
         const key = (rawKey === "scheduled_for" ? "scheduledFor" : rawKey) as
-          | keyof FormFields
-          | undefined;
+          keyof FormFields | undefined;
         if (key && !fieldErrors[key]) {
           fieldErrors[key] = issue.message;
         }
@@ -392,6 +416,86 @@ export function BlogForm({ post }: BlogFormProps) {
               />
               {errors.tags && <p className="text-destructive text-xs">{errors.tags}</p>}
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Sources</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSource}
+                className="gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add source
+              </Button>
+            </div>
+            {fields.sources.length === 0 ? (
+              <p className="text-muted-foreground text-xs">
+                No sources yet. Reference links are listed on the public post.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {fields.sources.map((source, index) => (
+                  <div
+                    key={index}
+                    className="border-border/50 flex items-start gap-2 rounded-lg border p-3"
+                  >
+                    <div className="grid flex-1 gap-2 sm:grid-cols-2">
+                      <Input
+                        aria-label={`Source title ${index + 1}`}
+                        value={source.title}
+                        onChange={(e) => updateSource(index, { title: e.target.value })}
+                        placeholder="Source title (e.g. OpenAI Docs)"
+                      />
+                      <Input
+                        aria-label={`Source URL ${index + 1}`}
+                        value={source.url}
+                        onChange={(e) => updateSource(index, { url: e.target.value })}
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => moveSource(index, -1)}
+                        disabled={index === 0}
+                        aria-label="Move source up"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => moveSource(index, 1)}
+                        disabled={index === fields.sources.length - 1}
+                        aria-label="Move source down"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/10 hover:text-red-400"
+                        onClick={() => removeSource(index)}
+                        aria-label="Remove source"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {errors.sources && <p className="text-destructive text-xs">{errors.sources}</p>}
           </div>
 
           <div className="space-y-2">

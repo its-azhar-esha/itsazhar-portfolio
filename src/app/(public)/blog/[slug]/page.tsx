@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock3, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyLinkButton } from "@/components/blog/copy-link-button";
@@ -238,6 +238,32 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 #{tag.replace(/\s+/g, "-")}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {post.sources.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              Sources
+            </h2>
+            <ol className="mt-4 space-y-2">
+              {post.sources.map((source, index) => (
+                <li key={index}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 group flex items-start gap-2 text-sm font-medium transition-colors"
+                  >
+                    <span className="text-muted-foreground group-hover:text-primary/80 font-normal transition-colors">
+                      {index + 1}.
+                    </span>
+                    <span className="break-all">{source.title}</span>
+                    <ExternalLink className="text-muted-foreground group-hover:text-primary/80 mt-0.5 h-3 w-3 shrink-0 transition-colors" />
+                  </a>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
 

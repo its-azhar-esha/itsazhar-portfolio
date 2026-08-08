@@ -20,6 +20,15 @@ export const createBlogPostSchema = z.object({
     .max(10, "Maximum 10 categories")
     .default([]),
   tags: z.array(z.string().trim().min(1).max(40)).max(20, "Maximum 20 tags").default([]),
+  sources: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1, "Source title is required").max(200),
+        url: z.string().trim().url("Must be a valid URL (include https://)"),
+      }),
+    )
+    .max(20, "Maximum 20 sources")
+    .default([]),
   author: z.string().trim().min(1, "Author is required").max(100).default("Azhar"),
   status: z.enum(BLOG_POST_STATUSES as unknown as [string, ...string[]]).default("draft"),
   featured: z.boolean().default(false),

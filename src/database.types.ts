@@ -757,6 +757,7 @@ export interface Database {
           og_image: string | null;
           canonical_url: string | null;
           keywords: string[] | null;
+          sources: unknown;
           created_at: string;
           updated_at: string;
         };
@@ -779,6 +780,7 @@ export interface Database {
           og_image?: string | null;
           canonical_url?: string | null;
           keywords?: string[] | null;
+          sources?: unknown;
           created_at?: string;
           updated_at?: string;
         };
@@ -801,6 +803,7 @@ export interface Database {
           og_image?: string | null;
           canonical_url?: string | null;
           keywords?: string[] | null;
+          sources?: unknown;
           created_at?: string;
           updated_at?: string;
         };

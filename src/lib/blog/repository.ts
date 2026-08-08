@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/database.types";
-import type { DbBlogPost, CreateBlogPostInput, UpdateBlogPostInput } from "@/types/blog";
+import type {
+  DbBlogPost,
+  CreateBlogPostInput,
+  UpdateBlogPostInput,
+  BlogSource,
+} from "@/types/blog";
 import type { BlogPostStatus } from "@/constants/blog";
 import type { Result } from "@/lib/result";
 import { ok, fail } from "@/lib/result";
@@ -22,6 +27,7 @@ export function rowToDbBlogPost(
     cover_image: row.cover_image,
     categories: row.categories ?? [],
     tags: row.tags ?? [],
+    sources: (row.sources as BlogSource[] | null) ?? [],
     author: row.author,
     status: row.status as BlogPostStatus,
     featured: row.featured,
